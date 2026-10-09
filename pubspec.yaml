@@ -1,0 +1,36 @@
+name: tharwati
+description: "Tharwati (ثروتي) - personal finance and savings habits."
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.13.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.20.3
+  path: ^1.9.1
+  sqflite: ^2.4.4+1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  sqflite_common_ffi: ^2.4.3
+
+flutter:
+  generate: true
+  uses-material-design: true
+  fonts:
+    # IBM Plex Sans Arabic (Arabic + Latin), SIL OFL 1.1 - see assets/fonts/OFL.txt
+    - family: IBMPlexSansArabic
+      fonts:
+        - asset: assets/fonts/IBMPlexSansArabic_400Regular.ttf
+          weight: 400
+        - asset: assets/fonts/IBMPlexSansArabic_500Medium.ttf
+          weight: 500
+        - asset: assets/fonts/IBMPlexSansArabic_700Bold.ttf
+          weight: 700
