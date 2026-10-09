@@ -7,6 +7,7 @@ import {
   healthScore,
   HealthScore,
   MonthTotals,
+  FIXED_CATEGORY_KEYS,
   projectMonthEndSpending,
   safeToSpendPerDay,
 } from '../domain/analytics';
@@ -96,5 +97,8 @@ export function safeToSpend(s: AppState): SafeToSpend | null {
 export function monthEndForecast(s: AppState): number | null {
   const spent = expenseTotal(s);
   if (!isViewingCurrentMonth(s) || spent === 0) return null;
-  return projectMonthEndSpending(spent, s.today);
+  const fixed = spends(s)
+    .filter((x) => x.category.key != null && (FIXED_CATEGORY_KEYS as readonly string[]).includes(x.category.key))
+    .reduce((a, x) => a + x.spentMinor, 0);
+  return projectMonthEndSpending(spent - fixed, s.today, fixed);
 }

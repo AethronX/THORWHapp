@@ -6,6 +6,8 @@ calculator, plus a five-question onboarding that builds a personal plan and an a
 Local-only (SQLite on the device), no account, no ads, no tracking.
 Competitor study: `../docs/COMPETITIVE_ANALYSIS.md` · formulas: `../docs/ANALYTICS.md`.
 
+Screenshots (web render of the real screens with sample data, iPhone size): `../docs/screenshots/`.
+
 **Stack:** Expo SDK 57 · React Native 0.86 · TypeScript · Expo Router · expo-sqlite.
 Runs in **Expo Go** (only modules bundled in Expo Go are used).
 

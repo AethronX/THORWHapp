@@ -2,6 +2,7 @@ import {
   addMonths,
   Day,
   dayKey,
+  daysInMonth,
   firstDayKey,
   lastDayKey,
   monthKey,
@@ -147,6 +148,16 @@ export class FinanceRepository {
    * Income and expense totals per month for `count` months ending at `last`
    * (oldest first). Months without data are included as zeros.
    */
+  /** Total spent from the 1st of `month` to `day` (clamped to the month's length). */
+  async expensesUntil(month: YearMonth, day: number): Promise<number> {
+    const last = Math.min(Math.max(1, day), daysInMonth(month.year, month.month));
+    const row = await this.db.first<{ total: number | null }>(
+      'SELECT SUM(amount_minor) AS total FROM expenses WHERE day BETWEEN ? AND ?',
+      [firstDayKey(month), dayKey({ ...month, day: last })],
+    );
+    return row?.total ?? 0;
+  }
+
   async monthlyTotals(last: YearMonth, count: number): Promise<MonthTotals[]> {
     const months: YearMonth[] = [];
     for (let i = count - 1; i >= 0; i--) months.push(addMonths(last, -i));

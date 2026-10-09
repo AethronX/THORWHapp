@@ -1,7 +1,7 @@
 /** @jest-environment node */
 import { currencyFromCode } from '../src/core/currency';
 import { AppController } from '../src/state/appController';
-import { expenseTotal, incomeTotal, insights, netCashFlow } from '../src/state/selectors';
+import { expenseTotal, incomeTotal, insights, monthEndForecast, netCashFlow } from '../src/state/selectors';
 import { SqlJsDriver } from './helpers/sqlJsDriver';
 
 const OMR = currencyFromCode('OMR');
@@ -107,4 +107,31 @@ test('a failed delete-all still leaves a working app with data intact', async ()
   await expect(app.deleteAllData()).rejects.toThrow();
   expect(s().status).toBe('ready');
   expect(incomeTotal(s())).toBe(1000);
+});
+
+test('"vs last month" uses the same days of last month (clamped to its length)', async () => {
+  await app.completeOnboarding({ currency: OMR, monthlyIncomeMinor: 500000 });
+  const food = s().categories.find((c) => c.key === 'food')!.id;
+  now = new Date(2026, 2, 30, 12); // Mar 30 — February has only 28 days
+  await app.setMonth({ year: 2026, month: 2 });
+  await app.addExpense({ amountMinor: 100000, categoryId: food, date: { year: 2026, month: 2, day: 10 }, note: '' });
+  await app.addExpense({ amountMinor: 50000, categoryId: food, date: { year: 2026, month: 2, day: 28 }, note: '' });
+  await app.setMonth({ year: 2026, month: 3 });
+  expect(s().previousSamePeriodExpensesMinor).toBe(150000);
+  now = new Date(2026, 2, 9, 12); // Mar 9 → Feb 1..9
+  await app.setMonth({ year: 2026, month: 3 });
+  expect(s().previousSamePeriodExpensesMinor).toBe(0);
+  // Past months: no same-period figure (full months are compared).
+  await app.setMonth({ year: 2026, month: 2 });
+  expect(s().previousSamePeriodExpensesMinor).toBeNull();
+});
+
+test('month-end forecast counts rent once and extrapolates only everyday spending', async () => {
+  now = new Date(2026, 9, 10, 12); // Oct 10
+  await app.completeOnboarding({ currency: OMR, monthlyIncomeMinor: 800000 });
+  const id = (k: string) => s().categories.find((c) => c.key === k)!.id;
+  await app.addExpense({ amountMinor: 350000, categoryId: id('housing'), date: { year: 2026, month: 10, day: 1 }, note: '' });
+  await app.addExpense({ amountMinor: 31000, categoryId: id('food'), date: { year: 2026, month: 10, day: 5 }, note: '' });
+  // 350.000 + 31.000 / 10 days × 31 = 350.000 + 96.100 (naive linear would say 1,181.100)
+  expect(monthEndForecast(s())).toBe(446100);
 });

@@ -1,5 +1,6 @@
 import { Tabs } from 'expo-router';
 import type { ColorValue } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useUi } from '../../ui/AppContext';
 import { PhIcon, type IconName } from '../../ui/icons';
@@ -12,6 +13,7 @@ import { Fonts } from '../../ui/theme';
  */
 export default function TabsLayout() {
   const { s, p, rtl } = useUi();
+  const insets = useSafeAreaInsets();
   const tab = (title: string, icon: IconName) => ({
     title,
     tabBarAccessibilityLabel: title,
@@ -28,8 +30,10 @@ export default function TabsLayout() {
         headerShadowVisible: false,
         tabBarActiveTintColor: p.primary,
         tabBarInactiveTintColor: p.textSubtle,
-        tabBarStyle: { backgroundColor: p.surface, borderTopColor: p.outline },
-        tabBarLabelStyle: { fontFamily: Fonts.medium },
+        // IBM Plex Sans Arabic has tall line metrics: the library's 49 pt bar
+        // clips the labels, so the bar is taller and the line height explicit.
+        tabBarStyle: { backgroundColor: p.surface, borderTopColor: p.outline, height: 64 + insets.bottom, paddingTop: 6 },
+        tabBarLabelStyle: { fontFamily: Fonts.medium, fontSize: 11, lineHeight: 18 },
         sceneStyle: { backgroundColor: p.background },
       }}
     >

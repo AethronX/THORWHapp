@@ -33,6 +33,11 @@ export interface AppState {
   readonly profile: Profile | null;
   /** 6 months of totals ending at the viewed month (oldest first). */
   readonly trend: readonly MonthTotals[];
+  /**
+   * Spending in the previous month over the same days as today (1..today),
+   * when viewing the current month; null otherwise. Fair "vs last month".
+   */
+  readonly previousSamePeriodExpensesMinor: number | null;
 }
 
 /**
@@ -69,6 +74,7 @@ export class AppController {
       previousMonthHasIncome: false,
       profile: null,
       trend: [],
+      previousSamePeriodExpensesMinor: null,
     };
   }
 
@@ -123,6 +129,7 @@ export class AppController {
 
   private async load(month: YearMonth): Promise<Partial<AppState>> {
     const r = this.r;
+    const today = dayFromDate(this.clock());
     const all = await r.categories(true);
     const incomes = await r.incomesFor(month);
     return {
@@ -136,6 +143,9 @@ export class AppController {
       previousMonthHasIncome:
         incomes.length === 0 && (await r.incomesFor(addMonths(month, -1))).length > 0,
       trend: await r.monthlyTotals(month, 6),
+      previousSamePeriodExpensesMinor: sameMonth(month, monthOf(today))
+        ? await r.expensesUntil(addMonths(month, -1), today.day)
+        : null,
     };
   }
 

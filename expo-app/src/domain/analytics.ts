@@ -7,7 +7,7 @@
  * "safe to spend" rounds DOWN, projections round to nearest.
  */
 import { Day, daysInMonth, YearMonth } from '../core/dates';
-import type { CategorySpend } from './models';
+import type { CategoryKey, CategorySpend } from './models';
 
 // -----------------------------------------------------------------------------
 // Category breakdown (donut chart)
@@ -54,12 +54,19 @@ export function change(current: number, previous: number): Change {
 // -----------------------------------------------------------------------------
 
 /**
- * Linear month-end projection of spending: spent ÷ days elapsed × days in
- * month. Only meaningful for the current month; day 1 included.
+ * Categories paid about once a month (rent, bills, instalments). Extrapolating
+ * them by day would turn rent paid on the 1st into 30× rent, so the forecast
+ * counts them once and only extrapolates everyday spending.
  */
-export function projectMonthEndSpending(spentMinor: number, today: Day): number {
+export const FIXED_CATEGORY_KEYS: readonly CategoryKey[] = ['housing', 'utilities', 'telecom', 'education', 'debt'];
+
+/**
+ * Month-end spending forecast: fixed bills as paid so far + everyday spending
+ * extrapolated linearly over the month.
+ */
+export function projectMonthEndSpending(variableMinor: number, today: Day, fixedMinor = 0): number {
   const elapsed = Math.max(1, today.day);
-  return Math.round((spentMinor / elapsed) * daysInMonth(today.year, today.month));
+  return fixedMinor + Math.round((variableMinor / elapsed) * daysInMonth(today.year, today.month));
 }
 
 /**

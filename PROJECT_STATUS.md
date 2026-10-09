@@ -13,6 +13,10 @@ that resembled the Thawani logo (D-025).
 | `npx jest` | **242 tests passing** (8 suites) |
 | `npx expo export` | Android 3.2 MB and iOS 2.9 MB Hermes bundles build |
 
+Screenshot review (docs/screenshots/, web render with sample data) found and fixed: tab labels clipped
+by the Arabic font, «ر.ع..» double full stop, a month-end forecast that extrapolated rent paid on the 1st
+(false over-income warning), and a partial-month vs full-month comparison. 246 tests passing.
+
 Not verified here: on-device look and feel, Expo Go on a phone, EAS build, trademark search for the icon.
 
 ## Update 2026-10-09 (later): Expo rebuild — `expo-app/`

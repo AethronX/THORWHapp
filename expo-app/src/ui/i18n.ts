@@ -233,6 +233,7 @@ const en = {
   projectionTitle: 'Month-end forecast',
   projectionBody: (amount: string) => `At this pace you will spend about ${amount} this month.`,
   vsLastMonth: 'Compared with last month',
+  samePeriodNote: (day: number) => `Spending compares days 1–${day} of both months.`,
   changeUp: (pct: string) => `${pct} more`,
   changeDown: (pct: string) => `${pct} less`,
   changeSame: 'About the same',
@@ -262,10 +263,13 @@ const en = {
 
 export type Strings = typeof en;
 
+/** Arabic currency symbols such as «ر.ع.» already end in a full stop. */
+const endSentence = (text: string) => (text.endsWith('.') ? text : `${text}.`);
+
 const ar: Strings = {
   appTitle: 'ثروتي',
   onbTitle1: 'اعرف أين يذهب مالك',
-  onbBody1: 'سجّل دخلك ومصروفاتك في ثوانٍ، وشاهد صورة شهرك كاملة بنظرة واحدة.',
+  onbBody1: 'سجّل دخلك ومصروفاتك بلمسة، وشاهد صورة شهرك كاملة بنظرة واحدة.',
   onbTitle2: 'خطّط لراتبك',
   onbBody2: 'ضع ميزانية شهرية بسيطة لكل تصنيف، واحصل على تنبيه قبل أن تتجاوزها.',
   onbTitle3: 'ابنِ عادة الادخار',
@@ -306,11 +310,11 @@ const ar: Strings = {
   prevMonth: 'الشهر السابق',
   nextMonth: 'الشهر التالي',
   insightNoIncome: 'لديك مصروفات بدون دخل مسجّل لهذا الشهر.',
-  insightNegativeCashFlow: (amount) => `مصروفاتك هذا الشهر تزيد على دخلك بمقدار ${amount}.`,
-  insightOverBudget: (category, amount) => `تجاوز تصنيف «${category}» ميزانيته بمقدار ${amount}.`,
-  insightNearBudget: (category, amount) => `تصنيف «${category}» قريب من حدّه: متبقٍّ ${amount}.`,
+  insightNegativeCashFlow: (amount) => `مصروفاتك هذا الشهر تزيد على دخلك بمقدار ${endSentence(amount)}`,
+  insightOverBudget: (category, amount) => `تجاوز تصنيف «${category}» ميزانيته بمقدار ${endSentence(amount)}`,
+  insightNearBudget: (category, amount) => `تصنيف «${category}» قريب من حدّه: متبقٍّ ${endSentence(amount)}`,
   insightGoalAtRisk: (goal, amount) => `هدف «${goal}» يحتاج ${amount} شهريًا، وهذا أكثر من المتبقي لديك هذا الشهر.`,
-  insightGoalOverdue: (goal, amount) => `انقضى موعد هدف «${goal}» وما زال ينقصه ${amount}. فكّر في تاريخ جديد.`,
+  insightGoalOverdue: (goal, amount) => `انقضى موعد هدف «${goal}» وما زال ينقصه ${amount}؛ فكّر في تاريخ جديد.`,
   addExpense: 'إضافة مصروف',
   editExpense: 'تعديل المصروف',
   amount: 'المبلغ',
@@ -484,6 +488,7 @@ const ar: Strings = {
   projectionTitle: 'توقع نهاية الشهر',
   projectionBody: (amount) => `بهذا المعدل ستصرف نحو ${amount} هذا الشهر.`,
   vsLastMonth: 'مقارنة بالشهر الماضي',
+  samePeriodNote: (day) => `المصروفات تُقارن بنفس الفترة (من 1 إلى ${day}) في الشهرين.`,
   changeUp: (pct) => `أكثر بنسبة ${pct}`,
   changeDown: (pct) => `أقل بنسبة ${pct}`,
   changeSame: 'تقريبًا كما هو',

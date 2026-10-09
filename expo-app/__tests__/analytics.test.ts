@@ -43,6 +43,12 @@ describe('pace & payday', () => {
     expect(projectMonthEndSpending(5000, d(2026, 2, 28))).toBe(5000);
   });
 
+  test('fixed bills are counted once, not extrapolated', () => {
+    // rent 350.000 + everyday 31.000 over 10 of 31 days → 350.000 + 96.100
+    expect(projectMonthEndSpending(31000, d(2026, 10, 10), 350000)).toBe(446100);
+    expect(projectMonthEndSpending(0, d(2026, 10, 1), 350000)).toBe(350000);
+  });
+
   test('days until payday incl. short months and year end', () => {
     expect(daysUntilPayday(d(2026, 10, 9), 25)).toBe(16);
     expect(daysUntilPayday(d(2026, 10, 25), 25)).toBe(0);
@@ -145,4 +151,12 @@ describe('questionnaire plan', () => {
       savingHabit: 'rarely',
     });
   });
+});
+
+test('Arabic insights do not double the full stop after «ر.ع.»', () => {
+  const { STRINGS } = require('../src/ui/i18n');
+  const amount = '‎10.000‎ ر.ع.';
+  expect(STRINGS.ar.insightNearBudget('السكن', amount)).toMatch(/ر\.ع\.$/);
+  expect(STRINGS.ar.insightOverBudget('السكن', amount)).not.toMatch(/\.\.$/);
+  expect(STRINGS.ar.insightNearBudget('السكن', '‎10‎ د.إ')).toMatch(/د\.إ\.$/);
 });

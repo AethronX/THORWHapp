@@ -55,6 +55,8 @@ export default function Analytics() {
   const safe = safeToSpend(st);
   const forecast = monthEndForecast(st);
   const prev = previousMonthTotals(st);
+  // Current month: compare spending with the same days of last month.
+  const prevSpent = st.previousSamePeriodExpensesMinor ?? prev?.expensesMinor ?? 0;
   const slices = categoryBreakdown(spends(st));
   const sliceColor = (id: number | null) => {
     if (id == null) return p.borderStrong;
@@ -148,10 +150,12 @@ export default function Analytics() {
           {(
             [
               ['income', s.income, change(income, prev.incomeMinor), true],
-              ['expense', s.expenses, change(spent, prev.expensesMinor), false],
+              ['expense', s.expenses, change(spent, prevSpent), false],
             ] as const
           ).map(([icon, label, c, upIsGood]) => {
-            const good = c.deltaMinor === 0 || (c.deltaMinor > 0) === upIsGood;
+            const same = c.pct == null ? c.deltaMinor === 0 : Math.abs(c.pct) < 0.02;
+            const good = same || (c.deltaMinor > 0) === upIsGood;
+            const tone = same ? p.onSurfaceMuted : good ? p.positive : p.warning;
             return (
               <Row key={icon} style={{ justifyContent: 'space-between' }}>
                 <Row>
@@ -159,14 +163,19 @@ export default function Analytics() {
                   <T>{label}</T>
                 </Row>
                 <Row gap={Space.xs}>
-                  <Icon name={c.deltaMinor >= 0 ? 'trendUp' : 'trendDown'} size={18} color={good ? p.positive : p.warning} />
-                  <T variant="label" color={good ? p.positive : p.warning}>
+                  <Icon name={same ? 'remove' : c.deltaMinor > 0 ? 'trendUp' : 'trendDown'} size={18} color={tone} />
+                  <T variant="label" color={tone}>
                     {changeText(c)}
                   </T>
                 </Row>
               </Row>
             );
           })}
+          {st.previousSamePeriodExpensesMinor != null && (
+            <T variant="small" muted>
+              {s.samePeriodNote(st.today.day)}
+            </T>
+          )}
         </Card>
       )}
 
