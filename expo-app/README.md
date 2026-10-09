@@ -20,6 +20,18 @@ npx expo start
 Scan the QR code with Expo Go (Android) or the Camera app (iOS). Phone and computer must be on
 the same Wi-Fi; if not, use `npx expo start --tunnel`.
 
+## 1b. Expo Go on any network, laptop off (EAS Update)
+Publish the app to Expo's servers once; Expo Go then opens it from anywhere.
+```bash
+npx eas-cli@latest login
+npx eas-cli@latest init                      # first time only
+npx eas-cli@latest update --branch preview --message "first preview"
+```
+Open the link it prints (expo.dev → Updates) on the iPhone and choose **Open in Expo Go**, or scan
+its QR code with the Camera. Sign in to Expo Go with the **same Expo account**.
+After later code changes, run the `update` command again and reopen the project in Expo Go.
+Installed builds never check for updates by themselves (`updates.checkAutomatically: NEVER`).
+
 ## 2. Checks
 ```bash
 npm run typecheck     # TypeScript
