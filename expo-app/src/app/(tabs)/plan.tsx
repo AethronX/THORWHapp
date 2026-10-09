@@ -75,7 +75,7 @@ export default function Plan() {
       )}
 
       <Row style={{ alignItems: 'flex-start', backgroundColor: p.surfaceMuted, borderRadius: Radii.md, padding: Space.md }}>
-        <Icon name="information-outline" size={20} color={p.onSurfaceMuted} />
+        <Icon name="info" size={20} color={p.onSurfaceMuted} />
         <View style={{ flex: 1 }}>
           <T variant="small" muted testID="calc.disclaimer">
             {s.calcDisclaimer}

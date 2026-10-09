@@ -3,7 +3,10 @@ import { addMonths, Day, dayFromDate, monthOf, sameMonth, YearMonth } from '../c
 import type { DbDriver } from '../data/db';
 import { FinanceRepository, SettingKeys } from '../data/repository';
 import { migrate } from '../data/schema';
+import type { MonthTotals } from '../domain/analytics';
 import type { Category, Expense, IncomeEntry, SavingsGoal } from '../domain/models';
+import { parseProfile, Profile } from '../domain/profile';
+import type { Day as DayT } from '../core/dates';
 
 export type LoadStatus = 'loading' | 'ready' | 'error';
 export type Locale = 'ar' | 'en';
@@ -26,6 +29,10 @@ export interface AppState {
   readonly budgets: ReadonlyMap<number, number>;
   readonly goals: readonly SavingsGoal[];
   readonly previousMonthHasIncome: boolean;
+  /** Questionnaire answers; null if skipped. */
+  readonly profile: Profile | null;
+  /** 6 months of totals ending at the viewed month (oldest first). */
+  readonly trend: readonly MonthTotals[];
 }
 
 /**
@@ -60,6 +67,8 @@ export class AppController {
       budgets: new Map(),
       goals: [],
       previousMonthHasIncome: false,
+      profile: null,
+      trend: [],
     };
   }
 
@@ -103,6 +112,7 @@ export class AppController {
         // Light is the default (D-020); dark/system only when the user chose it.
         themeMode: theme === 'dark' || theme === 'system' ? theme : 'light',
         onboarded: s[SettingKeys.onboarded] === '1',
+        profile: parseProfile(s[SettingKeys.profile]),
       };
       this.set({ ...patch, ...(await this.load(this.state.month)), status: 'ready' });
     } catch {
@@ -125,6 +135,7 @@ export class AppController {
       goals: await r.goals(),
       previousMonthHasIncome:
         incomes.length === 0 && (await r.incomesFor(addMonths(month, -1))).length > 0,
+      trend: await r.monthlyTotals(month, 6),
     };
   }
 
@@ -158,7 +169,14 @@ export class AppController {
 
   // -- settings & onboarding -------------------------------------------------
 
-  completeOnboarding(args: { currency: Currency; monthlyIncomeMinor?: number | null; incomeLabel?: string }) {
+  completeOnboarding(args: {
+    currency: Currency;
+    monthlyIncomeMinor?: number | null;
+    incomeLabel?: string;
+    profile?: Profile | null;
+    goal?: { name: string; targetMinor: number; targetDate: DayT } | null;
+    budget?: { categoryKey: string; limitMinor: number } | null;
+  }) {
     return this.mutate(
       (r) =>
         r.completeOnboarding({
@@ -166,9 +184,18 @@ export class AppController {
           month: this.state.month,
           incomeMinor: args.monthlyIncomeMinor,
           incomeLabel: args.incomeLabel,
+          profileJson: args.profile ? JSON.stringify(args.profile) : undefined,
+          goal: args.goal,
+          budget: args.budget,
         }),
-      { currency: args.currency, onboarded: true },
+      { currency: args.currency, onboarded: true, profile: args.profile ?? this.state.profile },
     );
+  }
+
+  /** Update questionnaire answers later (Settings → "Your plan"). */
+  async setProfile(profile: Profile) {
+    await this.r.setSetting(SettingKeys.profile, JSON.stringify(profile));
+    this.set({ profile });
   }
 
   async setLocale(locale: Locale) {
@@ -220,7 +247,7 @@ export class AppController {
       this.repo = null;
       await this.driver.destroy();
       const today = dayFromDate(this.clock());
-      this.set({ currency: DEFAULT_CURRENCY, onboarded: false, locale: 'ar', month: monthOf(today) });
+      this.set({ currency: DEFAULT_CURRENCY, onboarded: false, locale: 'ar', month: monthOf(today), profile: null });
     } finally {
       // Always reopen, so a failure never leaves a half-closed app.
       await this.init();

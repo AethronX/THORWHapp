@@ -16,7 +16,7 @@ export default function Expenses() {
         <MonthSwitcher />
         <TotalRow label={s.expenses} value={money(expenseTotal(st))} testID="expenses.total" />
         {st.expenses.length === 0 ? (
-          <EmptyState icon="receipt" title={s.noExpenses} body={s.noExpensesBody} />
+          <EmptyState icon="expenses" title={s.noExpenses} body={s.noExpensesBody} />
         ) : (
           st.expenses.map((e) => {
             const cat = st.categoriesById.get(e.categoryId);

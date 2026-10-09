@@ -1,4 +1,5 @@
 import {
+  addMonths,
   Day,
   dayKey,
   firstDayKey,
@@ -8,6 +9,7 @@ import {
   parseMonthKey,
   YearMonth,
 } from '../core/dates';
+import type { MonthTotals } from '../domain/analytics';
 import type { Budget, Category, Expense, IncomeEntry, SavingsGoal } from '../domain/models';
 import type { Db, DbExecutor } from './db';
 
@@ -16,6 +18,8 @@ export const SettingKeys = {
   locale: 'locale',
   onboarded: 'onboarded',
   themeMode: 'theme_mode',
+  /** Questionnaire answers (JSON, validated by parseProfile on read). */
+  profile: 'profile',
 } as const;
 
 export class ValidationError extends Error {
@@ -92,6 +96,11 @@ export class FinanceRepository {
     month: YearMonth;
     incomeMinor?: number | null;
     incomeLabel?: string;
+    /** Questionnaire answers, stored as JSON. */
+    profileJson?: string;
+    /** Accepted plan items, created in the same transaction. */
+    goal?: { name: string; targetMinor: number; targetDate: Day } | null;
+    budget?: { categoryKey: string; limitMinor: number } | null;
   }): Promise<void> {
     return this.db.transaction(async (tx) => {
       await this.setSetting(SettingKeys.currency, args.currencyCode, tx);
@@ -108,8 +117,56 @@ export class FinanceRepository {
           );
         }
       }
+      if (args.profileJson) await this.setSetting(SettingKeys.profile, args.profileJson, tx);
+      const now = this.nowUtc;
+      if (args.goal && args.goal.name.trim() !== '' && args.goal.targetMinor > 0) {
+        const n = await tx.first<{ n: number }>('SELECT COUNT(*) AS n FROM goals');
+        if ((n?.n ?? 0) === 0) {
+          await tx.run(
+            'INSERT INTO goals (name, target_minor, target_day, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
+            [args.goal.name.trim(), args.goal.targetMinor, dayKey(args.goal.targetDate), now, now],
+          );
+        }
+      }
+      if (args.budget && args.budget.limitMinor > 0) {
+        const c = await tx.first<{ id: number }>('SELECT id FROM categories WHERE key = ? AND archived = 0', [
+          args.budget.categoryKey,
+        ]);
+        if (c) {
+          await tx.run('INSERT OR REPLACE INTO budgets (category_id, limit_minor) VALUES (?, ?)', [
+            c.id,
+            args.budget.limitMinor,
+          ]);
+        }
+      }
       await this.setSetting(SettingKeys.onboarded, '1', tx);
     });
+  }
+
+  /**
+   * Income and expense totals per month for `count` months ending at `last`
+   * (oldest first). Months without data are included as zeros.
+   */
+  async monthlyTotals(last: YearMonth, count: number): Promise<MonthTotals[]> {
+    const months: YearMonth[] = [];
+    for (let i = count - 1; i >= 0; i--) months.push(addMonths(last, -i));
+    const first = months[0];
+    const exp = await this.db.all<{ m: string; total: number }>(
+      `SELECT substr(day, 1, 7) AS m, SUM(amount_minor) AS total FROM expenses
+       WHERE day BETWEEN ? AND ? GROUP BY m`,
+      [firstDayKey(first), lastDayKey(last)],
+    );
+    const inc = await this.db.all<{ m: string; total: number }>(
+      'SELECT month AS m, SUM(amount_minor) AS total FROM incomes WHERE month BETWEEN ? AND ? GROUP BY m',
+      [monthKey(first), monthKey(last)],
+    );
+    const e = new Map(exp.map((r) => [r.m, r.total]));
+    const i = new Map(inc.map((r) => [r.m, r.total]));
+    return months.map((m) => ({
+      month: m,
+      incomeMinor: i.get(monthKey(m)) ?? 0,
+      expensesMinor: e.get(monthKey(m)) ?? 0,
+    }));
   }
 
   // -- categories ------------------------------------------------------------

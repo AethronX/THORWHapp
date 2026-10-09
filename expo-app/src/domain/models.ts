@@ -1,5 +1,25 @@
 import type { Day, YearMonth } from '../core/dates';
 
+export type CategoryKey =
+  | 'housing'
+  | 'food'
+  | 'transport'
+  | 'utilities'
+  | 'telecom'
+  | 'health'
+  | 'education'
+  | 'family'
+  | 'shopping'
+  | 'entertainment'
+  | 'debt'
+  | 'other';
+
+/** Built-in category order — matches iconCode 0..11 in the database. */
+export const CATEGORY_KEYS: readonly CategoryKey[] = [
+  'housing', 'food', 'transport', 'utilities', 'telecom', 'health',
+  'education', 'family', 'shopping', 'entertainment', 'debt', 'other',
+];
+
 /** Built-in categories have a stable `key` (localised in the UI) and no name. */
 export interface Category {
   id: number;

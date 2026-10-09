@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="48" height="48">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#056249"/>
+      <stop offset="1" stop-color="#012A1E"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.38" r="0.6">
+      <stop offset="0" stop-color="#219976" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#219976" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F0D59A"/>
+      <stop offset="1" stop-color="#B98A32"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#bg)"/><rect width="1024" height="1024" fill="url(#glow)"/><g transform="translate(512 512) scale(1.08) translate(-512 -505)">
+    <!-- Omani arch: slightly pointed, open at the base, standing on a ground line -->
+    <path d="M332 760 V488 C332 372 418 300 512 258 C606 300 692 372 692 488 V760"
+          fill="none" stroke="#FBF5E9" stroke-width="52" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M262 760 H762" stroke="#FBF5E9" stroke-width="52" stroke-linecap="round"/>
+    <!-- three rising bars: saving that grows -->
+    <rect x="388" y="604" width="64" height="104" rx="18" fill="url(#gold)"/>
+    <rect x="480" y="530" width="64" height="178" rx="18" fill="url(#gold)"/>
+    <rect x="572" y="452" width="64" height="256" rx="18" fill="url(#gold)"/>
+  </g>
+</svg>

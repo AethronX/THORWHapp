@@ -1,14 +1,15 @@
 import { router } from 'expo-router';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { monthsUntil, compareDays } from '../../core/dates';
 import { goalProgress } from '../../domain/financeEngine';
 import type { Insight } from '../../domain/insights';
 import { isGoalReached, spendUsage } from '../../domain/models';
-import { expenseTotal, incomeTotal, insights, netCashFlow, savingsRate, spends } from '../../state/selectors';
+import { expenseTotal, health, incomeTotal, insights, netCashFlow, safeToSpend, savingsRate, spends } from '../../state/selectors';
 import { useAppState, useController, useUi } from '../../ui/AppContext';
 import { Button, Card, Fab, Icon, IconName, LabeledProgress, MonthSwitcher, Row, runGuarded, Screen, T } from '../../ui/components';
 import { categoryLabel, formatPercent } from '../../ui/format';
+import { ScoreRing } from '../../ui/charts';
 import { Elevation, Radii, Space } from '../../ui/theme';
 
 export default function Dashboard() {
@@ -40,7 +41,7 @@ export default function Dashboard() {
     }
   };
   const insightIcon = (i: Insight): [IconName, string] =>
-    i.severity === 'critical' ? ['alert-circle-outline', p.negative] : i.severity === 'warning' ? ['alert-outline', p.warning] : ['information-outline', p.primary];
+    i.severity === 'critical' ? ['error', p.negative] : i.severity === 'warning' ? ['warning', p.warning] : ['info', p.primary];
 
   return (
     <View style={{ flex: 1 }}>
@@ -60,11 +61,13 @@ export default function Dashboard() {
           </View>
           <View style={{ height: 1, backgroundColor: p.onHero, opacity: 0.12 }} />
           <Row style={{ flexWrap: 'wrap' }} gap={Space.lg}>
-            <Metric label={s.income} value={money(incomeTotal(st))} icon="arrow-bottom-left" testID="summary.income" />
-            <Metric label={s.expenses} value={money(expenseTotal(st))} icon="arrow-top-right" testID="summary.expenses" />
-            <Metric label={s.savingsRate} value={rate == null ? s.notAvailable : formatPercent(rate)} icon="piggy-bank-outline" testID="summary.rate" />
+            <Metric label={s.income} value={money(incomeTotal(st))} icon="income" testID="summary.income" />
+            <Metric label={s.expenses} value={money(expenseTotal(st))} icon="expense" testID="summary.expenses" />
+            <Metric label={s.savingsRate} value={rate == null ? s.notAvailable : formatPercent(rate)} icon="savings" testID="summary.rate" />
           </Row>
         </View>
+
+        <SmartSummary />
 
         {st.incomes.length === 0 && (
           <Card title={s.income}>
@@ -81,7 +84,7 @@ export default function Dashboard() {
         <Card title={s.insightsTitle} testID="insights">
           {list.length === 0 ? (
             <Row>
-              <Icon name="check-circle-outline" color={p.positive} />
+              <Icon name="success" color={p.positive} />
               <View style={{ flex: 1 }}>
                 <T>{s.allGood}</T>
               </View>
@@ -151,5 +154,48 @@ function Metric({ label, value, icon, testID }: { label: string; value: string; 
         </T>
       </View>
     </View>
+  );
+}
+
+/** Health score + safe daily spend at a glance; opens Insights. */
+function SmartSummary() {
+  const st = useAppState();
+  const { s, p, money } = useUi();
+  if (incomeTotal(st) === 0 && expenseTotal(st) === 0) return null;
+  const h = health(st);
+  const safe = safeToSpend(st);
+  const color = h.grade === 'excellent' || h.grade === 'good' ? p.positive : h.grade === 'fair' ? p.warning : p.negative;
+  return (
+    <Pressable
+      testID="dashboard.smart"
+      accessibilityRole="button"
+      accessibilityLabel={`${s.healthTitle}: ${s.healthOutOf(h.score)}${safe ? `، ${s.safeTitle}: ${money(safe.perDayMinor)}` : ''}`}
+      onPress={() => router.push('/analytics')}
+      style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
+    >
+      <Card>
+        <Row gap={Space.lg}>
+          <ScoreRing score={h.score} color={color} size={64} label={s.healthOutOf(h.score)} />
+          <View style={{ flex: 1, gap: Space.xxs }}>
+            <T variant="label" muted>
+              {s.healthTitle}
+            </T>
+            {safe ? (
+              <>
+                <T variant="amount" color={safe.perDayMinor > 0 ? p.primary : p.negative}>
+                  {money(safe.perDayMinor)}
+                </T>
+                <T variant="small" muted>
+                  {s.safeTitle}
+                </T>
+              </>
+            ) : (
+              <T variant="subtitle">{s.analyticsTitle}</T>
+            )}
+          </View>
+          <Icon name="forward" weight="regular" size={18} color={p.textSubtle} />
+        </Row>
+      </Card>
+    </Pressable>
   );
 }

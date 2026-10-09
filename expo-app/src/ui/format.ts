@@ -3,6 +3,7 @@ import { Currency, minorPerMajor } from '../core/currency';
 import type { Day, YearMonth } from '../core/dates';
 import type { Category } from '../domain/models';
 import type { Locale } from '../state/appController';
+import { CATEGORY_ICON_NAMES, type IconName } from './icons';
 import type { Strings } from './i18n';
 
 const AR_SYMBOLS: Record<string, string> = {
@@ -82,24 +83,9 @@ export function categoryLabel(c: Category, s: Strings): string {
   return s.cat[c.key ?? 'other'] ?? s.cat.other;
 }
 
-/** Curated icon set (MaterialCommunityIcons names), indexed by iconCode. */
-export const CATEGORY_ICONS = [
-  'home-outline',
-  'basket-outline',
-  'car-outline',
-  'flash-outline',
-  'wifi',
-  'heart-outline',
-  'school-outline',
-  'account-group-outline',
-  'shopping-outline',
-  'movie-open-outline',
-  'bank-outline',
-  'shape-outline',
-] as const;
-
-export const categoryIcon = (c: Category) =>
-  CATEGORY_ICONS[Math.min(Math.max(c.iconCode, 0), CATEGORY_ICONS.length - 1)];
+/** Category icon: built-ins by iconCode (0..11), custom categories too. */
+export const categoryIcon = (c: Category): IconName =>
+  CATEGORY_ICON_NAMES[Math.min(Math.max(c.iconCode, 0), CATEGORY_ICON_NAMES.length - 1)];
 
 export function amountErrorText(e: AmountError | null, c: Currency, s: Strings): string | null {
   switch (e) {

@@ -1,7 +1,10 @@
 # ثروتي — Tharwati (Expo / React Native)
 
 Arabic-first personal finance app: income, expenses, budgets, savings goals and a savings
-calculator. Local-only (SQLite on the device), no account, no ads, no tracking.
+calculator, plus a five-question onboarding that builds a personal plan and an analytics tab
+(financial-health score, safe-to-spend per day, month-end forecast, category and 6-month charts).
+Local-only (SQLite on the device), no account, no ads, no tracking.
+Competitor study: `../docs/COMPETITIVE_ANALYSIS.md` · formulas: `../docs/ANALYTICS.md`.
 
 **Stack:** Expo SDK 57 · React Native 0.86 · TypeScript · Expo Router · expo-sqlite.
 Runs in **Expo Go** (only modules bundled in Expo Go are used).
@@ -35,7 +38,7 @@ Installed builds never check for updates by themselves (`updates.checkAutomatica
 ## 2. Checks
 ```bash
 npm run typecheck     # TypeScript
-npm test              # 91 tests (Jest)
+npm test              # Jest (unit, data, controller, UI journey, design system)
 npx expo-doctor       # project health (needs internet)
 ```
 
@@ -61,13 +64,16 @@ Not needed for the APK and not done: `eas submit`, Google Play, paid EAS plans.
 
 ## Project layout
 ```
-src/app/          screens (Expo Router: (tabs)/, onboarding, income, budgets, categories,
+src/app/          screens (Expo Router: (tabs)/ incl. analytics, onboarding, profile, income, budgets, categories,
                   expense/[id], goal/[id])
 src/core/         currency, amount parsing (no floating point), calendar dates
-src/domain/       finance engine, rule-based insights, models — pure TypeScript
+src/domain/       finance engine, insights, analytics, profile/plan, models — pure TypeScript
 src/data/         SQLite schema + migrations, repository, expo-sqlite driver
 src/state/        AppController (app state) + selectors
-src/ui/           theme tokens, strings (ar/en), formatting, shared components
+src/ui/           theme tokens, strings (ar/en), formatting, shared components, charts,
+                  icons (Phosphor duotone paths), onboarding questionnaire
+assets/brand/     app icon, adaptive icon, splash (SVG sources + PNG)
+scripts/          gen-icons.py (src/ui/iconPaths.ts) · gen-brand.py (assets/brand/)
 __tests__/        engine, parser, insights, repository (real SQLite via sql.js),
                   controller, end-to-end UI journey, colour contrast
 ```

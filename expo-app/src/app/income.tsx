@@ -44,11 +44,11 @@ export default function Income() {
           }}
         />
       ) : (
-        <Button label={s.addIncome} icon="plus" onPress={() => setEditing('new')} testID="income.add" />
+        <Button label={s.addIncome} icon="add" onPress={() => setEditing('new')} testID="income.add" />
       )}
       {st.incomes.length === 0 ? (
         <EmptyState
-          icon="wallet-outline"
+          icon="wallet"
           title={s.noIncomeYet}
           action={
             st.previousMonthHasIncome ? (
@@ -68,7 +68,7 @@ export default function Income() {
             style={{ minHeight: MIN_TAP, justifyContent: 'center', borderBottomWidth: 1, borderBottomColor: p.outline }}
           >
             <Row>
-              <Icon name="cash" color={p.onSurfaceMuted} />
+              <Icon name="wallet" color={p.onSurfaceMuted} />
               <View style={{ flex: 1 }}>
                 <T>{i.label || s.income}</T>
               </View>

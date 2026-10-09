@@ -13,6 +13,8 @@
  */
 import type { TextStyle } from 'react-native';
 
+import { CATEGORY_KEYS, type CategoryKey } from '../domain/models';
+
 // -----------------------------------------------------------------------------
 // 1. Primitive scales (OKLCH lightness steps 50 = lightest … 950 = darkest).
 //    Rule that holds for every hue: step >= 600 is AA text on white.
@@ -36,25 +38,8 @@ export const Scale = {
 // -----------------------------------------------------------------------------
 // 2. Semantic tokens. Screens and components use ONLY these names.
 // -----------------------------------------------------------------------------
-export type CategoryKey =
-  | 'housing'
-  | 'food'
-  | 'transport'
-  | 'utilities'
-  | 'telecom'
-  | 'health'
-  | 'education'
-  | 'family'
-  | 'shopping'
-  | 'entertainment'
-  | 'debt'
-  | 'other';
-
-/** Built-in category order — matches iconCode 0..11 in the database. */
-export const CATEGORY_KEYS: readonly CategoryKey[] = [
-  'housing', 'food', 'transport', 'utilities', 'telecom', 'health',
-  'education', 'family', 'shopping', 'entertainment', 'debt', 'other',
-];
+export { CATEGORY_KEYS } from '../domain/models';
+export type { CategoryKey } from '../domain/models';
 
 export interface CategoryTone {
   /** Icon / label colour (AA on `bg` and on surface). */

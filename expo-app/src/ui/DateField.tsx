@@ -51,14 +51,14 @@ export function DateField({
         onPress={open}
         style={{ minHeight: MIN_TAP, flexDirection: 'row', alignItems: 'center', gap: Space.md, borderWidth: 1, borderColor: p.outline, borderRadius: Radii.md, paddingHorizontal: Space.md, backgroundColor: p.surface }}
       >
-        <Icon name="calendar-month-outline" color={p.onSurfaceMuted} />
+        <Icon name="calendar" color={p.onSurfaceMuted} />
         <View style={{ flex: 1 }}>
           <T variant="small" muted>
             {label}
           </T>
           <T>{formatDate(value, st.locale)}</T>
         </View>
-        <Icon name="pencil-outline" size={18} color={p.onSurfaceMuted} />
+        <Icon name="edit" size={18} color={p.onSurfaceMuted} />
       </Pressable>
       {Platform.OS !== 'android' && iosOpen && (
         <DateTimePicker

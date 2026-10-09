@@ -100,7 +100,7 @@ export default function ExpenseForm() {
         <DateField label={s.date} value={date} onChange={setDate} max={st.today} testID="expense.date" />
         <Field testID="expense.note" label={s.note} hint={s.noteHint} value={note} onChangeText={setNote} maxLength={120} />
         <Button label={s.save} onPress={save} disabled={busy} testID="expense.save" />
-        {existing && <Button kind="danger" icon="delete-outline" label={s.delete} onPress={remove} disabled={busy} testID="expense.delete" />}
+        {existing && <Button kind="danger" icon="delete" label={s.delete} onPress={remove} disabled={busy} testID="expense.delete" />}
       </Screen>
     </>
   );

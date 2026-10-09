@@ -17,8 +17,9 @@ export default function Goals() {
   return (
     <View style={{ flex: 1 }}>
       <Screen testID="goals">
+        <Button kind="tonal" icon="plan" label={s.openPlan} onPress={() => router.push('/plan')} testID="goals.plan" />
         {st.goals.length === 0 ? (
-          <EmptyState icon="flag-outline" title={s.goalsEmpty} body={s.goalsEmptyBody} />
+          <EmptyState icon="goals" title={s.goalsEmpty} body={s.goalsEmptyBody} />
         ) : (
           st.goals.map((g) => <GoalCard key={g.id} goal={g} />)
         )}
@@ -44,11 +45,11 @@ function GoalCard({ goal }: { goal: SavingsGoal }) {
     <Card
       testID={`goal.card.${goal.id}`}
       title={goal.name}
-      action={<IconButton icon="pencil-outline" label={s.edit} onPress={() => router.push(`/goal/${goal.id}`)} testID={`goal.edit.${goal.id}`} />}
+      action={<IconButton icon="edit" label={s.edit} onPress={() => router.push(`/goal/${goal.id}`)} testID={`goal.edit.${goal.id}`} />}
     >
       {reached && (
         <Row style={{ alignSelf: 'flex-start', backgroundColor: p.accentContainer, borderRadius: Radii.pill, paddingHorizontal: Space.md, paddingVertical: Space.xs }}>
-          <Icon name="trophy-outline" size={18} color={p.accentText} />
+          <Icon name="trophy" size={18} color={p.accentText} />
           <T variant="label" color={p.accentText}>
             {s.goalReached}
           </T>
@@ -56,7 +57,7 @@ function GoalCard({ goal }: { goal: SavingsGoal }) {
       )}
       <LabeledProgress value={progress} label={s.goalSaved(money(goal.savedMinor), money(goal.targetMinor))} trailing={formatPercent(progress)} />
       <Row>
-        <Icon name={reached ? 'check-circle-outline' : overdue ? 'alert-outline' : 'calendar-outline'} size={18} color={reached ? p.positive : overdue ? p.warning : p.onSurfaceMuted} />
+        <Icon name={reached ? 'success' : overdue ? 'warning' : 'calendar'} size={18} color={reached ? p.positive : overdue ? p.warning : p.onSurfaceMuted} />
         <View style={{ flex: 1 }}>
           <T variant="small" muted>{`${s.goalDue(formatDate(goal.targetDate, st.locale))} · ${status}`}</T>
         </View>
@@ -79,8 +80,8 @@ function GoalCard({ goal }: { goal: SavingsGoal }) {
         />
       ) : (
         <Row style={{ flexWrap: 'wrap' }} gap={Space.sm}>
-          <Button kind="tonal" icon="plus" label={s.addMoney} onPress={() => setMode('add')} testID={`goal.add.${goal.id}`} />
-          {goal.savedMinor > 0 && <Button kind="outlined" icon="minus" label={s.withdraw} onPress={() => setMode('withdraw')} testID={`goal.withdraw.${goal.id}`} />}
+          <Button kind="tonal" icon="add" label={s.addMoney} onPress={() => setMode('add')} testID={`goal.add.${goal.id}`} />
+          {goal.savedMinor > 0 && <Button kind="outlined" icon="remove" label={s.withdraw} onPress={() => setMode('withdraw')} testID={`goal.withdraw.${goal.id}`} />}
         </Row>
       )}
     </Card>

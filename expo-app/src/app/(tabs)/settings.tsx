@@ -49,11 +49,13 @@ export default function Settings() {
         />
       </Card>
       <Card>
-        <NavRow icon="cash" label={s.manageIncome} onPress={() => router.push('/income')} testID="settings.income" />
-        <NavRow icon="chart-donut" label={s.budgetsScreenTitle} onPress={() => router.push('/budgets')} testID="settings.budgets" />
-        <NavRow icon="shape-outline" label={s.categories} onPress={() => router.push('/categories')} testID="settings.categories" />
+        <NavRow icon="smart" label={s.yourPlan} onPress={() => router.push('/profile')} testID="settings.profile" />
+        <NavRow icon="plan" label={s.openPlan} onPress={() => router.push('/plan')} testID="settings.plan" />
+        <NavRow icon="wallet" label={s.manageIncome} onPress={() => router.push('/income')} testID="settings.income" />
+        <NavRow icon="analytics" label={s.budgetsScreenTitle} onPress={() => router.push('/budgets')} testID="settings.budgets" />
+        <NavRow icon="catOther" label={s.categories} onPress={() => router.push('/categories')} testID="settings.categories" />
         <Row style={{ alignItems: 'flex-start' }}>
-          <Icon name="currency-usd" color={p.onSurfaceMuted} />
+          <Icon name="currency" color={p.onSurfaceMuted} />
           <View style={{ flex: 1 }}>
             <T>{`${s.currency}: ${st.currency.code}`}</T>
             <T variant="small" muted>
@@ -64,7 +66,7 @@ export default function Settings() {
       </Card>
       <Card title={s.privacy}>
         <T>{s.privacyBody}</T>
-        <Button kind="danger" icon="delete-forever-outline" label={s.deleteAllData} onPress={deleteAll} testID="settings.deleteAll" />
+        <Button kind="danger" icon="delete" label={s.deleteAllData} onPress={deleteAll} testID="settings.deleteAll" />
       </Card>
       <Card title={s.about}>
         <T>{s.aboutBody}</T>
@@ -85,7 +87,7 @@ function NavRow({ icon, label, onPress, testID }: { icon: IconName; label: strin
         <View style={{ flex: 1 }}>
           <T>{label}</T>
         </View>
-        <Icon name={rtl ? 'chevron-left' : 'chevron-right'} color={p.onSurfaceMuted} />
+        <Icon name="forward" weight="regular" size={18} color={p.onSurfaceMuted} />
       </Row>
     </Pressable>
   );

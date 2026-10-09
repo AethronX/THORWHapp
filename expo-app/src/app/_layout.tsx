@@ -52,7 +52,7 @@ function Root() {
       <Loading />
     ) : st.status === 'error' ? (
       <View style={{ flex: 1, justifyContent: 'center', backgroundColor: p.background }}>
-        <EmptyState icon="alert-circle-outline" title={s.errLoad} action={<Button label={s.retry} onPress={() => c.init()} />} />
+        <EmptyState icon="error" title={s.errLoad} action={<Button label={s.retry} onPress={() => c.init()} />} />
       </View>
     ) : (
       <Stack
@@ -69,6 +69,7 @@ function Root() {
           <Stack.Screen name="income" options={{ title: s.incomeTitle }} />
           <Stack.Screen name="budgets" options={{ title: s.budgetsScreenTitle }} />
           <Stack.Screen name="categories" options={{ title: s.categories }} />
+          <Stack.Screen name="profile" options={{ title: s.yourPlan, headerShown: false }} />
           <Stack.Screen name="expense/[id]" options={{ presentation: 'modal', title: s.addExpense }} />
           <Stack.Screen name="goal/[id]" options={{ presentation: 'modal', title: s.addGoal }} />
         </Stack.Protected>

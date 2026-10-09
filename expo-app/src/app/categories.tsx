@@ -40,7 +40,7 @@ export default function Categories() {
           }}
         />
       ) : (
-        <Button icon="plus" label={s.addCategory} onPress={() => setEditing('new')} testID="categories.add" />
+        <Button icon="add" label={s.addCategory} onPress={() => setEditing('new')} testID="categories.add" />
       )}
       {st.categories.map((cat) => (
         <Row key={cat.id} style={{ borderBottomWidth: 1, borderBottomColor: p.outline }}>
@@ -48,8 +48,8 @@ export default function Categories() {
           <View style={{ flex: 1 }}>
             <T>{categoryLabel(cat, s)}</T>
           </View>
-          <IconButton icon="pencil-outline" label={`${s.rename}: ${categoryLabel(cat, s)}`} onPress={() => setEditing(cat)} testID={`category.rename.${cat.id}`} />
-          <IconButton icon="delete-outline" label={`${s.delete}: ${categoryLabel(cat, s)}`} onPress={() => remove(cat)} testID={`category.delete.${cat.id}`} />
+          <IconButton icon="edit" label={`${s.rename}: ${categoryLabel(cat, s)}`} onPress={() => setEditing(cat)} testID={`category.rename.${cat.id}`} />
+          <IconButton icon="delete" label={`${s.delete}: ${categoryLabel(cat, s)}`} onPress={() => remove(cat)} testID={`category.delete.${cat.id}`} />
         </Row>
       ))}
       <View style={{ height: Space.lg }} />

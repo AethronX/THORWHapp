@@ -53,6 +53,9 @@ const label = (id: string) => screen.getByTestId(id).props.accessibilityLabel as
 async function onboard(income?: string) {
   await screen.findByTestId('onb.skip');
   press('onb.skip');
+  await screen.findByTestId('quiz.skipAll');
+  press('quiz.skipAll');
+  await screen.findByTestId('setup.income');
   if (income) type('setup.income', income);
   press('setup.finish');
   await screen.findByTestId('dashboard');
@@ -157,4 +160,85 @@ test('ambiguous amounts are rejected in the form, not guessed', async () => {
   press('expense.cat.2');
   press('expense.save');
   expect(await screen.findByText(ar.errAmountInvalid)).toBeTruthy();
+});
+
+test('questionnaire builds a personal plan that the app then uses', async () => {
+  app();
+  await screen.findByTestId('onb.skip');
+  press('onb.skip');
+
+  // Q1 goal → Q2 income → Q3 payday (salary only) → Q4 focus → Q5 habit.
+  expect((await screen.findByTestId('quiz.progress')).props.children).toBe(ar.quizProgress(1, 5));
+  press('quiz.opt.emergency');
+  await screen.findByTestId('quiz.income');
+  press('quiz.opt.salary');
+  await screen.findByTestId('quiz.payday');
+  press('quiz.payday.25');
+  await screen.findByTestId('quiz.focus');
+  // Back works and keeps answers.
+  press('quiz.back');
+  await screen.findByTestId('quiz.payday');
+  press('quiz.payday.25');
+  await screen.findByTestId('quiz.focus');
+  press('quiz.opt.food');
+  await screen.findByTestId('quiz.habit');
+  press('quiz.opt.regularly');
+
+  type(await screen.findByTestId('setup.income').then(() => 'setup.income'), '800');
+  press('setup.finish');
+
+  // Plan: 20 % saving, emergency fund 1.5 × income, food limit 10 %.
+  await screen.findByTestId('plan.review');
+  expect(screen.getByTestId('plan.saving').props.children).toBe(ar.planSaving('\u200E160.000\u200E ر.ع.', '20%'));
+  expect(screen.getByText(ar.planGoalEmergency('\u200E1,200.000\u200E ر.ع.'))).toBeTruthy();
+  expect(screen.getByText(ar.planBudget(ar.cat.food, '\u200E80.000\u200E ر.ع.'))).toBeTruthy();
+  press('plan.start');
+
+  // Applied: goal + budget exist; insights use the payday (Oct 9 → Oct 25 = 16 days).
+  await screen.findByTestId('dashboard');
+  await nav((router) => router.push('/goals'));
+  expect(await screen.findByText(ar.emergencyGoalName)).toBeTruthy();
+  await nav((router) => router.push('/analytics'));
+  await screen.findByTestId('analytics.health');
+  // (800 − 0 − 160) / 16 days = 40.000 per day.
+  expect(screen.getByTestId('analytics.safe.amount').props.children).toBe('\u200E40.000\u200E ر.ع.');
+  expect(screen.getByText(ar.safeUntilPayday(16))).toBeTruthy();
+});
+
+test('analytics: donut, comparison and pace warning from real data', async () => {
+  app();
+  await onboard('500');
+  // Last month: 300 spent. This month: 600 by Oct 9 → pace far above income.
+  await nav((router) => router.push('/expense/new'));
+  await screen.findByTestId('expenseForm');
+  type('expense.amount', '600');
+  press('expense.cat.2');
+  press('expense.save');
+  await waitFor(() => expect(screen.queryByTestId('expenseForm')).toBeNull());
+  await nav((router) => router.push('/analytics'));
+  await screen.findByTestId('analytics.health');
+  expect(screen.getByTestId('analytics.donut')).toBeTruthy();
+  expect(screen.getByTestId('analytics.paceWarning')).toBeTruthy();
+  // Spending exceeds income → no safe daily amount.
+  expect(screen.getByText(ar.safeZero)).toBeTruthy();
+});
+
+test('Settings → retake the questionnaire updates the saved answers', async () => {
+  app();
+  await onboard('900');
+  await nav((router) => router.push('/profile'));
+  await screen.findByTestId('quiz.goal');
+  press('quiz.opt.debt');
+  await screen.findByTestId('quiz.income');
+  press('quiz.opt.irregular'); // irregular income → payday question is skipped
+  await screen.findByTestId('quiz.focus');
+  expect(screen.getByTestId('quiz.progress').props.children).toBe(ar.quizProgress(3, 4));
+  press('quiz.opt.none');
+  await screen.findByTestId('quiz.habit');
+  press('quiz.opt.rarely');
+  await screen.findByTestId('dashboard');
+  await nav((router) => router.push('/analytics'));
+  await screen.findByTestId('analytics.safe');
+  // No payday → counts down to month end (Oct 9 → 23 days left incl. today).
+  expect(screen.getByText(ar.safeUntilMonthEnd(23))).toBeTruthy();
 });

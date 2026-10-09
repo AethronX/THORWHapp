@@ -1,4 +1,3 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { ReactNode } from 'react';
 import {
   ActivityIndicator,
@@ -18,12 +17,13 @@ import {
 import { addMonths } from '../core/dates';
 import { useAppState, useController, useUi } from './AppContext';
 import { categoryIcon, formatMonth } from './format';
+import { IconName, PhIcon } from './icons';
 import type { Category } from '../domain/models';
 import { useState } from 'react';
 
 import { categoryTone, Elevation, Fonts, MIN_TAP, Radii, Space, Type, TypeVariant } from './theme';
 
-export type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
+export type { IconName } from './icons';
 
 // -- text ---------------------------------------------------------------------
 
@@ -73,9 +73,10 @@ export function T({
   );
 }
 
-export function Icon({ name, size = 22, color }: { name: IconName; size?: number; color?: string }) {
-  const { p } = useUi();
-  return <MaterialCommunityIcons name={name} size={size} color={color ?? p.onSurface} />;
+/** App icon (Phosphor duotone by default); mirrors directional icons in RTL. */
+export function Icon({ name, size = 22, color, weight }: { name: IconName; size?: number; color?: string; weight?: 'duotone' | 'regular' }) {
+  const { p, rtl } = useUi();
+  return <PhIcon name={name} size={size} color={color ?? p.onSurface} weight={weight} rtl={rtl} />;
 }
 
 // -- layout -------------------------------------------------------------------
@@ -215,7 +216,7 @@ export function IconButton({ icon, label, onPress, disabled, testID }: { icon: I
 export function Fab({ label, onPress, testID }: { label: string; onPress: () => void; testID?: string }) {
   return (
     <View pointerEvents="box-none" style={{ position: 'absolute', bottom: Space.lg, end: Space.lg }}>
-      <Button label={label} icon="plus" onPress={onPress} testID={testID} style={{ borderRadius: Radii.lg, ...Elevation.overlay }} />
+      <Button label={label} icon="add" onPress={onPress} testID={testID} style={{ borderRadius: Radii.lg, ...Elevation.overlay }} />
     </View>
   );
 }
@@ -299,7 +300,7 @@ export function LabeledProgress({ value, label, trailing, budget = false }: { va
   return (
     <View accessible accessibilityLabel={[label, trailing].filter(Boolean).join('، ')} style={{ gap: Space.xs }}>
       <Row style={{ alignItems: 'flex-start' }}>
-        {over && <Icon name="alert-outline" size={18} color={p.negative} />}
+        {over && <Icon name="warning" size={18} color={p.negative} />}
         <View style={{ flex: 3 }}>
           <T>{label}</T>
         </View>
@@ -367,13 +368,13 @@ export function MonthSwitcher() {
   const isCurrent = st.month.year === st.today.year && st.month.month === st.today.month;
   return (
     <Row style={{ justifyContent: 'center' }}>
-      <IconButton testID="month.prev" icon={rtl ? 'chevron-right' : 'chevron-left'} label={s.prevMonth} onPress={() => c.setMonth(addMonths(st.month, -1))} />
+      <IconButton testID="month.prev" icon="back" label={s.prevMonth} onPress={() => c.setMonth(addMonths(st.month, -1))} />
       <View style={{ flexShrink: 1 }}>
         <T variant="subtitle" center testID="month.label">
           {formatMonth(st.month, st.locale)}
         </T>
       </View>
-      <IconButton testID="month.next" icon={rtl ? 'chevron-left' : 'chevron-right'} label={s.nextMonth} disabled={isCurrent} onPress={() => c.setMonth(addMonths(st.month, 1))} />
+      <IconButton testID="month.next" icon="forward" label={s.nextMonth} disabled={isCurrent} onPress={() => c.setMonth(addMonths(st.month, 1))} />
     </Row>
   );
 }
@@ -417,7 +418,7 @@ export function CategoryBadge({ category, size = 40 }: { category: Category | un
       importantForAccessibility="no-hide-descendants"
       style={{ width: size, height: size, borderRadius: Radii.sm, backgroundColor: tone.bg, alignItems: 'center', justifyContent: 'center' }}
     >
-      <Icon name={category ? categoryIcon(category) : 'shape-outline'} size={Math.round(size * 0.55)} color={tone.fg} />
+      <Icon name={category ? categoryIcon(category) : 'catOther'} size={Math.round(size * 0.55)} color={tone.fg} />
     </View>
   );
 }

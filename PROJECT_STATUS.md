@@ -1,5 +1,20 @@
 # Project status
 
+## Update 2026-10-09 (latest): competitor study, onboarding questions, analytics, new icons
+Study: docs/COMPETITIVE_ANALYSIS.md (desk research, not hands-on testing). Formulas: docs/ANALYTICS.md.
+Built: five-question onboarding → personal plan (D-023); analytics tab with health score,
+safe-to-spend per day, month-end forecast, last-month comparison, category donut, 6-month bars (D-024);
+Phosphor duotone icons (D-022); new app icon — Omani arch with rising gold bars, replacing a «ث» mark
+that resembled the Thawani logo (D-025).
+
+| Check | Result |
+|---|---|
+| `npx tsc --noEmit` | 0 errors |
+| `npx jest` | **242 tests passing** (8 suites) |
+| `npx expo export` | Android 3.2 MB and iOS 2.9 MB Hermes bundles build |
+
+Not verified here: on-device look and feel, Expo Go on a phone, EAS build, trademark search for the icon.
+
 ## Update 2026-10-09 (later): Expo rebuild — `expo-app/`
 Owner chose Expo / React Native (Expo Go + EAS Build). Verified in this container:
 

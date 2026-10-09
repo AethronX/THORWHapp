@@ -62,7 +62,7 @@ export default function GoalForm() {
         )}
         <DateField label={s.goalTargetDate} value={date} onChange={setDate} min={existing ? undefined : st.today} testID="goal.date" />
         <Button label={s.save} onPress={save} disabled={busy} testID="goal.save" />
-        {existing && <Button kind="danger" icon="delete-outline" label={s.delete} onPress={remove} disabled={busy} testID="goal.delete" />}
+        {existing && <Button kind="danger" icon="delete" label={s.delete} onPress={remove} disabled={busy} testID="goal.delete" />}
       </Screen>
     </>
   );

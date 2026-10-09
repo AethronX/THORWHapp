@@ -1,6 +1,17 @@
 import { monthOf, sameMonth } from '../core/dates';
 import * as fe from '../domain/financeEngine';
+import {
+  averageSpending,
+  daysLeftInMonth,
+  daysUntilPayday,
+  healthScore,
+  HealthScore,
+  MonthTotals,
+  projectMonthEndSpending,
+  safeToSpendPerDay,
+} from '../domain/analytics';
 import { buildInsights, Insight } from '../domain/insights';
+import { suggestPlan } from '../domain/profile';
 import type { CategorySpend } from '../domain/models';
 import type { AppState } from './appController';
 
@@ -33,4 +44,57 @@ export function insights(s: AppState): Insight[] {
     today: s.today,
     assessGoalFeasibility: isViewingCurrentMonth(s),
   });
+}
+
+// -- analytics ------------------------------------------------------------------
+
+export const totalSaved = (s: AppState) => fe.sumMinor(s.goals.map((g) => Math.max(0, g.savedMinor)));
+
+/** Previous month's totals from the trend (null if not loaded). */
+export function previousMonthTotals(s: AppState): MonthTotals | null {
+  return s.trend.length >= 2 ? s.trend[s.trend.length - 2] : null;
+}
+
+export function health(s: AppState): HealthScore {
+  const sp = spends(s).filter((x) => x.limitMinor != null);
+  return healthScore({
+    incomeMinor: incomeTotal(s),
+    expensesMinor: expenseTotal(s),
+    budgetedCategories: sp.length,
+    categoriesOverBudget: sp.filter((x) => x.spentMinor > (x.limitMinor ?? 0)).length,
+    totalSavedMinor: totalSaved(s),
+    monthlySpendingMinor: averageSpending([...s.trend]) ?? expenseTotal(s),
+  });
+}
+
+export interface SafeToSpend {
+  perDayMinor: number;
+  daysLeft: number;
+  untilPayday: boolean;
+  plannedSavingMinor: number;
+}
+
+/**
+ * Only for the current month with income recorded. Uses the payday from the
+ * questionnaire when set, otherwise the days left in the month.
+ */
+export function safeToSpend(s: AppState): SafeToSpend | null {
+  const income = incomeTotal(s);
+  if (!isViewingCurrentMonth(s) || income === 0) return null;
+  const payday = s.profile?.payday ?? null;
+  const daysLeft = payday != null ? daysUntilPayday(s.today, payday) : daysLeftInMonth(s.today);
+  const plannedSavingMinor = s.profile ? suggestPlan(s.profile, income, s.currency).monthlySavingMinor : 0;
+  return {
+    perDayMinor: safeToSpendPerDay({ incomeMinor: income, spentMinor: expenseTotal(s), plannedSavingMinor, daysLeft }),
+    daysLeft,
+    untilPayday: payday != null,
+    plannedSavingMinor,
+  };
+}
+
+/** Month-end spending forecast (current month only, once spending exists). */
+export function monthEndForecast(s: AppState): number | null {
+  const spent = expenseTotal(s);
+  if (!isViewingCurrentMonth(s) || spent === 0) return null;
+  return projectMonthEndSpending(spent, s.today);
 }
