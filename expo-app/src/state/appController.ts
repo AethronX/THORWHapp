@@ -49,7 +49,7 @@ export class AppController {
       status: 'loading',
       currency: DEFAULT_CURRENCY,
       locale: 'ar',
-      themeMode: 'system',
+      themeMode: 'light',
       onboarded: false,
       month: monthOf(today),
       today,
@@ -100,7 +100,8 @@ export class AppController {
       const patch: Partial<AppState> = {
         currency: currencyFromCode(s[SettingKeys.currency]),
         locale: s[SettingKeys.locale] === 'en' ? 'en' : 'ar',
-        themeMode: theme === 'light' || theme === 'dark' ? theme : 'system',
+        // Light is the default (D-020); dark/system only when the user chose it.
+        themeMode: theme === 'dark' || theme === 'system' ? theme : 'light',
         onboarded: s[SettingKeys.onboarded] === '1',
       };
       this.set({ ...patch, ...(await this.load(this.state.month)), status: 'ready' });

@@ -72,7 +72,9 @@ export default function Income() {
               <View style={{ flex: 1 }}>
                 <T>{i.label || s.income}</T>
               </View>
-              <T variant="subtitle">{money(i.amountMinor)}</T>
+              <T variant="amount" color={p.income}>
+                {money(i.amountMinor)}
+              </T>
             </Row>
           </Pressable>
         ))

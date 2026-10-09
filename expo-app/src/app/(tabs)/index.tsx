@@ -9,7 +9,7 @@ import { expenseTotal, incomeTotal, insights, netCashFlow, savingsRate, spends }
 import { useAppState, useController, useUi } from '../../ui/AppContext';
 import { Button, Card, Fab, Icon, IconName, LabeledProgress, MonthSwitcher, Row, runGuarded, Screen, T } from '../../ui/components';
 import { categoryLabel, formatPercent } from '../../ui/format';
-import { Radii, Space } from '../../ui/theme';
+import { Elevation, Radii, Space } from '../../ui/theme';
 
 export default function Dashboard() {
   const st = useAppState();
@@ -47,15 +47,18 @@ export default function Dashboard() {
       <Screen testID="dashboard">
         <MonthSwitcher />
 
-        <View style={{ backgroundColor: p.primary, borderRadius: Radii.lg, padding: Space.xl, gap: Space.md }}>
+        <View style={{ backgroundColor: p.hero, borderRadius: Radii.lg, padding: Space.xl, gap: Space.lg, overflow: 'hidden', ...Elevation.raised }}>
+          {/* Signature detail: a fine gold rule along the top edge. */}
+          <View style={{ position: 'absolute', top: 0, start: Space.xl, end: Space.xl, height: 2, backgroundColor: p.heroAccent, borderBottomLeftRadius: 2, borderBottomRightRadius: 2 }} />
           <View accessible accessibilityLabel={`${s.net}: ${money(net)}`} testID="summary.net">
-            <T variant="label" color={p.onPrimary}>
+            <T variant="label" color={p.heroAccent}>
               {s.net}
             </T>
-            <T variant="display" color={p.onPrimary}>
+            <T variant="display" color={p.onHero}>
               {money(net)}
             </T>
           </View>
+          <View style={{ height: 1, backgroundColor: p.onHero, opacity: 0.12 }} />
           <Row style={{ flexWrap: 'wrap' }} gap={Space.lg}>
             <Metric label={s.income} value={money(incomeTotal(st))} icon="arrow-bottom-left" testID="summary.income" />
             <Metric label={s.expenses} value={money(expenseTotal(st))} icon="arrow-top-right" testID="summary.expenses" />
@@ -138,12 +141,12 @@ function Metric({ label, value, icon, testID }: { label: string; value: string; 
   const { p } = useUi();
   return (
     <View accessible accessibilityLabel={`${label}: ${value}`} testID={testID} style={{ flexDirection: 'row', gap: Space.xs, alignItems: 'flex-start', flexShrink: 1 }}>
-      <Icon name={icon} size={18} color={p.onPrimary} />
+      <Icon name={icon} size={18} color={p.onHeroMuted} />
       <View>
-        <T variant="small" color={p.onPrimary}>
+        <T variant="small" color={p.onHeroMuted}>
           {label}
         </T>
-        <T variant="subtitle" color={p.onPrimary}>
+        <T variant="amount" color={p.onHero}>
           {value}
         </T>
       </View>

@@ -3,8 +3,8 @@ import { Pressable, View } from 'react-native';
 
 import { spends, totalBudget } from '../state/selectors';
 import { useAppState, useController, useUi } from '../ui/AppContext';
-import { Icon, Row, runGuarded, Screen, T, TotalRow } from '../ui/components';
-import { categoryIcon, categoryLabel } from '../ui/format';
+import { CategoryBadge, Row, runGuarded, Screen, T, TotalRow } from '../ui/components';
+import { categoryLabel } from '../ui/format';
 import { AmountEditor } from '../ui/InlineEditor';
 import { MIN_TAP, Space } from '../ui/theme';
 
@@ -50,7 +50,7 @@ export default function Budgets() {
             style={{ minHeight: MIN_TAP, justifyContent: 'center', paddingVertical: Space.xs, borderBottomWidth: 1, borderBottomColor: p.outline }}
           >
             <Row>
-              <Icon name={categoryIcon(cat)} color={p.onSurfaceMuted} />
+              <CategoryBadge category={cat} size={36} />
               <View style={{ flex: 1 }}>
                 <T>{categoryLabel(cat, s)}</T>
                 {limit != null && (

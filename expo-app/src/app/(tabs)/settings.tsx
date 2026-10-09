@@ -41,9 +41,9 @@ export default function Settings() {
           testID="settings.theme"
           value={st.themeMode}
           options={[
-            ['system', s.themeSystem],
             ['light', s.themeLight],
             ['dark', s.themeDark],
+            ['system', s.themeSystem],
           ]}
           onChange={(m) => c.setThemeMode(m)}
         />

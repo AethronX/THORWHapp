@@ -3,8 +3,8 @@ import { Alert, View } from 'react-native';
 
 import type { Category } from '../domain/models';
 import { useAppState, useController, useUi } from '../ui/AppContext';
-import { Button, Card, confirm, Field, Icon, IconButton, Row, runGuarded, Screen, T } from '../ui/components';
-import { categoryIcon, categoryLabel } from '../ui/format';
+import { Button, Card, CategoryBadge, confirm, Field, IconButton, Row, runGuarded, Screen, T } from '../ui/components';
+import { categoryLabel } from '../ui/format';
 import { Space } from '../ui/theme';
 
 export default function Categories() {
@@ -44,7 +44,7 @@ export default function Categories() {
       )}
       {st.categories.map((cat) => (
         <Row key={cat.id} style={{ borderBottomWidth: 1, borderBottomColor: p.outline }}>
-          <Icon name={categoryIcon(cat)} color={p.onSurfaceMuted} />
+          <CategoryBadge category={cat} size={36} />
           <View style={{ flex: 1 }}>
             <T>{categoryLabel(cat, s)}</T>
           </View>

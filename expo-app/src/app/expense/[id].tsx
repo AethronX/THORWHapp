@@ -9,7 +9,7 @@ import { useAppState, useController, useUi } from '../../ui/AppContext';
 import { Button, confirm, Field, Icon, runGuarded, Screen, T } from '../../ui/components';
 import { DateField } from '../../ui/DateField';
 import { amountErrorText, categoryIcon, categoryLabel, currencySymbol } from '../../ui/format';
-import { MIN_TAP, Radii, Space } from '../../ui/theme';
+import { categoryTone, MIN_TAP, Radii, Space } from '../../ui/theme';
 
 /** Add (`/expense/new`) or edit (`/expense/<id>`) an expense. */
 export default function ExpenseForm() {
@@ -82,9 +82,9 @@ export default function ExpenseForm() {
                   accessibilityRole="radio"
                   accessibilityState={{ selected }}
                   onPress={() => setCategoryId(cat.id)}
-                  style={{ minHeight: MIN_TAP, flexDirection: 'row', alignItems: 'center', gap: Space.xs, paddingHorizontal: Space.md, borderRadius: Radii.pill, borderWidth: 1, borderColor: selected ? p.primary : p.outline, backgroundColor: selected ? p.primaryContainer : p.surface }}
+                  style={{ minHeight: MIN_TAP, flexDirection: 'row', alignItems: 'center', gap: Space.xs, paddingHorizontal: Space.md, borderRadius: Radii.pill, borderWidth: 1, borderColor: selected ? p.primary : p.borderStrong, backgroundColor: selected ? p.primaryContainer : p.surface }}
                 >
-                  <Icon name={selected ? 'check' : categoryIcon(cat)} size={18} color={selected ? p.onPrimaryContainer : p.onSurfaceMuted} />
+                  <Icon name={selected ? 'check' : categoryIcon(cat)} size={18} color={selected ? p.onPrimaryContainer : categoryTone(p, cat.key, cat.iconCode).fg} />
                   <T color={selected ? p.onPrimaryContainer : p.onSurface}>{categoryLabel(cat, s)}</T>
                 </Pressable>
               );

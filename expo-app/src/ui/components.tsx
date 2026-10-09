@@ -17,22 +17,17 @@ import {
 
 import { addMonths } from '../core/dates';
 import { useAppState, useController, useUi } from './AppContext';
-import { formatMonth } from './format';
-import { Fonts, MIN_TAP, Radii, Space } from './theme';
+import { categoryIcon, formatMonth } from './format';
+import type { Category } from '../domain/models';
+import { useState } from 'react';
+
+import { categoryTone, Elevation, Fonts, MIN_TAP, Radii, Space, Type, TypeVariant } from './theme';
 
 export type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
 
 // -- text ---------------------------------------------------------------------
 
-type Variant = 'display' | 'title' | 'subtitle' | 'body' | 'small' | 'label';
-const VARIANTS: Record<Variant, TextStyle> = {
-  display: { fontFamily: Fonts.bold, fontSize: 30, lineHeight: 42 },
-  title: { fontFamily: Fonts.bold, fontSize: 20, lineHeight: 30 },
-  subtitle: { fontFamily: Fonts.medium, fontSize: 16, lineHeight: 24 },
-  body: { fontFamily: Fonts.regular, fontSize: 15, lineHeight: 23 },
-  small: { fontFamily: Fonts.regular, fontSize: 13, lineHeight: 19 },
-  label: { fontFamily: Fonts.medium, fontSize: 13, lineHeight: 19 },
-};
+type Variant = TypeVariant;
 
 /**
  * Text that follows the UI direction (right-aligned in Arabic) regardless of
@@ -64,7 +59,7 @@ export function T({
       numberOfLines={numberOfLines}
       maxFontSizeMultiplier={2}
       style={[
-        VARIANTS[variant],
+        Type[variant],
         {
           color: color ?? (muted ? p.onSurfaceMuted : p.onSurface),
           textAlign: center ? 'center' : rtl ? 'right' : 'left',
@@ -122,7 +117,7 @@ export function Card({
     <View
       testID={testID}
       style={[
-        { backgroundColor: p.surface, borderRadius: Radii.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: p.outline, padding: Space.lg, gap: Space.md },
+        { backgroundColor: p.surface, borderRadius: Radii.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: p.outline, padding: Space.lg, gap: Space.md, ...(p.dark ? null : Elevation.raised) },
         style,
       ]}
     >
@@ -164,6 +159,7 @@ export function Button({
   const bg = { filled: p.primary, tonal: p.primaryContainer, outlined: 'transparent', text: 'transparent', danger: 'transparent' }[kind];
   const fg = { filled: p.onPrimary, tonal: p.onPrimaryContainer, outlined: p.primary, text: p.primary, danger: p.negative }[kind];
   const border = kind === 'outlined' ? p.primary : kind === 'danger' ? p.negative : 'transparent';
+  const labelStyle = { fontFamily: Fonts.medium };
   return (
     <Pressable
       testID={testID}
@@ -177,20 +173,20 @@ export function Button({
           minHeight: MIN_TAP,
           paddingHorizontal: Space.xl,
           borderRadius: Radii.md,
-          backgroundColor: bg,
+          backgroundColor: kind === 'filled' && pressed ? p.primaryPressed : bg,
           borderWidth: kind === 'outlined' || kind === 'danger' ? 1 : 0,
           borderColor: border,
           alignItems: 'center',
           justifyContent: 'center',
           flexDirection: 'row',
           gap: Space.sm,
-          opacity: disabled ? 0.5 : pressed ? 0.8 : 1,
+          opacity: disabled ? 0.45 : pressed && kind !== 'filled' ? 0.7 : 1,
         },
         style,
       ]}
     >
       {icon && <Icon name={icon} size={20} color={fg} />}
-      <T variant="subtitle" color={fg} center>
+      <T variant="subtitle" color={fg} center style={labelStyle}>
         {label}
       </T>
     </Pressable>
@@ -219,7 +215,7 @@ export function IconButton({ icon, label, onPress, disabled, testID }: { icon: I
 export function Fab({ label, onPress, testID }: { label: string; onPress: () => void; testID?: string }) {
   return (
     <View pointerEvents="box-none" style={{ position: 'absolute', bottom: Space.lg, end: Space.lg }}>
-      <Button label={label} icon="plus" onPress={onPress} testID={testID} style={{ borderRadius: Radii.lg, elevation: 3 }} />
+      <Button label={label} icon="plus" onPress={onPress} testID={testID} style={{ borderRadius: Radii.lg, ...Elevation.overlay }} />
     </View>
   );
 }
@@ -235,13 +231,16 @@ export function Field({
   ...props
 }: TextInputProps & { label: string; error?: string | null; hint?: string; suffix?: string; ltr?: boolean }) {
   const { p, rtl } = useUi();
+  const [focused, setFocused] = useState(false);
   return (
     <View style={{ gap: Space.xs }}>
-      <T variant="label">{label}</T>
+      <T variant="label" color={p.onSurfaceMuted}>
+        {label}
+      </T>
       <Row
         style={{
-          borderWidth: error ? 2 : 1,
-          borderColor: error ? p.negative : p.outline,
+          borderWidth: error || focused ? 2 : 1,
+          borderColor: error ? p.negative : focused ? p.primary : p.borderStrong,
           borderRadius: Radii.md,
           backgroundColor: p.surface,
           paddingHorizontal: Space.md,
@@ -251,7 +250,15 @@ export function Field({
         <TextInput
           accessibilityLabel={label}
           placeholder={hint}
-          placeholderTextColor={p.onSurfaceMuted}
+          placeholderTextColor={p.textSubtle}
+          onFocus={(e) => {
+            setFocused(true);
+            props.onFocus?.(e);
+          }}
+          onBlur={(e) => {
+            setFocused(false);
+            props.onBlur?.(e);
+          }}
           maxFontSizeMultiplier={2}
           style={{
             flex: 1,
@@ -259,13 +266,18 @@ export function Field({
             fontFamily: Fonts.regular,
             fontSize: 16,
             paddingVertical: Space.sm,
+            textAlign: rtl ? 'right' : 'left',
             // Numbers are typed left-to-right even in Arabic.
-            textAlign: ltr ? (rtl ? 'right' : 'left') : rtl ? 'right' : 'left',
             writingDirection: ltr ? 'ltr' : rtl ? 'rtl' : 'ltr',
+            ...(ltr ? { fontVariant: ['tabular-nums'] as const } : null),
           }}
           {...props}
         />
-        {suffix ? <T muted>{suffix}</T> : null}
+        {suffix ? (
+          <T variant="label" color={p.textSubtle}>
+            {suffix}
+          </T>
+        ) : null}
       </Row>
       {error ? (
         <T variant="small" color={p.negative} testID={props.testID ? `${props.testID}.error` : undefined}>
@@ -394,4 +406,18 @@ export async function runGuarded(op: () => Promise<unknown>, errorText: string):
     Alert.alert(errorText);
     return false;
   }
+}
+
+/** Category icon in its own tinted badge (colour + icon, never colour alone). */
+export function CategoryBadge({ category, size = 40 }: { category: Category | undefined; size?: number }) {
+  const { p } = useUi();
+  const tone = categoryTone(p, category?.key ?? null, category?.iconCode ?? 11);
+  return (
+    <View
+      importantForAccessibility="no-hide-descendants"
+      style={{ width: size, height: size, borderRadius: Radii.sm, backgroundColor: tone.bg, alignItems: 'center', justifyContent: 'center' }}
+    >
+      <Icon name={category ? categoryIcon(category) : 'shape-outline'} size={Math.round(size * 0.55)} color={tone.fg} />
+    </View>
+  );
 }

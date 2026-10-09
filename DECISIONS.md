@@ -102,3 +102,12 @@ expo-sqlite behind a small `Db` interface so tests run the same SQL on sql.js; e
 style for RTL (works in Expo Go without native restarts); only Expo Go-bundled native modules;
 `app.config.ts` + `APP_VARIANT` so the EAS **preview** APK (`om.tharwati.tharwati.preview`) never
 replaces or alters the production config.
+
+### D-020 Light theme is the default (owner decision) — 2026-10-09
+Light (ivory canvas, white cards) is the global language of banking and luxury and reads best in
+daylight. New and existing users start in light unless they explicitly chose dark/system. Dark stays
+available and meets the same rules. Design system: docs/DESIGN_SYSTEM.md.
+
+### D-021 Ordinary spending is not shown in red — 2026-10-09
+Users with limited incomes should not feel judged for every purchase. Expense amounts use the
+neutral ink colour; red is reserved for over-budget and negative cash flow, always with an icon/words.

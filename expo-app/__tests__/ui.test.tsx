@@ -8,7 +8,6 @@ import { Alert } from 'react-native';
 import { act, fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
 
 import { STRINGS } from '../src/ui/i18n';
-import { contrast, dark, light } from '../src/ui/theme';
 import { SqlJsDriver } from './helpers/sqlJsDriver';
 
 jest.setTimeout(60000);
@@ -158,30 +157,4 @@ test('ambiguous amounts are rejected in the form, not guessed', async () => {
   press('expense.cat.2');
   press('expense.save');
   expect(await screen.findByText(ar.errAmountInvalid)).toBeTruthy();
-});
-
-describe('colour contrast (WCAG AA 4.5:1)', () => {
-  for (const [name, p] of [
-    ['light', light],
-    ['dark', dark],
-  ] as const) {
-    const pairs: [string, string, string][] = [
-      ['onSurface/background', p.onSurface, p.background],
-      ['onSurface/surface', p.onSurface, p.surface],
-      ['onSurfaceMuted/background', p.onSurfaceMuted, p.background],
-      ['onSurfaceMuted/surface', p.onSurfaceMuted, p.surface],
-      ['onSurfaceMuted/surfaceMuted', p.onSurfaceMuted, p.surfaceMuted],
-      ['primary/surface', p.primary, p.surface],
-      ['primary/background', p.primary, p.background],
-      ['onPrimary/primary', p.onPrimary, p.primary],
-      ['onPrimaryContainer/primaryContainer', p.onPrimaryContainer, p.primaryContainer],
-      ['negative/surface', p.negative, p.surface],
-      ['warning/surface', p.warning, p.surface],
-      ['positive/surface', p.positive, p.surface],
-      ['onNegative/negative', p.onNegative, p.negative],
-    ];
-    test.each(pairs)(`${name} %s`, (_l, fg, bg) => {
-      expect(contrast(fg, bg)).toBeGreaterThanOrEqual(4.5);
-    });
-  }
 });

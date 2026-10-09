@@ -9,7 +9,7 @@ import { useAppState, useController, useUi } from '../../ui/AppContext';
 import { Button, Card, EmptyState, Fab, Icon, IconButton, LabeledProgress, Row, runGuarded, Screen, T } from '../../ui/components';
 import { formatDate, formatPercent } from '../../ui/format';
 import { AmountEditor } from '../../ui/InlineEditor';
-import { Space } from '../../ui/theme';
+import { Radii, Space } from '../../ui/theme';
 
 export default function Goals() {
   const st = useAppState();
@@ -46,6 +46,14 @@ function GoalCard({ goal }: { goal: SavingsGoal }) {
       title={goal.name}
       action={<IconButton icon="pencil-outline" label={s.edit} onPress={() => router.push(`/goal/${goal.id}`)} testID={`goal.edit.${goal.id}`} />}
     >
+      {reached && (
+        <Row style={{ alignSelf: 'flex-start', backgroundColor: p.accentContainer, borderRadius: Radii.pill, paddingHorizontal: Space.md, paddingVertical: Space.xs }}>
+          <Icon name="trophy-outline" size={18} color={p.accentText} />
+          <T variant="label" color={p.accentText}>
+            {s.goalReached}
+          </T>
+        </Row>
+      )}
       <LabeledProgress value={progress} label={s.goalSaved(money(goal.savedMinor), money(goal.targetMinor))} trailing={formatPercent(progress)} />
       <Row>
         <Icon name={reached ? 'check-circle-outline' : overdue ? 'alert-outline' : 'calendar-outline'} size={18} color={reached ? p.positive : overdue ? p.warning : p.onSurfaceMuted} />

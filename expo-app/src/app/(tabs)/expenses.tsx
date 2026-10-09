@@ -3,8 +3,8 @@ import { Pressable, View } from 'react-native';
 
 import { expenseTotal } from '../../state/selectors';
 import { useAppState, useUi } from '../../ui/AppContext';
-import { EmptyState, Fab, Icon, MonthSwitcher, Row, Screen, T, TotalRow } from '../../ui/components';
-import { categoryIcon, categoryLabel, formatDate } from '../../ui/format';
+import { CategoryBadge, EmptyState, Fab, MonthSwitcher, Row, Screen, T, TotalRow } from '../../ui/components';
+import { categoryLabel, formatDate } from '../../ui/format';
 import { MIN_TAP, Space } from '../../ui/theme';
 
 export default function Expenses() {
@@ -33,16 +33,16 @@ export default function Expenses() {
                 style={{ minHeight: MIN_TAP, borderBottomWidth: 1, borderBottomColor: p.outline, paddingVertical: Space.sm }}
               >
                 <Row>
-                  <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: p.primaryContainer, alignItems: 'center', justifyContent: 'center' }}>
-                    <Icon name={cat ? categoryIcon(cat) : 'shape-outline'} color={p.onPrimaryContainer} />
-                  </View>
+                  <CategoryBadge category={cat} />
                   <View style={{ flex: 1 }}>
                     <T>{name}</T>
                     <T variant="small" muted>
                       {sub}
                     </T>
                   </View>
-                  <T variant="subtitle">{money(e.amountMinor)}</T>
+                  <T variant="amount" color={p.expense}>
+                    {money(e.amountMinor)}
+                  </T>
                 </Row>
               </Pressable>
             );
