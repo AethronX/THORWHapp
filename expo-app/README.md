@@ -1,0 +1,62 @@
+# ثروتي — Tharwati (Expo / React Native)
+
+Arabic-first personal finance app: income, expenses, budgets, savings goals and a savings
+calculator. Local-only (SQLite on the device), no account, no ads, no tracking.
+
+**Stack:** Expo SDK 57 · React Native 0.86 · TypeScript · Expo Router · expo-sqlite.
+Runs in **Expo Go** (only modules bundled in Expo Go are used).
+
+## 1. Run on your phone with Expo Go
+Requirements: Node.js 20+ and the **Expo Go** app (Play Store / App Store) on your phone.
+
+```bash
+git clone https://github.com/AethronX/THORWHapp.git
+cd THORWHapp
+git checkout claude/great-brown-kz81yw
+cd expo-app
+npm install
+npx expo start
+```
+Scan the QR code with Expo Go (Android) or the Camera app (iOS). Phone and computer must be on
+the same Wi-Fi; if not, use `npx expo start --tunnel`.
+
+## 2. Checks
+```bash
+npm run typecheck     # TypeScript
+npm test              # 91 tests (Jest)
+npx expo-doctor       # project health (needs internet)
+```
+
+## 3. Installable APK with EAS Build (internal testing)
+`eas.json` has a **preview** profile → an `.apk` you can install directly. It uses
+`APP_VARIANT=preview`, so it installs as **«ثروتي (تجريبي)»** with package
+`om.tharwati.tharwati.preview`, next to (never replacing) the production app.
+The **production** profile (`.aab` for Google Play, `om.tharwati.tharwati`) is untouched.
+
+```bash
+npm install -g eas-cli        # or prefix commands with: npx eas-cli@latest
+eas login                     # free Expo account
+eas init                      # first time only: links the project to your Expo account
+eas build -p android --profile preview
+```
+If `eas init` says it cannot edit the dynamic config, copy the `projectId` it prints into
+`app.json` under `expo.extra.eas.projectId`, then continue.
+On the first build, answer **Yes** to "Generate a new Android Keystore?" (EAS stores it for you).
+When the build finishes, EAS shows a link/QR code to download and install the APK.
+The free plan is enough; builds may wait in a queue.
+
+Not needed for the APK and not done: `eas submit`, Google Play, paid EAS plans.
+
+## Project layout
+```
+src/app/          screens (Expo Router: (tabs)/, onboarding, income, budgets, categories,
+                  expense/[id], goal/[id])
+src/core/         currency, amount parsing (no floating point), calendar dates
+src/domain/       finance engine, rule-based insights, models — pure TypeScript
+src/data/         SQLite schema + migrations, repository, expo-sqlite driver
+src/state/        AppController (app state) + selectors
+src/ui/           theme tokens, strings (ar/en), formatting, shared components
+__tests__/        engine, parser, insights, repository (real SQLite via sql.js),
+                  controller, end-to-end UI journey, colour contrast
+```
+Formulas and their independent reference values: `../docs/FINANCE_FORMULAS.md`.

@@ -1,0 +1,397 @@
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { ReactNode } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleProp,
+  StyleSheet,
+  Text,
+  TextInput,
+  TextInputProps,
+  TextStyle,
+  View,
+  ViewStyle,
+} from 'react-native';
+
+import { addMonths } from '../core/dates';
+import { useAppState, useController, useUi } from './AppContext';
+import { formatMonth } from './format';
+import { Fonts, MIN_TAP, Radii, Space } from './theme';
+
+export type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
+
+// -- text ---------------------------------------------------------------------
+
+type Variant = 'display' | 'title' | 'subtitle' | 'body' | 'small' | 'label';
+const VARIANTS: Record<Variant, TextStyle> = {
+  display: { fontFamily: Fonts.bold, fontSize: 30, lineHeight: 42 },
+  title: { fontFamily: Fonts.bold, fontSize: 20, lineHeight: 30 },
+  subtitle: { fontFamily: Fonts.medium, fontSize: 16, lineHeight: 24 },
+  body: { fontFamily: Fonts.regular, fontSize: 15, lineHeight: 23 },
+  small: { fontFamily: Fonts.regular, fontSize: 13, lineHeight: 19 },
+  label: { fontFamily: Fonts.medium, fontSize: 13, lineHeight: 19 },
+};
+
+/**
+ * Text that follows the UI direction (right-aligned in Arabic) regardless of
+ * the device language, so the layout is correct in Expo Go too.
+ */
+export function T({
+  children,
+  variant = 'body',
+  color,
+  muted,
+  center,
+  style,
+  testID,
+  numberOfLines,
+}: {
+  children: ReactNode;
+  variant?: Variant;
+  color?: string;
+  muted?: boolean;
+  center?: boolean;
+  style?: StyleProp<TextStyle>;
+  testID?: string;
+  numberOfLines?: number;
+}) {
+  const { p, rtl } = useUi();
+  return (
+    <Text
+      testID={testID}
+      numberOfLines={numberOfLines}
+      maxFontSizeMultiplier={2}
+      style={[
+        VARIANTS[variant],
+        {
+          color: color ?? (muted ? p.onSurfaceMuted : p.onSurface),
+          textAlign: center ? 'center' : rtl ? 'right' : 'left',
+          writingDirection: rtl ? 'rtl' : 'ltr',
+        },
+        style,
+      ]}
+    >
+      {children}
+    </Text>
+  );
+}
+
+export function Icon({ name, size = 22, color }: { name: IconName; size?: number; color?: string }) {
+  const { p } = useUi();
+  return <MaterialCommunityIcons name={name} size={size} color={color ?? p.onSurface} />;
+}
+
+// -- layout -------------------------------------------------------------------
+
+/** Scrollable screen body with the standard gutter. */
+export function Screen({ children, testID }: { children: ReactNode; testID?: string }) {
+  const { p } = useUi();
+  return (
+    <ScrollView
+      testID={testID}
+      style={{ backgroundColor: p.background }}
+      contentContainerStyle={{ padding: Space.gutter, paddingBottom: 120, gap: Space.lg }}
+      keyboardShouldPersistTaps="handled"
+    >
+      {children}
+    </ScrollView>
+  );
+}
+
+export function Row({ children, style, gap = Space.sm }: { children: ReactNode; style?: StyleProp<ViewStyle>; gap?: number }) {
+  return <View style={[{ flexDirection: 'row', alignItems: 'center', gap }, style]}>{children}</View>;
+}
+
+export function Card({
+  title,
+  action,
+  children,
+  style,
+  testID,
+}: {
+  title?: string;
+  action?: ReactNode;
+  children: ReactNode;
+  style?: StyleProp<ViewStyle>;
+  testID?: string;
+}) {
+  const { p } = useUi();
+  return (
+    <View
+      testID={testID}
+      style={[
+        { backgroundColor: p.surface, borderRadius: Radii.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: p.outline, padding: Space.lg, gap: Space.md },
+        style,
+      ]}
+    >
+      {title != null && (
+        <Row style={{ justifyContent: 'space-between' }}>
+          <View style={{ flex: 1 }} accessibilityRole="header">
+            <T variant="subtitle">{title}</T>
+          </View>
+          {action}
+        </Row>
+      )}
+      {children}
+    </View>
+  );
+}
+
+// -- buttons ------------------------------------------------------------------
+
+type ButtonKind = 'filled' | 'tonal' | 'outlined' | 'text' | 'danger';
+
+export function Button({
+  label,
+  onPress,
+  kind = 'filled',
+  icon,
+  disabled,
+  testID,
+  style,
+}: {
+  label: string;
+  onPress: () => void;
+  kind?: ButtonKind;
+  icon?: IconName;
+  disabled?: boolean;
+  testID?: string;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const { p } = useUi();
+  const bg = { filled: p.primary, tonal: p.primaryContainer, outlined: 'transparent', text: 'transparent', danger: 'transparent' }[kind];
+  const fg = { filled: p.onPrimary, tonal: p.onPrimaryContainer, outlined: p.primary, text: p.primary, danger: p.negative }[kind];
+  const border = kind === 'outlined' ? p.primary : kind === 'danger' ? p.negative : 'transparent';
+  return (
+    <Pressable
+      testID={testID}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled: !!disabled }}
+      disabled={disabled}
+      onPress={onPress}
+      style={({ pressed }) => [
+        {
+          minHeight: MIN_TAP,
+          paddingHorizontal: Space.xl,
+          borderRadius: Radii.md,
+          backgroundColor: bg,
+          borderWidth: kind === 'outlined' || kind === 'danger' ? 1 : 0,
+          borderColor: border,
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexDirection: 'row',
+          gap: Space.sm,
+          opacity: disabled ? 0.5 : pressed ? 0.8 : 1,
+        },
+        style,
+      ]}
+    >
+      {icon && <Icon name={icon} size={20} color={fg} />}
+      <T variant="subtitle" color={fg} center>
+        {label}
+      </T>
+    </Pressable>
+  );
+}
+
+export function IconButton({ icon, label, onPress, disabled, testID }: { icon: IconName; label: string; onPress: () => void; disabled?: boolean; testID?: string }) {
+  const { p } = useUi();
+  return (
+    <Pressable
+      testID={testID}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled: !!disabled }}
+      disabled={disabled}
+      onPress={onPress}
+      hitSlop={4}
+      style={({ pressed }) => ({ width: MIN_TAP, height: MIN_TAP, alignItems: 'center', justifyContent: 'center', borderRadius: Radii.pill, opacity: disabled ? 0.35 : pressed ? 0.6 : 1 })}
+    >
+      <Icon name={icon} color={p.onSurface} />
+    </Pressable>
+  );
+}
+
+/** Floating action button pinned to the bottom "end" corner. */
+export function Fab({ label, onPress, testID }: { label: string; onPress: () => void; testID?: string }) {
+  return (
+    <View pointerEvents="box-none" style={{ position: 'absolute', bottom: Space.lg, end: Space.lg }}>
+      <Button label={label} icon="plus" onPress={onPress} testID={testID} style={{ borderRadius: Radii.lg, elevation: 3 }} />
+    </View>
+  );
+}
+
+// -- inputs -------------------------------------------------------------------
+
+export function Field({
+  label,
+  error,
+  hint,
+  suffix,
+  ltr,
+  ...props
+}: TextInputProps & { label: string; error?: string | null; hint?: string; suffix?: string; ltr?: boolean }) {
+  const { p, rtl } = useUi();
+  return (
+    <View style={{ gap: Space.xs }}>
+      <T variant="label">{label}</T>
+      <Row
+        style={{
+          borderWidth: error ? 2 : 1,
+          borderColor: error ? p.negative : p.outline,
+          borderRadius: Radii.md,
+          backgroundColor: p.surface,
+          paddingHorizontal: Space.md,
+          minHeight: MIN_TAP,
+        }}
+      >
+        <TextInput
+          accessibilityLabel={label}
+          placeholder={hint}
+          placeholderTextColor={p.onSurfaceMuted}
+          maxFontSizeMultiplier={2}
+          style={{
+            flex: 1,
+            color: p.onSurface,
+            fontFamily: Fonts.regular,
+            fontSize: 16,
+            paddingVertical: Space.sm,
+            // Numbers are typed left-to-right even in Arabic.
+            textAlign: ltr ? (rtl ? 'right' : 'left') : rtl ? 'right' : 'left',
+            writingDirection: ltr ? 'ltr' : rtl ? 'rtl' : 'ltr',
+          }}
+          {...props}
+        />
+        {suffix ? <T muted>{suffix}</T> : null}
+      </Row>
+      {error ? (
+        <T variant="small" color={p.negative} testID={props.testID ? `${props.testID}.error` : undefined}>
+          {error}
+        </T>
+      ) : null}
+    </View>
+  );
+}
+
+// -- feedback & status --------------------------------------------------------
+
+/** Progress bar that always states its value in text (never colour alone). */
+export function LabeledProgress({ value, label, trailing, budget = false }: { value: number; label: string; trailing?: string; budget?: boolean }) {
+  const { p } = useUi();
+  const over = budget && value > 1;
+  const near = budget && !over && value >= 0.8;
+  const color = over ? p.negative : near ? p.warning : p.primary;
+  return (
+    <View accessible accessibilityLabel={[label, trailing].filter(Boolean).join('، ')} style={{ gap: Space.xs }}>
+      <Row style={{ alignItems: 'flex-start' }}>
+        {over && <Icon name="alert-outline" size={18} color={p.negative} />}
+        <View style={{ flex: 3 }}>
+          <T>{label}</T>
+        </View>
+        {trailing ? (
+          <View style={{ flex: 2 }}>
+            <T variant="small" color={over ? p.negative : p.onSurfaceMuted} style={{ textAlign: 'auto' }}>
+              {trailing}
+            </T>
+          </View>
+        ) : null}
+      </Row>
+      <View style={{ height: 8, borderRadius: Radii.pill, backgroundColor: p.surfaceMuted, overflow: 'hidden' }}>
+        <View style={{ height: 8, width: `${Math.round(Math.min(1, Math.max(0, value)) * 100)}%`, backgroundColor: color }} />
+      </View>
+    </View>
+  );
+}
+
+/** "Label ..... value" that wraps the value below at large text sizes. */
+export function TotalRow({ label, value, testID }: { label: string; value: string; testID?: string }) {
+  return (
+    <View accessible accessibilityLabel={`${label}: ${value}`} testID={testID} style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: Space.sm }}>
+      <T>{label}</T>
+      <T variant="subtitle" style={{ fontFamily: Fonts.bold }}>
+        {value}
+      </T>
+    </View>
+  );
+}
+
+export function EmptyState({ icon, title, body, action }: { icon: IconName; title: string; body?: string; action?: ReactNode }) {
+  const { p } = useUi();
+  return (
+    <View style={{ alignItems: 'center', padding: Space.xxl, gap: Space.md }}>
+      <View importantForAccessibility="no-hide-descendants" style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: p.primaryContainer, alignItems: 'center', justifyContent: 'center' }}>
+        <Icon name={icon} size={32} color={p.onPrimaryContainer} />
+      </View>
+      <T variant="subtitle" center>
+        {title}
+      </T>
+      {body ? (
+        <T muted center>
+          {body}
+        </T>
+      ) : null}
+      {action}
+    </View>
+  );
+}
+
+export function Loading() {
+  const { p } = useUi();
+  return (
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: p.background }}>
+      <ActivityIndicator color={p.primary} size="large" />
+    </View>
+  );
+}
+
+/** ‹ October 2026 › — arrows follow the reading direction. */
+export function MonthSwitcher() {
+  const st = useAppState();
+  const c = useController();
+  const { s, rtl } = useUi();
+  const isCurrent = st.month.year === st.today.year && st.month.month === st.today.month;
+  return (
+    <Row style={{ justifyContent: 'center' }}>
+      <IconButton testID="month.prev" icon={rtl ? 'chevron-right' : 'chevron-left'} label={s.prevMonth} onPress={() => c.setMonth(addMonths(st.month, -1))} />
+      <View style={{ flexShrink: 1 }}>
+        <T variant="subtitle" center testID="month.label">
+          {formatMonth(st.month, st.locale)}
+        </T>
+      </View>
+      <IconButton testID="month.next" icon={rtl ? 'chevron-left' : 'chevron-right'} label={s.nextMonth} disabled={isCurrent} onPress={() => c.setMonth(addMonths(st.month, 1))} />
+    </Row>
+  );
+}
+
+// -- dialogs & guarded actions -------------------------------------------------
+
+export function confirm(opts: { title: string; body?: string; confirmLabel: string; cancelLabel: string; destructive?: boolean }): Promise<boolean> {
+  return new Promise((resolve) => {
+    Alert.alert(
+      opts.title,
+      opts.body,
+      [
+        { text: opts.cancelLabel, style: 'cancel', onPress: () => resolve(false) },
+        { text: opts.confirmLabel, style: opts.destructive ? 'destructive' : 'default', onPress: () => resolve(true) },
+      ],
+      { cancelable: true, onDismiss: () => resolve(false) },
+    );
+  });
+}
+
+/**
+ * Runs a mutation; on failure shows a generic message. The error payload is
+ * never logged (it may contain amounts). Returns true on success.
+ */
+export async function runGuarded(op: () => Promise<unknown>, errorText: string): Promise<boolean> {
+  try {
+    await op();
+    return true;
+  } catch {
+    Alert.alert(errorText);
+    return false;
+  }
+}

@@ -91,3 +91,14 @@ of three. Never guess silently with money.
 ### D-018 Goal months = month-end deposits until target — 2026-10-09
 Aligns "months left" with the engine's end-of-month deposit convention (a target on the last day of a
 month includes that month's deposit). See docs/FINANCE_FORMULAS.md.
+
+### D-019 Rebuild in Expo / React Native (owner decision) — 2026-10-09
+The owner wants to preview the app in **Expo Go** and build APKs with **EAS Build**; neither supports
+Flutter. **Decision (owner-approved):** rebuild in Expo SDK 57 + React Native + TypeScript under
+`expo-app/`, porting the domain logic and its tests 1:1 (same reference values, same rules D-004…D-018).
+The Flutter app stays in the repository root, unchanged, until the owner decides to remove it.
+Expo-specific choices: Expo Router (file-based routes, `Stack.Protected` for onboarding);
+expo-sqlite behind a small `Db` interface so tests run the same SQL on sql.js; explicit `direction`
+style for RTL (works in Expo Go without native restarts); only Expo Go-bundled native modules;
+`app.config.ts` + `APP_VARIANT` so the EAS **preview** APK (`om.tharwati.tharwati.preview`) never
+replaces or alters the production config.

@@ -1,4 +1,23 @@
-# Project status — 2026-10-09
+# Project status
+
+## Update 2026-10-09 (later): Expo rebuild — `expo-app/`
+Owner chose Expo / React Native (Expo Go + EAS Build). Verified in this container:
+
+| Check | Result |
+|---|---|
+| `npx tsc --noEmit` | 0 errors |
+| `npx jest` | **91 tests passing**, stable over 3 runs (engine, parser, insights, repository on real SQLite, controller, end-to-end UI journey through the real Expo Router screens, colour contrast) |
+| `npx expo export --platform android` | Android JS bundle builds (3.4 MB Hermes bytecode) |
+| `eas.json` | Valid per `@expo/eas-json`; preview → internal APK, `om.tharwati.tharwati.preview`; production unchanged |
+| `npx expo-doctor` | 19/21 pass; 2 checks need `exp.host` (blocked here) — re-run on your machine |
+
+Not verified here: running in Expo Go on a phone, an actual EAS build (needs your Expo account).
+Fixes found by tests during the rebuild: missing `expo-asset` dependency (required by `expo-font`).
+
+---
+
+## Flutter implementation (original, kept for reference)
+
 
 **Phase A (build P0), slice 1 complete on the host. Not yet built for or run on Android.**
 Not ready for publication (see "Definition of done" below).

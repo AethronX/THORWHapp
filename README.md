@@ -1,5 +1,8 @@
 # ثروتي — Tharwati
 
+> **Active app: [`expo-app/`](expo-app/README.md)** (Expo / React Native, runs in Expo Go, APK via EAS Build).
+> The Flutter implementation below is kept for reference — see DECISIONS D-019.
+
 Personal finance and savings-habit app, Arabic-first, starting in Oman (OMR) on Android.
 Know where your money goes, plan your salary, set goals with dates, and see what regular saving adds
 up to — with every assumption stated.
