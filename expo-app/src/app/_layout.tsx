@@ -1,7 +1,7 @@
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AppState as RNAppState, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -9,6 +9,8 @@ import { expoDbDriver } from '../data/expoDb';
 import { AppController } from '../state/appController';
 import { AppProvider, useAppState, useController, useUi } from '../ui/AppContext';
 import { Button, EmptyState, Loading } from '../ui/components';
+import { setHapticsEnabled } from '../ui/feedback';
+import { LockScreen } from '../ui/lock';
 import { Fonts } from '../ui/theme';
 
 export default function RootLayout() {
@@ -44,6 +46,27 @@ function Root() {
   const st = useAppState();
   const c = useController();
   const { s, p, rtl } = useUi();
+  // App lock: asked on a cold start and after > 60 s in the background —
+  // never as a side effect of turning the setting on (that would remount
+  // the navigator and drop the user's place).
+  useEffect(() => setHapticsEnabled(st.haptics), [st.haptics]);
+  const [needsUnlock, setNeedsUnlock] = useState(false);
+  const lockOn = useRef(st.appLock);
+  lockOn.current = st.appLock;
+  const checkedAtStart = useRef(false);
+  useEffect(() => {
+    if (st.status !== 'ready' || checkedAtStart.current) return;
+    checkedAtStart.current = true;
+    if (st.appLock) setNeedsUnlock(true);
+  }, [st.status, st.appLock]);
+  const leftAt = useRef<number | null>(null);
+  useEffect(() => {
+    const sub = RNAppState.addEventListener('change', (state) => {
+      if (state === 'background') leftAt.current = Date.now();
+      if (state === 'active' && lockOn.current && leftAt.current != null && Date.now() - leftAt.current > 60_000) setNeedsUnlock(true);
+    });
+    return () => sub.remove();
+  }, []);
 
   // Explicit layout direction: correct RTL/LTR without relying on the device
   // language or a native restart (works the same in Expo Go and in an APK).
@@ -54,6 +77,8 @@ function Root() {
       <View style={{ flex: 1, justifyContent: 'center', backgroundColor: p.background }}>
         <EmptyState icon="error" title={s.errLoad} action={<Button label={s.retry} onPress={() => c.init()} />} />
       </View>
+    ) : st.appLock && (needsUnlock || !checkedAtStart.current) ? (
+      <LockScreen onUnlock={() => setNeedsUnlock(false)} />
     ) : (
       <Stack
         screenOptions={{
@@ -71,6 +96,7 @@ function Root() {
           <Stack.Screen name="categories" options={{ title: s.categories }} />
           <Stack.Screen name="profile" options={{ title: s.yourPlan, headerShown: false }} />
           <Stack.Screen name="expense/[id]" options={{ presentation: 'modal', title: s.addExpense }} />
+          <Stack.Screen name="quick-add" options={{ presentation: 'modal', title: s.quickAdd }} />
           <Stack.Screen name="goal/[id]" options={{ presentation: 'modal', title: s.addGoal }} />
         </Stack.Protected>
         <Stack.Protected guard={!st.onboarded}>

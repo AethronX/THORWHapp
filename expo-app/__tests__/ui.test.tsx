@@ -7,6 +7,8 @@
 import { Alert } from 'react-native';
 import { act, fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
 
+import { FinanceRepository } from '../src/data/repository';
+import { migrate } from '../src/data/schema';
 import { STRINGS } from '../src/ui/i18n';
 import { SqlJsDriver } from './helpers/sqlJsDriver';
 
@@ -17,6 +19,16 @@ jest.mock('../src/data/expoDb', () => ({
   expoDbDriver: {
     open: () => mockDriver.current.open(),
     destroy: () => mockDriver.current.destroy(),
+  },
+}));
+const mockAuth = { success: true, calls: 0 };
+jest.mock('expo-local-authentication', () => ({
+  SecurityLevel: { NONE: 0, SECRET: 1, BIOMETRIC_WEAK: 2, BIOMETRIC_STRONG: 3 },
+  hasHardwareAsync: async () => true,
+  getEnrolledLevelAsync: async () => 3,
+  authenticateAsync: async () => {
+    mockAuth.calls++;
+    return { success: mockAuth.success };
   },
 }));
 jest.mock('@react-native-community/datetimepicker', () => ({
@@ -50,6 +62,14 @@ const nav = (fn: (router: typeof import('expo-router').router) => void) =>
   act(async () => fn(require('expo-router').router));
 const label = (id: string) => screen.getByTestId(id).props.accessibilityLabel as string;
 
+/** FAB → Quick add → "More details" → the full expense form. */
+async function openFullExpenseForm() {
+  press('dashboard.addExpense');
+  await screen.findByTestId('quickAdd');
+  press('quick.more');
+  await screen.findByTestId('expenseForm');
+}
+
 async function onboard(income?: string) {
   await screen.findByTestId('onb.skip');
   press('onb.skip');
@@ -72,8 +92,7 @@ test('full MVP journey in Arabic, persisting across restart', async () => {
   await waitFor(() => expect(label('summary.net')).toContain('800.000'));
 
   // 4. Add an expense: 12.5 OMR food. Empty form is rejected first.
-  press('dashboard.addExpense');
-  await screen.findByTestId('expenseForm');
+  await openFullExpenseForm();
   press('expense.save');
   expect(await screen.findByText(ar.errAmountEmpty)).toBeTruthy();
   expect(screen.getByTestId('expense.cat.error')).toBeTruthy();
@@ -154,8 +173,7 @@ test('ambiguous amounts are rejected in the form, not guessed', async () => {
   app();
   await onboard('1,5');
   await waitFor(() => expect(label('summary.income')).toContain('1.500'));
-  press('dashboard.addExpense');
-  await screen.findByTestId('expenseForm');
+  await openFullExpenseForm();
   type('expense.amount', '12,500');
   press('expense.cat.2');
   press('expense.save');
@@ -241,4 +259,140 @@ test('Settings → retake the questionnaire updates the saved answers', async ()
   await screen.findByTestId('analytics.safe');
   // No payday → counts down to month end (Oct 9 → 23 days left incl. today).
   expect(screen.getByText(ar.safeUntilMonthEnd(23))).toBeTruthy();
+});
+
+
+test('Quick add: keypad, smart category from the note, three taps to save', async () => {
+  app();
+  await onboard('800');
+  press('dashboard.addExpense');
+  await screen.findByTestId('quickAdd');
+  // Save is disabled until there is an amount and a category.
+  expect(screen.getByTestId('quick.save').props.accessibilityState.disabled).toBe(true);
+  for (const k of ['1', '2', 'dec', '5', '0', '0', '0']) press(`key.${k}`);
+  expect(screen.getByTestId('quick.amount').props.children).toBe('\u200E12.500\u200E ر.ع.'); // 4th decimal ignored (OMR has 3)
+  press('key.back');
+  expect(screen.getByTestId('quick.amount').props.children).toBe('\u200E12.50\u200E ر.ع.');
+  press('key.0');
+  // Note «بنزين المها» → transport suggested from the keyword list.
+  type('quick.note', 'بنزين المها');
+  expect(await screen.findByTestId('quick.suggestion')).toBeTruthy();
+  expect(screen.getByText(ar.suggestedKeyword)).toBeTruthy();
+  press('quick.save');
+  await waitFor(() => expect(screen.queryByTestId('quickAdd')).toBeNull());
+  await waitFor(() => expect(label('summary.expenses')).toContain('12.500'));
+
+  // Second time the user's own history wins: same note → same category, labelled "from your history".
+  press('dashboard.addExpense');
+  await screen.findByTestId('quickAdd');
+  press('key.3');
+  type('quick.note', 'بنزين');
+  expect(await screen.findByText(ar.suggestedHistory)).toBeTruthy();
+  // A manual pick overrides the suggestion.
+  press('quick.cat.2');
+  expect(screen.queryByTestId('quick.suggestion')).toBeNull();
+  press('quick.yesterday');
+  press('quick.save');
+  await waitFor(() => expect(label('summary.expenses')).toContain('15.500'));
+});
+
+test('Quick add → More details carries the amount, note and category', async () => {
+  app();
+  await onboard('800');
+  press('dashboard.addExpense');
+  await screen.findByTestId('quickAdd');
+  press('key.7');
+  type('quick.note', 'Omantel');
+  press('quick.more');
+  await screen.findByTestId('expenseForm');
+  expect(screen.getByTestId('expense.amount').props.value).toBe('7');
+  expect(screen.getByTestId('expense.note').props.value).toBe('Omantel');
+  expect(screen.getByTestId('expense.cat.5').props.accessibilityState.selected).toBe(true); // telecom
+});
+
+
+test('hide amounts: one tap masks every amount, and it is remembered', async () => {
+  app();
+  await onboard('800');
+  await waitFor(() => expect(label('summary.net')).toContain('800.000'));
+  press('dashboard.hideAmounts');
+  await waitFor(() => expect(label('summary.net')).toContain('••••'));
+  expect(label('summary.net')).not.toContain('800');
+  await nav((router) => router.push('/settings'));
+  expect((await screen.findByTestId('settings.hideAmounts')).props.value).toBe(true);
+  fireEvent(screen.getByTestId('settings.hideAmounts'), 'valueChange', false);
+  await nav((router) => router.push('/'));
+  await waitFor(() => expect(label('summary.net')).toContain('800.000'));
+});
+
+test('app lock: enabling needs authentication; reopening shows the lock screen', async () => {
+  mockAuth.success = true;
+  mockAuth.calls = 0;
+  const r = app();
+  await onboard('800');
+  await nav((router) => router.push('/settings'));
+  await screen.findByTestId('settings.appLock');
+  fireEvent(screen.getByTestId('settings.appLock'), 'valueChange', true);
+  await waitFor(() => expect(screen.getByTestId('settings.appLock').props.value).toBe(true));
+  expect(mockAuth.calls).toBe(1);
+  // Not locked out right after turning it on.
+  expect(screen.queryByTestId('lockScreen')).toBeNull();
+
+  // Reopen: locked. A failed check keeps it locked; a successful one opens.
+  r.unmount();
+  mockAuth.success = false;
+  app();
+  await screen.findByTestId('lockScreen');
+  expect(screen.queryByTestId('dashboard')).toBeNull();
+  mockAuth.success = true;
+  press('lock.unlock');
+  await screen.findByTestId('dashboard');
+});
+
+
+test('smart analytics: recurring payments, unusual expense, calendar and the formula', async () => {
+  // Seed 3 months of history directly into the database the app will open.
+  const db = await mockDriver.current.open();
+  await migrate(db);
+  const repo = new FinanceRepository(db, () => new Date(2026, 9, 9, 10));
+  await repo.completeOnboarding({ currencyCode: 'OMR', month: { year: 2026, month: 10 }, incomeMinor: 1000000, incomeLabel: 'راتب' });
+  const cat = new Map((await repo.categories()).map((c) => [c.key, c.id]));
+  const add = (key: string, amountMinor: number, month: number, day: number, note = '') =>
+    repo.addExpense({ amountMinor, categoryId: cat.get(key as never)!, date: { year: 2026, month, day }, note });
+  for (const m of [7, 8, 9]) {
+    await add('housing', 300000, m, 1);
+    await add('telecom', 15000, m, 5, 'Omantel');
+    await add('entertainment', 4500, m, 12, 'نتفليكس');
+    for (const [d, a] of [[3, 8000], [10, 10000], [17, 12000], [24, 9000]]) await add('food', a, m, d, 'لولو');
+  }
+  await add('housing', 300000, 10, 1);
+  await add('telecom', 15000, 10, 5, 'Omantel');
+  await add('food', 40000, 10, 8, 'عزومة');
+  await db.close();
+
+  app();
+  await screen.findByTestId('dashboard');
+  await nav((router) => router.push('/analytics'));
+  await screen.findByTestId('analytics.health');
+
+  // Recurring: rent (no note, same amount) + Omantel + Netflix = 319.500 a month.
+  expect(screen.getByTestId('analytics.recurring.total').props.children).toBe(ar.recurringTotal('\u200E319.500\u200E ر.ع.'));
+  expect(screen.getByText('Omantel')).toBeTruthy();
+  expect(screen.getAllByText(ar.recurringPaid).length).toBe(2); // rent + Omantel paid in October
+  expect(screen.getByText(ar.recurringDue(12))).toBeTruthy(); // Netflix, usually on the 12th
+
+  // Unusual: 40.000 on food vs a typical 9.500.
+  expect(screen.getByText(ar.unusualBody('\u200E40.000\u200E ر.ع.', ar.cat.food, '\u200E9.500\u200E ر.ع.'))).toBeTruthy();
+
+  // Calendar shows everyday spending (rent on the 1st and Omantel on the 5th are bills):
+  // Oct 1–9 with everyday spending only on the 8th → 8 no-spend days.
+  expect(screen.getByTestId('analytics.noSpend').props.children).toBe(ar.calendarNoSpend(8));
+  // Lulu 4× a month is shopping, not a recurring payment.
+  expect(screen.queryByText('لولو')).toBeNull();
+
+  // Safe-to-spend explains itself with the user's own numbers.
+  press('analytics.safe.how');
+  expect(screen.getByTestId('analytics.safe.explain').props.children).toBe(
+    ar.safeExplain('\u200E1,000.000\u200E ر.ع.', '\u200E355.000\u200E ر.ع.', '\u200E0.000\u200E ر.ع.', '23'),
+  );
 });

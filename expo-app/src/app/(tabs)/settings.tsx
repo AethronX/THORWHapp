@@ -1,16 +1,29 @@
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
-import { Pressable, View } from 'react-native';
+import { Alert, Pressable, Switch, View } from 'react-native';
 
 import type { Locale, ThemeMode } from '../../state/appController';
 import { useAppState, useController, useUi } from '../../ui/AppContext';
 import { Button, Card, confirm, Icon, IconName, Row, runGuarded, Screen, T } from '../../ui/components';
+import { haptic } from '../../ui/feedback';
+import { authenticate, canUseLock } from '../../ui/lock';
 import { MIN_TAP, Radii, Space } from '../../ui/theme';
 
 export default function Settings() {
   const st = useAppState();
   const c = useController();
   const { s, p } = useUi();
+
+  async function toggleLock(on: boolean) {
+    if (!(await canUseLock())) {
+      Alert.alert(s.appLock, s.lockUnavailable);
+      return;
+    }
+    // Confirm it's the owner — both to turn on and to turn off.
+    if (!(await authenticate(s.unlockPrompt, s.cancel))) return;
+    haptic.success();
+    await runGuarded(() => c.setAppLock(on), s.errGeneric);
+  }
 
   async function deleteAll() {
     const yes = await confirm({
@@ -49,6 +62,9 @@ export default function Settings() {
         />
       </Card>
       <Card>
+        <ToggleRow icon="sparkle" label={s.haptics} hint={s.hapticsHint} value={st.haptics} onChange={(v) => runGuarded(() => c.setHaptics(v), s.errGeneric)} testID="settings.haptics" />
+      </Card>
+      <Card>
         <NavRow icon="smart" label={s.yourPlan} onPress={() => router.push('/profile')} testID="settings.profile" />
         <NavRow icon="plan" label={s.openPlan} onPress={() => router.push('/plan')} testID="settings.plan" />
         <NavRow icon="wallet" label={s.manageIncome} onPress={() => router.push('/income')} testID="settings.income" />
@@ -65,6 +81,15 @@ export default function Settings() {
         </Row>
       </Card>
       <Card title={s.privacy}>
+        <ToggleRow icon="fingerprint" label={s.appLock} hint={s.appLockHint} value={st.appLock} onChange={toggleLock} testID="settings.appLock" />
+        <ToggleRow
+          icon="eyeOff"
+          label={s.hideAmounts}
+          hint={s.hideAmountsHint}
+          value={st.hideAmounts}
+          onChange={(v) => runGuarded(() => c.setHideAmounts(v), s.errGeneric)}
+          testID="settings.hideAmounts"
+        />
         <T>{s.privacyBody}</T>
         <Button kind="danger" icon="delete" label={s.deleteAllData} onPress={deleteAll} testID="settings.deleteAll" />
       </Card>
@@ -116,5 +141,21 @@ function Segmented<V extends string>({ value, options, onChange, testID }: { val
         );
       })}
     </View>
+  );
+}
+
+function ToggleRow({ icon, label, hint, value, onChange, testID }: { icon: IconName; label: string; hint: string; value: boolean; onChange: (v: boolean) => void; testID: string }) {
+  const { p } = useUi();
+  return (
+    <Row style={{ alignItems: 'flex-start' }}>
+      <Icon name={icon} color={p.primary} />
+      <View style={{ flex: 1, gap: 2 }}>
+        <T>{label}</T>
+        <T variant="small" muted>
+          {hint}
+        </T>
+      </View>
+      <Switch testID={testID} value={value} onValueChange={onChange} trackColor={{ true: p.primary, false: p.outline }} accessibilityLabel={label} />
+    </Row>
   );
 }

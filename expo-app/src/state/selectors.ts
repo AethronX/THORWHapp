@@ -12,6 +12,7 @@ import {
   safeToSpendPerDay,
 } from '../domain/analytics';
 import { buildInsights, Insight } from '../domain/insights';
+import { dailyTotals, detectRecurring, RecurringPayment, unusualExpense, UnusualExpense, weekdayPattern, WeekdayPattern } from '../domain/smart';
 import { suggestPlan } from '../domain/profile';
 import type { CategorySpend } from '../domain/models';
 import type { AppState } from './appController';
@@ -73,6 +74,8 @@ export interface SafeToSpend {
   daysLeft: number;
   untilPayday: boolean;
   plannedSavingMinor: number;
+  incomeMinor: number;
+  spentMinor: number;
 }
 
 /**
@@ -90,6 +93,8 @@ export function safeToSpend(s: AppState): SafeToSpend | null {
     daysLeft,
     untilPayday: payday != null,
     plannedSavingMinor,
+    incomeMinor: income,
+    spentMinor: expenseTotal(s),
   };
 }
 
@@ -101,4 +106,27 @@ export function monthEndForecast(s: AppState): number | null {
     .filter((x) => x.category.key != null && (FIXED_CATEGORY_KEYS as readonly string[]).includes(x.category.key))
     .reduce((a, x) => a + x.spentMinor, 0);
   return projectMonthEndSpending(spent - fixed, s.today, fixed);
+}
+
+// -- smart (src/domain/smart.ts) -----------------------------------------------
+
+/** Ids of the categories paid about once a month (rent, bills, instalments). */
+export function fixedCategoryIds(s: AppState): Set<number> {
+  const keys = FIXED_CATEGORY_KEYS as readonly string[];
+  return new Set([...s.categoriesById.values()].filter((c) => c.key != null && keys.includes(c.key)).map((c) => c.id));
+}
+
+/** Recurring payments seen in the 3 months before the viewed month. */
+export const recurring = (s: AppState): RecurringPayment[] => detectRecurring(s.history, s.month, fixedCategoryIds(s));
+
+/** Everyday-spending weekday habit over the loaded history (fixed bills excluded). */
+export const weekdayHabit = (s: AppState): WeekdayPattern | null => weekdayPattern(s.history, fixedCategoryIds(s));
+
+/** Latest unusually large everyday expense of the viewed month. */
+export const unusual = (s: AppState): UnusualExpense | null => unusualExpense(s.history, s.month, fixedCategoryIds(s));
+
+/** Everyday spending per day of the viewed month (rent and bills excluded, so habits show). */
+export function calendar(s: AppState): number[] {
+  const fixed = fixedCategoryIds(s);
+  return dailyTotals(s.expenses.filter((e) => !fixed.has(e.categoryId)), s.month);
 }

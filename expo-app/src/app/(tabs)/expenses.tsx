@@ -49,7 +49,7 @@ export default function Expenses() {
           })
         )}
       </Screen>
-      <Fab label={s.addExpense} onPress={() => router.push('/expense/new')} testID="expenses.add" />
+      <Fab label={s.addExpense} onPress={() => router.push('/quick-add')} testID="expenses.add" />
     </View>
   );
 }

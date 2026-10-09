@@ -113,3 +113,25 @@ describe('dates', () => {
     expect(to(2025, 1, 1)).toBe(0);
   });
 });
+
+describe('keypadInput', () => {
+  const { keypadInput } = require('../src/core/keypad');
+  const typeKeys = (keys: string[], exp = 3) => keys.reduce((acc: string, k: string) => keypadInput(acc, k, exp), '');
+  test('digits, decimal point and backspace', () => {
+    expect(typeKeys(['1', '2', '.', '5'])).toBe('12.5');
+    expect(typeKeys(['.', '7'])).toBe('0.7');
+    expect(typeKeys(['1', '.', '.', '2'])).toBe('1.2'); // one point only
+    expect(typeKeys(['1', '2', 'back'])).toBe('1');
+    expect(typeKeys(['back'])).toBe('');
+  });
+  test('respects currency decimals (OMR 3, AED 2, JPY-like 0)', () => {
+    expect(typeKeys(['1', '.', '2', '3', '4', '5'], 3)).toBe('1.234');
+    expect(typeKeys(['1', '.', '2', '3', '4'], 2)).toBe('1.23');
+    expect(typeKeys(['1', '.', '2'], 0)).toBe('12');
+  });
+  test('no leading zeros, at most 9 whole digits', () => {
+    expect(typeKeys(['0', '0', '5'])).toBe('5');
+    expect(typeKeys(['0', '.', '5'])).toBe('0.5');
+    expect(typeKeys(Array(12).fill('9'))).toBe('999999999');
+  });
+});

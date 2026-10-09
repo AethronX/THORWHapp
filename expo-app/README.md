@@ -3,8 +3,11 @@
 Arabic-first personal finance app: income, expenses, budgets, savings goals and a savings
 calculator, plus a five-question onboarding that builds a personal plan and an analytics tab
 (financial-health score, safe-to-spend per day, month-end forecast, category and 6-month charts).
+Smart and modern, all on the device: quick add with a keypad and automatic category suggestion,
+recurring-payment detection, spending calendar, unusual-expense alert, hide-amounts mode, app lock
+(Face ID / fingerprint), haptics and motion that respect Reduce Motion, Liquid Glass on iOS 26.
 Local-only (SQLite on the device), no account, no ads, no tracking.
-Competitor study: `../docs/COMPETITIVE_ANALYSIS.md` · formulas: `../docs/ANALYTICS.md`.
+Competitor study: `../docs/COMPETITIVE_ANALYSIS.md` · design research 2026: `../docs/DESIGN_RESEARCH_2026.md` · formulas: `../docs/ANALYTICS.md`.
 
 Screenshots (web render of the real screens with sample data, iPhone size): `../docs/screenshots/`.
 

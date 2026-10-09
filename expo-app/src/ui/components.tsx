@@ -1,7 +1,9 @@
 import { ReactNode } from 'react';
+import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import {
   ActivityIndicator,
   Alert,
+  Platform,
   Pressable,
   ScrollView,
   StyleProp,
@@ -17,6 +19,7 @@ import {
 import { addMonths } from '../core/dates';
 import { useAppState, useController, useUi } from './AppContext';
 import { categoryIcon, formatMonth } from './format';
+import { PressScale, useCountUp } from './motion';
 import { IconName, PhIcon } from './icons';
 import type { Category } from '../domain/models';
 import { useState } from 'react';
@@ -96,8 +99,8 @@ export function Screen({ children, testID }: { children: ReactNode; testID?: str
   );
 }
 
-export function Row({ children, style, gap = Space.sm }: { children: ReactNode; style?: StyleProp<ViewStyle>; gap?: number }) {
-  return <View style={[{ flexDirection: 'row', alignItems: 'center', gap }, style]}>{children}</View>;
+export function Row({ children, style, gap = Space.sm, testID }: { children: ReactNode; style?: StyleProp<ViewStyle>; gap?: number; testID?: string }) {
+  return <View testID={testID} style={[{ flexDirection: 'row', alignItems: 'center', gap }, style]}>{children}</View>;
 }
 
 export function Card({
@@ -212,12 +215,56 @@ export function IconButton({ icon, label, onPress, disabled, testID }: { icon: I
   );
 }
 
-/** Floating action button pinned to the bottom "end" corner. */
+function liquidGlass(): boolean {
+  try {
+    return Platform.OS === 'ios' && isLiquidGlassAvailable();
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Floating action button pinned to the bottom "end" corner. On iOS 26+ it is
+ * an emerald-tinted Liquid Glass control — Apple's guidance: glass for
+ * controls floating above content, never for the content itself. Elsewhere a
+ * solid emerald button.
+ */
 export function Fab({ label, onPress, testID }: { label: string; onPress: () => void; testID?: string }) {
+  const { p } = useUi();
+  if (liquidGlass()) {
+    return (
+      <View pointerEvents="box-none" style={{ position: 'absolute', bottom: Space.lg, end: Space.lg }}>
+        <PressScale testID={testID} accessibilityRole="button" accessibilityLabel={label} onPress={onPress}>
+          <GlassView
+            glassEffectStyle="regular"
+            tintColor={p.primary}
+            isInteractive
+            style={{ minHeight: MIN_TAP + 4, paddingHorizontal: Space.xl, borderRadius: Radii.pill, flexDirection: 'row', alignItems: 'center', gap: Space.sm }}
+          >
+            <Icon name="add" size={20} color={p.onPrimary} />
+            <T variant="subtitle" color={p.onPrimary} style={{ fontFamily: Fonts.medium }}>
+              {label}
+            </T>
+          </GlassView>
+        </PressScale>
+      </View>
+    );
+  }
   return (
     <View pointerEvents="box-none" style={{ position: 'absolute', bottom: Space.lg, end: Space.lg }}>
       <Button label={label} icon="add" onPress={onPress} testID={testID} style={{ borderRadius: Radii.lg, ...Elevation.overlay }} />
     </View>
+  );
+}
+
+/** An amount that counts up to its new value (static with Reduce Motion). */
+export function AnimatedAmount({ minor, variant = 'display', color, testID }: { minor: number; variant?: Variant; color?: string; testID?: string }) {
+  const { money } = useUi();
+  const shown = useCountUp(minor);
+  return (
+    <T variant={variant} color={color} testID={testID}>
+      {money(shown)}
+    </T>
   );
 }
 

@@ -13,19 +13,19 @@ import { categoryTone, MIN_TAP, Radii, Space } from '../../ui/theme';
 
 /** Add (`/expense/new`) or edit (`/expense/<id>`) an expense. */
 export default function ExpenseForm() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, amount: amountParam, note: noteParam, cat: catParam } = useLocalSearchParams<{ id: string; amount?: string; note?: string; cat?: string }>();
   const st = useAppState();
   const c = useController();
   const { s, p } = useUi();
   const existing = id === 'new' ? undefined : st.expenses.find((e) => String(e.id) === id);
 
-  const [amount, setAmount] = useState(existing ? minorToEditable(existing.amountMinor, st.currency) : '');
-  const [categoryId, setCategoryId] = useState<number | null>(existing?.categoryId ?? null);
+  const [amount, setAmount] = useState(existing ? minorToEditable(existing.amountMinor, st.currency) : (amountParam ?? ''));
+  const [categoryId, setCategoryId] = useState<number | null>(existing?.categoryId ?? (catParam ? Number(catParam) : null));
   // Default: today in the current month, else the 1st of the viewed month.
   const [date, setDate] = useState<Day>(
     existing?.date ?? (isViewingCurrentMonth(st) ? st.today : { ...st.month, day: 1 }),
   );
-  const [note, setNote] = useState(existing?.note ?? '');
+  const [note, setNote] = useState(existing?.note ?? noteParam ?? '');
   const [submitted, setSubmitted] = useState(false);
   const [busy, setBusy] = useState(false);
 

@@ -17,6 +17,9 @@ export interface AppState {
   readonly currency: Currency;
   readonly locale: Locale;
   readonly themeMode: ThemeMode;
+  readonly appLock: boolean;
+  readonly hideAmounts: boolean;
+  readonly haptics: boolean;
   readonly onboarded: boolean;
   /** The month being viewed. */
   readonly month: YearMonth;
@@ -38,6 +41,8 @@ export interface AppState {
    * when viewing the current month; null otherwise. Fair "vs last month".
    */
   readonly previousSamePeriodExpensesMinor: number | null;
+  /** Expenses of the viewed month and the 3 before it (smart features). */
+  readonly history: readonly Expense[];
 }
 
 /**
@@ -62,6 +67,9 @@ export class AppController {
       currency: DEFAULT_CURRENCY,
       locale: 'ar',
       themeMode: 'light',
+      appLock: false,
+      hideAmounts: false,
+      haptics: true,
       onboarded: false,
       month: monthOf(today),
       today,
@@ -75,6 +83,7 @@ export class AppController {
       profile: null,
       trend: [],
       previousSamePeriodExpensesMinor: null,
+      history: [],
     };
   }
 
@@ -119,6 +128,9 @@ export class AppController {
         themeMode: theme === 'dark' || theme === 'system' ? theme : 'light',
         onboarded: s[SettingKeys.onboarded] === '1',
         profile: parseProfile(s[SettingKeys.profile]),
+        appLock: s[SettingKeys.appLock] === '1',
+        hideAmounts: s[SettingKeys.hideAmounts] === '1',
+        haptics: s[SettingKeys.haptics] !== '0',
       };
       this.set({ ...patch, ...(await this.load(this.state.month)), status: 'ready' });
     } catch {
@@ -132,11 +144,13 @@ export class AppController {
     const today = dayFromDate(this.clock());
     const all = await r.categories(true);
     const incomes = await r.incomesFor(month);
+    const history = await r.expensesBetween(addMonths(month, -3), month);
     return {
       month,
       categories: all.filter((c) => !c.archived),
       categoriesById: new Map(all.map((c) => [c.id, c])),
-      expenses: await r.expensesFor(month),
+      expenses: history.filter((e) => sameMonth(monthOf(e.date), month)),
+      history,
       incomes,
       budgets: new Map((await r.budgets()).map((b) => [b.categoryId, b.limitMinor])),
       goals: await r.goals(),
@@ -216,6 +230,21 @@ export class AppController {
   async setThemeMode(themeMode: ThemeMode) {
     await this.r.setSetting(SettingKeys.themeMode, themeMode);
     this.set({ themeMode });
+  }
+
+  async setAppLock(appLock: boolean) {
+    await this.r.setSetting(SettingKeys.appLock, appLock ? '1' : '0');
+    this.set({ appLock });
+  }
+
+  async setHideAmounts(hideAmounts: boolean) {
+    await this.r.setSetting(SettingKeys.hideAmounts, hideAmounts ? '1' : '0');
+    this.set({ hideAmounts });
+  }
+
+  async setHaptics(haptics: boolean) {
+    await this.r.setSetting(SettingKeys.haptics, haptics ? '1' : '0');
+    this.set({ haptics });
   }
 
   async setMonth(month: YearMonth) {

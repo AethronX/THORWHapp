@@ -3,7 +3,7 @@ import { useColorScheme } from 'react-native';
 
 import type { AppController, AppState } from '../state/appController';
 import { STRINGS, Strings } from './i18n';
-import { formatMoney } from './format';
+import { currencySymbol, formatMoney } from './format';
 import { dark, light, Palette } from './theme';
 
 const Ctx = createContext<AppController | null>(null);
@@ -28,8 +28,10 @@ export interface UiKit {
   s: Strings;
   p: Palette;
   rtl: boolean;
-  /** Format minor units in the active currency and language. */
+  /** Format minor units in the active currency and language (masked when amounts are hidden). */
   money: (minor: number, signed?: boolean) => string;
+  /** Amounts are masked ("hide amounts" privacy mode). */
+  hidden: boolean;
 }
 
 export function useUi(): UiKit {
@@ -41,8 +43,14 @@ export function useUi(): UiKit {
       s: STRINGS[st.locale],
       p: isDark ? dark : light,
       rtl: st.locale === 'ar',
-      money: (minor: number, signed = false) => formatMoney(minor, st.currency, st.locale, signed),
+      money: (minor: number, signed = false) =>
+        st.hideAmounts
+          ? st.locale === 'ar'
+            ? `•••• ${currencySymbol(st.currency, st.locale)}`
+            : `${st.currency.code} ••••`
+          : formatMoney(minor, st.currency, st.locale, signed),
+      hidden: st.hideAmounts,
     }),
-    [st.locale, st.currency, isDark],
+    [st.locale, st.currency, isDark, st.hideAmounts],
   );
 }

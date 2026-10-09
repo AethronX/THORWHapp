@@ -17,7 +17,7 @@ NAMES = {
     'question': 'Question', 'income': 'ArrowDownLeft', 'expense': 'ArrowUpRight', 'wallet': 'Wallet',
     'savings': 'PiggyBank', 'coins': 'Coins', 'currency': 'CurrencyCircleDollar',
     'handCoins': 'HandCoins', 'trendUp': 'TrendUp', 'trendDown': 'TrendDown', 'chartUp': 'ChartLineUp',
-    'health': 'Gauge', 'trophy': 'Trophy', 'shield': 'ShieldCheck', 'calendar': 'CalendarBlank',
+    'health': 'Gauge', 'trophy': 'Trophy', 'shield': 'ShieldCheck', 'calendar': 'CalendarBlank', 'eye': 'Eye', 'eyeOff': 'EyeSlash', 'repeat': 'Repeat', 'fingerprint': 'Fingerprint', 'quick': 'Lightning', 'backspace': 'Backspace',
     'lock': 'Lock', 'language': 'Translate', 'sun': 'Sun', 'moon': 'Moon', 'radioOn': 'RadioButton',
     'radioOff': 'Circle', 'catHousing': 'House', 'catFood': 'ForkKnife', 'catTransport': 'Car',
     'catUtilities': 'Lightning', 'catTelecom': 'DeviceMobile', 'catHealth': 'Heartbeat',

@@ -21,6 +21,12 @@ export const SettingKeys = {
   themeMode: 'theme_mode',
   /** Questionnaire answers (JSON, validated by parseProfile on read). */
   profile: 'profile',
+  /** '1' = ask for biometrics / device passcode on open. */
+  appLock: 'app_lock',
+  /** '1' = mask amounts on screen (privacy in public). */
+  hideAmounts: 'hide_amounts',
+  /** '0' = haptic feedback off. */
+  haptics: 'haptics',
 } as const;
 
 export class ValidationError extends Error {
@@ -224,6 +230,11 @@ export class FinanceRepository {
   // -- expenses --------------------------------------------------------------
 
   async expensesFor(month: YearMonth): Promise<Expense[]> {
+    return this.expensesBetween(month, month);
+  }
+
+  /** Expenses from the first day of `from` to the last day of `to`, newest first. */
+  async expensesBetween(from: YearMonth, to: YearMonth): Promise<Expense[]> {
     const rows = await this.db.all<{
       id: number;
       amount_minor: number;
@@ -233,7 +244,7 @@ export class FinanceRepository {
     }>(
       `SELECT id, amount_minor, category_id, day, note FROM expenses
        WHERE day BETWEEN ? AND ? ORDER BY day DESC, id DESC`,
-      [firstDayKey(month), lastDayKey(month)],
+      [firstDayKey(from), lastDayKey(to)],
     );
     return rows.map((r) => ({
       id: r.id,

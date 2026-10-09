@@ -1,5 +1,12 @@
 # Project status
 
+## Update 2026-10-09 (newest): design research + smart, modern features
+Study with 64 sources: docs/DESIGN_RESEARCH_2026.md. Built (all run in Expo Go): quick add with keypad and
+smart category (D-026); recurring payments, spending calendar, weekday habit, unusual expense, formula
+explainer (D-027); motion respecting Reduce Motion, optional haptics, Liquid Glass FAB on iOS 26 (D-028);
+hide amounts and app lock (D-029). Verified here: `tsc` 0 errors, **267 tests passing**, Android and iOS
+bundles build. Not verified: anything on a real device (haptics, Face ID, glass, motion feel).
+
 ## Update 2026-10-09 (latest): competitor study, onboarding questions, analytics, new icons
 Study: docs/COMPETITIVE_ANALYSIS.md (desk research, not hands-on testing). Formulas: docs/ANALYTICS.md.
 Built: five-question onboarding → personal plan (D-023); analytics tab with health score,

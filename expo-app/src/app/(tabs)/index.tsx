@@ -7,10 +7,11 @@ import type { Insight } from '../../domain/insights';
 import { isGoalReached, spendUsage } from '../../domain/models';
 import { expenseTotal, health, incomeTotal, insights, netCashFlow, safeToSpend, savingsRate, spends } from '../../state/selectors';
 import { useAppState, useController, useUi } from '../../ui/AppContext';
-import { Button, Card, Fab, Icon, IconName, LabeledProgress, MonthSwitcher, Row, runGuarded, Screen, T } from '../../ui/components';
+import { AnimatedAmount, Button, Card, Fab, Icon, IconName, LabeledProgress, MonthSwitcher, Row, runGuarded, Screen, T } from '../../ui/components';
+import { haptic } from '../../ui/feedback';
 import { categoryLabel, formatPercent } from '../../ui/format';
 import { ScoreRing } from '../../ui/charts';
-import { Elevation, Radii, Space } from '../../ui/theme';
+import { Elevation, MIN_TAP, Radii, Space } from '../../ui/theme';
 
 export default function Dashboard() {
   const st = useAppState();
@@ -51,14 +52,29 @@ export default function Dashboard() {
         <View style={{ backgroundColor: p.hero, borderRadius: Radii.lg, padding: Space.xl, gap: Space.lg, overflow: 'hidden', ...Elevation.raised }}>
           {/* Signature detail: a fine gold rule along the top edge. */}
           <View style={{ position: 'absolute', top: 0, start: Space.xl, end: Space.xl, height: 2, backgroundColor: p.heroAccent, borderBottomLeftRadius: 2, borderBottomRightRadius: 2 }} />
-          <View accessible accessibilityLabel={`${s.net}: ${money(net)}`} testID="summary.net">
-            <T variant="label" color={p.heroAccent}>
-              {s.net}
-            </T>
-            <T variant="display" color={p.onHero}>
-              {money(net)}
-            </T>
-          </View>
+          <Row style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <View accessible accessibilityLabel={`${s.net}: ${money(net)}`} testID="summary.net" style={{ flex: 1 }}>
+              <T variant="label" color={p.heroAccent}>
+                {s.net}
+              </T>
+              <AnimatedAmount minor={net} color={p.onHero} />
+            </View>
+            {/* Privacy in public: mask every amount with one tap. */}
+            <Pressable
+              testID="dashboard.hideAmounts"
+              accessibilityRole="switch"
+              accessibilityState={{ checked: st.hideAmounts }}
+              accessibilityLabel={s.hideAmounts}
+              hitSlop={8}
+              onPress={() => {
+                haptic.tick();
+                runGuarded(() => c.setHideAmounts(!st.hideAmounts), s.errGeneric);
+              }}
+              style={{ width: MIN_TAP, height: MIN_TAP, alignItems: 'center', justifyContent: 'center', borderRadius: Radii.pill }}
+            >
+              <Icon name={st.hideAmounts ? 'eyeOff' : 'eye'} color={p.heroAccent} />
+            </Pressable>
+          </Row>
           <View style={{ height: 1, backgroundColor: p.onHero, opacity: 0.12 }} />
           <Row style={{ flexWrap: 'wrap' }} gap={Space.lg}>
             <Metric label={s.income} value={money(incomeTotal(st))} icon="income" testID="summary.income" />
@@ -135,7 +151,7 @@ export default function Dashboard() {
           )}
         </Card>
       </Screen>
-      <Fab label={s.addExpense} onPress={() => router.push('/expense/new')} testID="dashboard.addExpense" />
+      <Fab label={s.addExpense} onPress={() => router.push('/quick-add')} testID="dashboard.addExpense" />
     </View>
   );
 }
