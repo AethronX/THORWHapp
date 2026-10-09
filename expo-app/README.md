@@ -39,6 +39,7 @@ Open the link it prints (expo.dev → Updates) on the iPhone and choose **Open i
 its QR code with the Camera. Sign in to Expo Go with the **same Expo account**.
 After later code changes, run the `update` command again and reopen the project in Expo Go.
 Installed builds never check for updates by themselves (`updates.checkAutomatically: NEVER`).
+The app targets iOS and Android only (`expo.platforms`), so `eas update` does not try to build a web bundle.
 
 ## 2. Checks
 ```bash
