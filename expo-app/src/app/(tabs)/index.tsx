@@ -64,6 +64,9 @@ export default function Dashboard() {
         <MonthSwitcher />
 
         <View style={{ backgroundColor: p.hero, borderRadius: Radii.lg, padding: Space.xl, gap: Space.lg, overflow: 'hidden', ...Elevation.raised }}>
+          {/* Quiet depth: two large soft rings in the corner (decorative). */}
+          <View pointerEvents="none" importantForAccessibility="no-hide-descendants" style={{ position: 'absolute', top: -70, end: -70, width: 220, height: 220, borderRadius: 110, borderWidth: 28, borderColor: p.onHero, opacity: 0.05 }} />
+          <View pointerEvents="none" importantForAccessibility="no-hide-descendants" style={{ position: 'absolute', bottom: -90, start: -60, width: 180, height: 180, borderRadius: 90, backgroundColor: p.onHero, opacity: 0.04 }} />
           {/* Signature detail: a fine gold rule along the top edge. */}
           <View style={{ position: 'absolute', top: 0, start: Space.xl, end: Space.xl, height: 2, backgroundColor: p.brandGold, borderBottomLeftRadius: 2, borderBottomRightRadius: 2 }} />
           <Row style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -93,12 +96,11 @@ export default function Dashboard() {
               <Icon name={st.hideAmounts ? 'eyeOff' : 'eye'} color={p.heroAccent} />
             </Pressable>
           </Row>
-          <View style={{ height: 1, backgroundColor: p.onHero, opacity: 0.12 }} />
-          <Row style={{ flexWrap: 'wrap' }} gap={Space.lg}>
+          <Row gap={Space.sm}>
             <Metric label={s.income} value={money(incomeTotal(st))} icon="income" testID="summary.income" />
             <Metric label={s.expenses} value={money(expenseTotal(st))} icon="expense" testID="summary.expenses" />
-            <Metric label={s.savingsRate} value={rate == null ? s.notAvailable : formatPercent(rate)} icon="savings" testID="summary.rate" />
           </Row>
+          <SavingsBar rate={rate} />
           {/* Honest about the data: only what the user recorded. */}
           <Row gap={Space.xs} style={{ alignItems: 'flex-start' }}>
             <Icon name="info" size={16} color={p.onHeroMuted} />
@@ -202,18 +204,48 @@ export default function Dashboard() {
   );
 }
 
+/** Income / expenses tile on the hero: icon chip, label, amount. */
 function Metric({ label, value, icon, testID }: { label: string; value: string; icon: IconName; testID?: string }) {
   const { p, say } = useUi();
   return (
-    <View accessible accessibilityLabel={say(`${label}: ${value}`)} testID={testID} style={{ flexDirection: 'row', gap: Space.xs, alignItems: 'flex-start', flexShrink: 1 }}>
-      <Icon name={icon} size={18} color={p.onHeroMuted} />
-      <View>
+    <View accessible accessibilityLabel={say(`${label}: ${value}`)} testID={testID} style={{ flex: 1, borderRadius: Radii.md, padding: Space.md, gap: Space.xs, overflow: 'hidden' }}>
+      <View pointerEvents="none" style={{ position: 'absolute', top: 0, bottom: 0, start: 0, end: 0, backgroundColor: p.onHero, opacity: 0.08 }} />
+      <Row gap={Space.xs}>
+        <View style={{ width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: p.heroAccent }}>
+          <Icon name={icon} size={16} weight="regular" color={p.heroAccent} />
+        </View>
         <T variant="small" color={p.onHeroMuted}>
           {label}
         </T>
-        <T variant="amount" color={p.onHero}>
+      </Row>
+      <T variant="amount" color={p.onHero}>
+        {value}
+      </T>
+    </View>
+  );
+}
+
+/** Savings rate as a labelled gold bar (text + bar, never colour alone). */
+function SavingsBar({ rate }: { rate: number | null }) {
+  const { s, p, say } = useUi();
+  const value = rate == null ? s.notAvailable : formatPercent(rate);
+  const fill = rate == null ? 0 : Math.max(0, Math.min(1, rate));
+  return (
+    <View accessible accessibilityLabel={say(`${s.savingsRate}: ${value}`)} testID="summary.rate" style={{ gap: Space.xs }}>
+      <Row style={{ justifyContent: 'space-between' }}>
+        <Row gap={Space.xs}>
+          <Icon name="savings" size={18} color={p.heroAccent} />
+          <T variant="small" color={p.onHeroMuted}>
+            {s.savingsRate}
+          </T>
+        </Row>
+        <T variant="label" color={p.onHero}>
           {value}
         </T>
+      </Row>
+      <View style={{ height: 8, borderRadius: Radii.pill, overflow: 'hidden' }}>
+        <View style={{ position: 'absolute', top: 0, bottom: 0, start: 0, end: 0, backgroundColor: p.onHero, opacity: 0.12 }} />
+        <View style={{ height: 8, width: `${Math.round(fill * 100)}%`, backgroundColor: p.heroAccent, borderRadius: Radii.pill }} />
       </View>
     </View>
   );
