@@ -759,7 +759,7 @@ const ar: Strings = {
   debtRate: (rate) => `فائدة سنوية ${rate}%`,
   debtNoRate: 'بلا فائدة مسجلة',
   debtPaidOff: 'تم السداد',
-  payoffBase: (months, when, interest) => `بهذا القسط: ينتهي السداد خلال ${months} (نحو ${when})، بفائدة إجمالية تقريبية ${interest}.`,
+  payoffBase: (months, when, interest) => `بهذا القسط: ينتهي السداد خلال ${months} (نحو ${when})، بفائدة إجمالية تقريبية ${endSentence(interest)}`,
   payoffNever: 'هذا القسط لا يغطي الفائدة الشهرية — لن ينتهي السداد بهذا المبلغ.',
   payoffExtra: (extra, months, interest) => `لو دفعت ${extra} إضافية شهريًا: تنتهي أبكر بـ${months} وتوفّر نحو ${interest} من الفائدة.`,
   payoffAssumption: 'يفترض فائدة ثابتة بلا رسوم ولا اقتراض جديد — تقدير وليس كشف حساب من البنك.',

@@ -1,4 +1,19 @@
-# Release process (Android)
+# Release process
+
+## Expo app (current) — `expo-app/`
+Builds are made with **EAS Build** from the owner's machine (`eas login`). Step-by-step launch checklist,
+owner decisions and build commands: **`docs/LAUNCH_CHECKLIST.md`**. Store texts and form answers:
+`docs/STORE_LISTING.md`. Privacy: `PRIVACY.md` and the public-policy draft `docs/PRIVACY_POLICY_AR.md`.
+- Version: `expo.version` (now 0.9.0, release candidate), `android.versionCode`, `ios.buildNumber` in `app.json`
+  — raise them for every store build.
+- Database: schema v2; every schema change needs a migration step and a test that upgrades a real older database
+  (see `__tests__/dataV2.test.ts`). The app refuses a database written by a newer schema, so never ship a schema
+  bump in a build you might need to roll back.
+- `eas update` targets iOS and Android only (`expo.platforms`).
+
+---
+
+## Flutter app (legacy, kept for reference)
 
 Status: **no release build has been produced yet.** The development container could not download the
 Android SDK (`dl.google.com` / `maven.google.com` blocked by its network policy). Everything below

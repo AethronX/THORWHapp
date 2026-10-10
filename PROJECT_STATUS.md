@@ -1,5 +1,13 @@
 # Project status
 
+## Update 2026-10-10 (later): toward launch — release candidate 0.9.0
+Added: database v2 with tested v1→v2 migration (obligations, payments, assets, goal pause); net worth & payoff
+plans (D-034); export JSON/CSV via share sheet (D-035); unneeded Android permissions blocked; versions set
+(0.9.0, versionCode 1, buildNumber 1); launch docs: docs/LAUNCH_CHECKLIST.md, docs/STORE_LISTING.md,
+docs/PRIVACY_POLICY_AR.md (draft for legal review); PRIVACY.md rewritten for the Expo app.
+Remaining before release: real-device testing, closed test with real users, owner decisions (app ID, trademark,
+legal review of the policy, support email, monetisation timing). Nothing has been published.
+
 ## Update 2026-10-10: Tharwati 2030 — audit + first three batches
 Audit with evidence and ordered plan: docs/AUDIT_2030.md (rollback point before changes: 6336e54).
 1. Brand palette anchors with AA-safe text shades (D-030); home metric renamed «صافي التدفق · month», defined,
