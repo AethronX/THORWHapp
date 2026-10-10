@@ -18,6 +18,13 @@ export default function Persona() {
   const st = useAppState();
   const { s, p, money } = useUi();
   const r = persona(st);
+  const ACTIONS: Record<string, { label: string; to: '/goals' | '/budgets' }> = {
+    paydaySprinter: { label: s.pActGoals, to: '/goals' },
+    weekender: { label: s.pActLimit, to: '/budgets' },
+    focused: { label: s.pActLimit, to: '/budgets' },
+    steady: { label: s.pActGoals, to: '/goals' },
+  };
+  const act = r.status === 'ready' ? ACTIONS[r.key] : ACTIONS.steady;
 
   if (r.status === 'needsData')
     return (
@@ -58,17 +65,20 @@ export default function Persona() {
         </Row>
         <Button
           kind="tonal"
-          label={s.budgetsTitle}
+          label={act.label}
           onPress={() => {
             haptic.tap();
-            router.push('/budgets');
+            router.push(act.to);
           }}
           testID="persona.act"
           style={{ alignSelf: 'flex-start' }}
         />
       </Card>
 
-      <Card title={s.personaIntro} testID="persona.traits">
+      <Card title={s.traitsTitle} testID="persona.traits">
+        <T variant="small" muted>
+          {s.personaIntro}
+        </T>
         {r.traits.map((t) => (
           <TraitRow key={t.key} t={t} />
         ))}

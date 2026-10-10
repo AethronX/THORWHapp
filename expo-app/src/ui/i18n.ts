@@ -477,6 +477,7 @@ const en = {
   investDisclaimer: 'Tharwati is not a licensed investment adviser and does not recommend products. For personal advice, consult a licensed provider.',
   // Money personality (D-045)
   personaTitle: 'Your money personality',
+  traitsTitle: 'Your three traits',
   personaIntro: 'Read from your own records: when you spend and on what. No comparison with other people — we have no such data.',
   personaEntry: (name: string) => `Your pattern: ${name}`,
   personaEntryNoData: 'Record a little more and we will read your pattern',
@@ -1027,6 +1028,7 @@ const ar: Strings = {
   ],
   investDisclaimer: 'ثروتي ليس جهة استشارة استثمارية مرخّصة ولا يوصي بمنتجات. للمشورة الشخصية راجع جهة مرخّصة.',
   personaTitle: 'شخصيتك المالية',
+  traitsTitle: 'سماتك الثلاث',
   personaIntro: 'مقروءة من سجلّك أنت: متى تصرف وعلى ماذا. لا مقارنة بمستخدمين آخرين — لا نملك بيانات كهذه.',
   personaEntry: (name) => `نمطك: ${name}`,
   personaEntryNoData: 'سجّل قليلًا أكثر لنقرأ نمطك',
