@@ -22,7 +22,7 @@ export default function Dashboard() {
   const net = netCashFlow(st);
   const rate = savingsRate(st);
   // Next step first; alerts below skip whatever the top step already says.
-  const steps = guidance(st, s.emergencyGoalName);
+  const steps = guidance(st, { emergency: s.emergencyGoalName, season: s.seasonGoalName });
   const top = steps[0];
   const sameAsTop = (i: Insight) =>
     !!top &&

@@ -3,11 +3,13 @@ import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { minorToEditable } from '../core/amountParser';
+import { dayKey } from '../core/dates';
 import type { Guidance } from '../domain/guidance';
 import { useAppState, useController, useUi } from './AppContext';
 import { Button, Card, Icon, Row, runGuarded, T } from './components';
 import { haptic } from './feedback';
-import { categoryLabel, formatPercent } from './format';
+import type { Locale } from '../state/appController';
+import { categoryLabel, formatDate, formatPercent } from './format';
 import type { Strings } from './i18n';
 import { Radii, Space } from './theme';
 
@@ -18,7 +20,7 @@ interface Text {
 }
 
 /** Words for one guidance item: what, why (with the user's own numbers), and the action label. */
-export function guidanceText(g: Guidance, s: Strings, money: (m: number) => string, catName: (id: number) => string): Text {
+export function guidanceText(g: Guidance, s: Strings, money: (m: number) => string, catName: (id: number) => string, locale: Locale = 'ar'): Text {
   const a = g.action;
   switch (g.kind) {
     case 'addIncome':
@@ -45,6 +47,14 @@ export function guidanceText(g: Guidance, s: Strings, money: (m: number) => stri
       };
     case 'saveSurplus':
       return { title: s.gSurplusTitle(money(g.netMinor)), why: s.gSurplusWhy(g.goal.name), action: s.gAddToGoal };
+    case 'payYourselfFirst':
+      return { title: s.gPayFirstTitle(money(g.amountMinor), g.goal.name), why: s.gPayFirstWhy(g.daysSincePayday, money(g.amountMinor)), action: s.gAddToGoal };
+    case 'season':
+      return {
+        title: s.gSeasonTitle(s.seasonName[g.season], g.daysAway),
+        why: s.gSeasonWhy(s.seasonName[g.season], formatDate(g.date, locale), g.months),
+        action: s.gCreateGoal,
+      };
   }
 }
 
@@ -76,6 +86,8 @@ export function NextStepCard({ items }: { items: Guidance[] }) {
         return router.push({ pathname: '/budgets', params: { focus: String(a.categoryId), suggest: String(a.suggestedLimitMinor) } });
       case 'createGoal':
         return router.push({ pathname: '/goal/[id]', params: { id: 'new', name: s.emergencyGoalName, target: minorToEditable(a.targetMinor, st.currency) } });
+      case 'createSeasonGoal':
+        return router.push({ pathname: '/goal/[id]', params: { id: 'new', name: s.seasonGoalName(a.season, a.year), date: dayKey(a.targetDate) } });
       case 'openGoals':
         return router.push('/goals');
     }
@@ -94,7 +106,7 @@ export function NextStepCard({ items }: { items: Guidance[] }) {
           {s.nextStepTitle}
         </T>
       </Row>
-      <Step g={top} text={guidanceText(top, s, money, catName)} onAct={() => act(top)} onDismiss={() => dismiss(top)} prominent />
+      <Step g={top} text={guidanceText(top, s, money, catName, st.locale)} onAct={() => act(top)} onDismiss={() => dismiss(top)} prominent />
       {rest.length > 0 && (
         <Pressable testID="nextStep.more" accessibilityRole="button" accessibilityState={{ expanded: showAll }} onPress={() => setShowAll(!showAll)} hitSlop={8}>
           <T variant="label" color={p.primary}>
@@ -105,7 +117,7 @@ export function NextStepCard({ items }: { items: Guidance[] }) {
       {showAll &&
         rest.map((g) => (
           <View key={g.id} style={{ borderTopWidth: 1, borderTopColor: p.outline, paddingTop: Space.md }}>
-            <Step g={g} text={guidanceText(g, s, money, catName)} onAct={() => act(g)} onDismiss={() => dismiss(g)} />
+            <Step g={g} text={guidanceText(g, s, money, catName, st.locale)} onAct={() => act(g)} onDismiss={() => dismiss(g)} />
           </View>
         ))}
     </Card>

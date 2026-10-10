@@ -11,6 +11,8 @@
  */
 import { Currency, minorPerMajor } from '../core/currency';
 import { addMonths, Day, daysInMonth, monthOf, sameMonth, YearMonth, compareDays, monthsUntil } from '../core/dates';
+import type { Season, SeasonKey } from './seasons';
+import { seasonFundDate } from './seasons';
 import { FIXED_CATEGORY_KEYS } from './analytics';
 import { requiredMonthlySaving } from './financeEngine';
 import type { Category, CategorySpend, Expense, SavingsGoal } from './models';
@@ -21,6 +23,7 @@ export type GuidanceAction =
   | { type: 'reviewBudgets' }
   | { type: 'setBudget'; categoryId: number; suggestedLimitMinor: number }
   | { type: 'createGoal'; name: 'emergency'; targetMinor: number }
+  | { type: 'createSeasonGoal'; season: SeasonKey; year: number; targetDate: Day }
   | { type: 'openGoals' };
 
 export type Guidance =
@@ -51,7 +54,30 @@ export type Guidance =
       savedMinor: number;
       action: GuidanceAction;
     }
-  | { id: string; kind: 'saveSurplus'; priority: number; netMinor: number; goal: SavingsGoal; action: GuidanceAction };
+  | { id: string; kind: 'saveSurplus'; priority: number; netMinor: number; goal: SavingsGoal; action: GuidanceAction }
+  | {
+      id: string;
+      kind: 'payYourselfFirst';
+      priority: number;
+      /** This month's planned saving (from the personal plan). */
+      amountMinor: number;
+      goal: SavingsGoal;
+      /** Days since the salary arrived (0 = today). */
+      daysSincePayday: number;
+      action: GuidanceAction;
+    }
+  | {
+      id: string;
+      kind: 'season';
+      priority: number;
+      season: SeasonKey;
+      /** Approximate (moon sighting). */
+      date: Day;
+      daysAway: number;
+      /** Monthly steps until the fund's target date (≥ 1). */
+      months: number;
+      action: GuidanceAction;
+    };
 
 export type GuidanceKind = Guidance['kind'];
 
@@ -63,6 +89,8 @@ export const RISE_MIN_SHARE_OF_INCOME = 0.03;
 export const RISE_MIN_DAY = 5;
 /** Emergency fund nudge until savings cover this many months of essentials. */
 export const EMERGENCY_MONTHS = 3;
+/** "Pay yourself first" is shown for this many days after the salary arrives. */
+export const PAY_FIRST_DAYS = 3;
 
 const roundUpToUnit = (minor: number, unit: number) => Math.ceil(minor / unit) * unit;
 
@@ -79,6 +107,12 @@ export function buildGuidance(args: {
   currency: Currency;
   /** Name given to the emergency goal the app creates (to find it again). */
   emergencyGoalName: string;
+  /** Salary day (1..31) from the profile; null/absent when not fixed. */
+  payday?: number | null;
+  /** Monthly saving from the personal plan (0 = none). */
+  plannedSavingMinor?: number;
+  /** The next spending season within the window (see seasons.ts), if any. */
+  season?: (Season & { daysAway: number; goalName: string }) | null;
 }): Guidance[] {
   const { today, incomeMinor, expensesMinor, history, currency } = args;
   const unit = minorPerMajor(currency);
@@ -190,6 +224,45 @@ export function buildGuidance(args: {
   const open = args.goals.find((g) => !g.paused && !isGoalReached(g) && compareDays(g.targetDate, today) >= 0);
   if (incomeMinor > 0 && net > 0 && open && today.day >= 20) {
     out.push({ id: `saveSurplus:${open.id}`, kind: 'saveSurplus', priority: 20, netMinor: net, goal: open, action: { type: 'openGoals' } });
+  }
+
+  // 8. "Pay yourself first": right after payday, before the salary is spent.
+  //    Only when there is a plan amount, an open goal, and nothing was put
+  //    aside since the salary arrived.
+  const planned = args.plannedSavingMinor ?? 0;
+  if (args.payday != null && incomeMinor > 0 && planned > 0 && open) {
+    const payDay = Math.min(Math.max(1, Math.round(args.payday)), daysInMonth(today.year, today.month));
+    const since = today.day - payDay;
+    const paidFrom: Day = { year: today.year, month: today.month, day: payDay };
+    const savedSincePayday = args.goals.some((g) => g.lastContributionDay != null && compareDays(g.lastContributionDay, paidFrom) >= 0);
+    if (since >= 0 && since <= PAY_FIRST_DAYS && !savedSincePayday) {
+      out.push({
+        id: `payYourselfFirst:${open.id}`,
+        kind: 'payYourselfFirst',
+        priority: 75,
+        amountMinor: planned,
+        goal: open,
+        daysSincePayday: since,
+        action: { type: 'openGoals' },
+      });
+    }
+  }
+
+  // 9. A spending season ahead (Ramadan & Eid al-Fitr, Eid al-Adha): suggest a
+  //    named fund, unless the user already has a goal with that name.
+  const sn = args.season;
+  if (sn && !args.goals.some((g) => g.name.trim() === sn.goalName.trim())) {
+    const target = seasonFundDate(sn);
+    out.push({
+      id: `season:${sn.key}-${sn.date.year}`,
+      kind: 'season',
+      priority: sn.daysAway <= 60 ? 55 : 40,
+      season: sn.key,
+      date: sn.date,
+      daysAway: sn.daysAway,
+      months: Math.max(1, monthsUntil(today, target)),
+      action: { type: 'createSeasonGoal', season: sn.key, year: sn.date.year, targetDate: target },
+    });
   }
 
   return out.sort((a, b) => b.priority - a.priority || a.id.localeCompare(b.id));

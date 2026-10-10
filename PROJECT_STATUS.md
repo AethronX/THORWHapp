@@ -1,5 +1,11 @@
 # Project status
 
+## Update 2026-10-10 (behaviour study): season funds + pay yourself first
+docs/BEHAVIORAL_STUDY.md (Arab money habits, behavioural strategies, sources, reliability labels; desk research only).
+New guidance rules (D-039; ANALYTICS.md §6): Ramadan/Eid season fund (approximate dates, amount chosen by the user)
+and "pay yourself first" after payday. Verified here: `tsc` 0 errors · **316 tests passing**. Not verified: a real
+device; the behavioural effect on real users (to ask in the closed test).
+
 ## Update 2026-10-10 (later): toward launch — release candidate 0.9.0
 Added: database v2 with tested v1→v2 migration (obligations, payments, assets, goal pause); net worth & payoff
 plans (D-034); export JSON/CSV via share sheet (D-035); unneeded Android permissions blocked; versions set

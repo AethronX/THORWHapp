@@ -2,7 +2,7 @@ import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 
 import { minorToEditable, parseAmount } from '../../core/amountParser';
-import { Day } from '../../core/dates';
+import { Day, parseDayKey } from '../../core/dates';
 import { useAppState, useController, useUi } from '../../ui/AppContext';
 import { Button, confirm, Field, runGuarded, Screen } from '../../ui/components';
 import { DateField } from '../../ui/DateField';
@@ -11,7 +11,8 @@ import { amountErrorText, currencySymbol } from '../../ui/format';
 /** Create (`/goal/new`) or edit (`/goal/<id>`) a savings goal. */
 export default function GoalForm() {
   // `name` / `target`: prefilled when created from a guidance step (e.g. emergency fund).
-  const { id, name: nameParam, target: targetParam } = useLocalSearchParams<{ id: string; name?: string; target?: string }>();
+  // `date` (YYYY-MM-DD): prefilled target date (e.g. a season fund).
+  const { id, name: nameParam, target: targetParam, date: dateParam } = useLocalSearchParams<{ id: string; name?: string; target?: string; date?: string }>();
   const st = useAppState();
   const c = useController();
   const { s } = useUi();
@@ -20,7 +21,9 @@ export default function GoalForm() {
   const [name, setName] = useState(existing?.name ?? nameParam ?? '');
   const [target, setTarget] = useState(existing ? minorToEditable(existing.targetMinor, st.currency) : (targetParam ?? ''));
   const [saved, setSaved] = useState('');
-  const [date, setDate] = useState<Day>(existing?.targetDate ?? { year: st.today.year + 1, month: st.today.month, day: 1 });
+  const [date, setDate] = useState<Day>(
+    existing?.targetDate ?? (dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? parseDayKey(dateParam) : { year: st.today.year + 1, month: st.today.month, day: 1 }),
+  );
   const [submitted, setSubmitted] = useState(false);
   const [busy, setBusy] = useState(false);
 

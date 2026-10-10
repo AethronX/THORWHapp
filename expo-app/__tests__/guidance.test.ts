@@ -92,3 +92,62 @@ test('dismissed items stay hidden for that month only', () => {
   expect(withoutDismissed(g, { addIncome: '2026-10' }, { year: 2026, month: 10 })).toHaveLength(0);
   expect(withoutDismissed(g, { addIncome: '2026-09' }, { year: 2026, month: 10 })).toHaveLength(1);
 });
+
+// -- behavioural rules (docs/BEHAVIORAL_STUDY.md) ---------------------------------
+
+import { daysBetween, nextSeason, SEASONS, seasonFundDate } from '../src/domain/seasons';
+
+test('seasons: next season inside the window only, fund date one week before, table sorted and still covers 2029', () => {
+  expect(nextSeason({ year: 2026, month: 10, day: 12 })).toMatchObject({ key: 'ramadan', date: { year: 2027, month: 2, day: 8 }, daysAway: 119 });
+  expect(nextSeason({ year: 2026, month: 6, day: 1 })).toBeNull(); // Ramadan 2027 is > 150 days away
+  // 5 days before Ramadan is too late to start a fund; the next one (Eid al-Adha) is 102 days away.
+  expect(nextSeason({ year: 2027, month: 2, day: 3 })).toMatchObject({ key: 'eidAdha', daysAway: 102 });
+  expect(seasonFundDate({ key: 'ramadan', date: { year: 2027, month: 2, day: 8 } })).toEqual({ year: 2027, month: 2, day: 1 });
+  expect(seasonFundDate({ key: 'ramadan', date: { year: 2028, month: 1, day: 3 } })).toEqual({ year: 2027, month: 12, day: 27 });
+  for (let i = 1; i < SEASONS.length; i++) expect(daysBetween(SEASONS[i - 1].date, SEASONS[i].date)).toBeGreaterThan(0);
+  expect(SEASONS[SEASONS.length - 1].date.year).toBeGreaterThanOrEqual(2029);
+});
+
+test('season fund: suggested with an approximate date and monthly steps, skipped when a goal with its name exists', () => {
+  const season = { ...nextSeason(today)!, goalName: 'رمضان والعيد 2027' };
+  const g = buildGuidance({ ...base, season });
+  expect(g.find((x) => x.kind === 'season')).toEqual({
+    id: 'season:ramadan-2027',
+    kind: 'season',
+    priority: 40,
+    season: 'ramadan',
+    date: { year: 2027, month: 2, day: 8 },
+    daysAway: 119,
+    months: 4, // month-end steps Oct, Nov, Dec, Jan — all before 2027-02-01
+    action: { type: 'createSeasonGoal', season: 'ramadan', year: 2027, targetDate: { year: 2027, month: 2, day: 1 } },
+  });
+  // Closer than 60 days → higher priority.
+  expect(buildGuidance({ ...base, season: { ...season, daysAway: 45 } }).find((x) => x.kind === 'season')?.priority).toBe(55);
+  expect(kinds(buildGuidance({ ...base, season, goals: [goal(9, ' رمضان والعيد 2027 ', 300, 0)] }))).not.toContain('season');
+  expect(kinds(buildGuidance({ ...base, season: null }))).not.toContain('season');
+});
+
+test('pay yourself first: within 3 days after payday, with a plan amount and an open goal, until something is saved', () => {
+  const travel = goal(1, 'سفر', 1200, 100);
+  const args = { ...base, today: { year: 2026, month: 10, day: 26 }, payday: 25, plannedSavingMinor: 150000, goals: [travel] };
+  expect(buildGuidance(args).find((x) => x.kind === 'payYourselfFirst')).toEqual({
+    id: 'payYourselfFirst:1',
+    kind: 'payYourselfFirst',
+    priority: 75,
+    amountMinor: 150000,
+    goal: travel,
+    daysSincePayday: 1,
+    action: { type: 'openGoals' },
+  });
+  const has = (a: Parameters<typeof buildGuidance>[0]) => kinds(buildGuidance(a)).includes('payYourselfFirst');
+  expect(has({ ...args, today: { year: 2026, month: 10, day: 24 } })).toBe(false); // before payday
+  expect(has({ ...args, today: { year: 2026, month: 10, day: 29 } })).toBe(false); // 4 days after
+  expect(has({ ...args, payday: null })).toBe(false);
+  expect(has({ ...args, plannedSavingMinor: 0 })).toBe(false);
+  expect(has({ ...args, goals: [{ ...travel, paused: true }] })).toBe(false);
+  // Already saved since payday → done; a contribution BEFORE payday doesn't count.
+  expect(has({ ...args, goals: [{ ...travel, lastContributionDay: { year: 2026, month: 10, day: 25 } }] })).toBe(false);
+  expect(has({ ...args, goals: [{ ...travel, lastContributionDay: { year: 2026, month: 10, day: 20 } }] })).toBe(true);
+  // Payday 31 in a 30-day month → the 30th.
+  expect(has({ ...args, payday: 31, today: { year: 2026, month: 11, day: 30 } })).toBe(true);
+});

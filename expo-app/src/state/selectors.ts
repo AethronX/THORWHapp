@@ -12,6 +12,7 @@ import {
   safeToSpendPerDay,
 } from '../domain/analytics';
 import { buildGuidance, Guidance, withoutDismissed } from '../domain/guidance';
+import { nextSeason, SeasonKey } from '../domain/seasons';
 import { netWorth, NetWorth } from '../domain/wealth';
 import { buildInsights, Insight } from '../domain/insights';
 import { dailyTotals, detectRecurring, RecurringPayment, unusualExpense, UnusualExpense, weekdayPattern, WeekdayPattern } from '../domain/smart';
@@ -136,18 +137,23 @@ export function calendar(s: AppState): number[] {
 // -- guidance (src/domain/guidance.ts) -------------------------------------------
 
 /** Ranked next steps for the CURRENT month, minus those dismissed this month. */
-export function guidance(s: AppState, emergencyGoalName: string): Guidance[] {
+export function guidance(s: AppState, names: { emergency: string; season: (key: SeasonKey, year: number) => string }): Guidance[] {
   if (!isViewingCurrentMonth(s)) return [];
+  const income = incomeTotal(s);
+  const next = nextSeason(s.today);
   const items = buildGuidance({
     today: s.today,
-    incomeMinor: incomeTotal(s),
+    incomeMinor: income,
     expensesMinor: expenseTotal(s),
     spends: spends(s),
     history: s.history,
     categories: [...s.categoriesById.values()],
     goals: s.goals,
     currency: s.currency,
-    emergencyGoalName,
+    emergencyGoalName: names.emergency,
+    payday: s.profile?.payday ?? null,
+    plannedSavingMinor: s.profile ? suggestPlan(s.profile, income, s.currency).monthlySavingMinor : 0,
+    season: next ? { ...next, goalName: names.season(next.key, next.date.year) } : null,
   });
   return withoutDismissed(items, s.dismissedGuidance, s.month);
 }

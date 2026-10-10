@@ -342,6 +342,14 @@ const en = {
   gSurplusTitle: (amount: string) => `Net cash flow so far this month: ${amount}`,
   gSurplusWhy: (goal: string) => `If this money is really available, you could move part of it to "${goal}". It is calculated only from what you recorded.`,
   gAddToGoal: 'Add to a goal',
+  gPayFirstTitle: (amount: string, goal: string) => `Pay yourself first: move ${amount} to "${goal}"`,
+  gPayFirstWhy: (days: number, amount: string) =>
+    `${days === 0 ? 'Your salary arrives today' : `Your salary arrived ${days === 1 ? '1 day' : `${days} days`} ago`} — the easiest moment to put this month's planned saving (${amount}) aside, before it is spread across spending. The amount comes from your personal plan; you can change it.`,
+  gSeasonTitle: (season: string, days: number) => `${season} is about ${days} days away — start a small fund for it`,
+  gSeasonWhy: (season: string, date: string, months: number) =>
+    `Spending usually rises before and during ${season}. Saving for it in ${months === 1 ? '1 monthly step' : `${months} monthly steps`} is lighter than paying it all at once. The expected date (${date}) is approximate and depends on the moon sighting. Set the amount that suits you.`,
+  seasonName: { ramadan: 'Ramadan & Eid', eidAdha: 'Eid al-Adha' } as Record<'ramadan' | 'eidAdha', string>,
+  seasonGoalName: (key: 'ramadan' | 'eidAdha', year: number) => `${key === 'ramadan' ? 'Ramadan & Eid' : 'Eid al-Adha'} ${year}`,
   // Search & filters
   searchPlaceholder: 'Search notes or categories',
   searchScope: (month: string) => `Searching in ${month}`,
@@ -738,6 +746,14 @@ const ar: Strings = {
   gSurplusTitle: (amount) => `صافي تدفقك هذا الشهر حتى الآن: ${amount}`,
   gSurplusWhy: (goal) => `إن كان هذا المبلغ متاحًا لديك فعلًا، يمكنك إضافة جزء منه إلى هدف «${goal}». المبلغ محسوب مما سجّلته فقط.`,
   gAddToGoal: 'إضافة إلى هدف',
+  gPayFirstTitle: (amount, goal) => `ادفع لنفسك أولًا: انقل ${amount} إلى «${goal}»`,
+  gPayFirstWhy: (days, amount) =>
+    `${days === 0 ? 'يصل راتبك اليوم' : `وصل راتبك قبل ${arDays(days)}`} — وهذا أسهل وقت لتجنيب ادخار الشهر المخطط (${amount}) قبل أن يتوزّع على المصروفات. المبلغ من خطتك الشخصية ويمكنك تغييره.`,
+  gSeasonTitle: (season, days) => `${season} بعد نحو ${arDays(days)} — ابدأ له صندوقًا صغيرًا`,
+  gSeasonWhy: (season, date, months) =>
+    `يرتفع الإنفاق عادةً قبل ${season} وخلاله. الادخار له على ${arMonthsCount(months)} بدفعات شهرية أخفّ من دفعه مرة واحدة. الموعد المتوقع (${date}) تقريبي ويعتمد على رؤية الهلال. حدّد المبلغ الذي يناسبك.`,
+  seasonName: { ramadan: 'رمضان والعيد', eidAdha: 'عيد الأضحى' },
+  seasonGoalName: (key, year) => `${key === 'ramadan' ? 'رمضان والعيد' : 'عيد الأضحى'} ${year}`,
   searchPlaceholder: 'ابحث في الملاحظات أو التصنيفات',
   searchScope: (month) => `البحث داخل ${month}`,
   filterAll: 'الكل',

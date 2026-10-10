@@ -475,6 +475,14 @@ test('guidance: rising category → set a limit (prefilled), emergency fund → 
   await screen.findByTestId('guidance.emergencyFund');
   expect(screen.getByTestId('guidance.emergencyFund.act').props.accessibilityLabel).toBe(ar.gOpenGoals);
   press('guidance.emergencyFund.dismiss');
+  // Next: the season fund (Oct 9 → expected Ramadan 2027-02-08 = 122 days), creating a named goal with no amount guessed.
+  const season = 'guidance.season:ramadan-2027';
+  expect((await screen.findByTestId(`${season}.title`)).props.children).toBe(ar.gSeasonTitle(ar.seasonName.ramadan, 122));
+  press(`${season}.act`);
+  expect((await screen.findByTestId('goal.name')).props.value).toBe(ar.seasonGoalName('ramadan', 2027));
+  expect(screen.getByTestId('goal.target').props.value).toBe('');
+  await nav((router) => router.back());
+  press(`${season}.dismiss`);
   await waitFor(() => expect(screen.queryByTestId('nextStep')).toBeNull());
 });
 

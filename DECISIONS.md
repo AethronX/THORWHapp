@@ -246,3 +246,15 @@ Observer were blocked here; the only package found has an unofficial raster). Th
 add a font with the official U+20C4 glyph to `CURRENCY_SIGN_FONTS` and it switches. No new symbols found for QAR, KWD,
 BHD, EGP, JOD; USD «$» and EUR «€» unchanged. Data, CSV export and inputs keep ISO codes.
 
+
+### D-039 Behaviour-informed guidance: season funds and "pay yourself first" — 2026-10-10
+Owner request: study how people in Arab countries handle money and let it shape the app (docs/BEHAVIORAL_STUDY.md,
+desk research with reliability labels; no user research done yet). Strongest evidence for our case: spending peaks
+around Ramadan/Eid (Visa, GCC surveys) and reminders naming a specific upcoming expense raised saving more than generic
+ones (Karlan et al., NBER w16205); committing saving before money is spent (Thaler & Benartzi). **Decision:** two
+guidance rules: (1) `season` — 10–150 days before Ramadan (with Eid) or Eid al-Adha, propose a named goal dated a week
+before, in monthly steps; dates are approximate Umm al-Qura expectations stated as such; the app never guesses the
+amount; (2) `payYourselfFirst` — payday to +3 days, plan amount > 0, open goal, nothing saved since payday. Goals now
+expose their last contribution day (query only, no migration). Not done (needs design / review): ROSCA (jam'iya)
+tracker, zakat estimator (religious review), cooling-off list, fresh-start moments. Rejected: social comparison
+without real data, spending streaks, fear framing.

@@ -376,9 +376,11 @@ export class FinanceRepository {
       target_day: string;
       saved_minor: number;
       paused: number;
+      last_day: string | null;
     }>(`
       SELECT g.id, g.name, g.target_minor, g.target_day, g.paused,
-             COALESCE(SUM(c.amount_minor), 0) AS saved_minor
+             COALESCE(SUM(c.amount_minor), 0) AS saved_minor,
+             MAX(CASE WHEN c.amount_minor > 0 THEN c.day END) AS last_day
       FROM goals g LEFT JOIN goal_contributions c ON c.goal_id = g.id
       GROUP BY g.id ORDER BY g.target_day, g.id`);
     return rows.map((r) => ({
@@ -388,6 +390,7 @@ export class FinanceRepository {
       savedMinor: r.saved_minor,
       targetDate: parseDayKey(r.target_day),
       paused: r.paused === 1,
+      lastContributionDay: r.last_day ? parseDayKey(r.last_day) : null,
     }));
   }
 

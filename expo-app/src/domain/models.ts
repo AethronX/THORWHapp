@@ -60,6 +60,8 @@ export interface SavingsGoal {
   targetDate: Day;
   /** Paused goals are kept but left out of guidance and "at risk" checks. */
   paused: boolean;
+  /** Day of the latest positive contribution (null/absent: none recorded). */
+  lastContributionDay?: Day | null;
 }
 
 /** An obligation (loan, card, instalments). remaining = original - paid. */
