@@ -9,7 +9,7 @@
     "scheme": "tharwati",
     "version": "0.9.0",
     "runtimeVersion": {
-      "policy": "appVersion"
+      "policy": "sdkVersion"
     },
     "updates": {
       "checkAutomatically": "NEVER",
