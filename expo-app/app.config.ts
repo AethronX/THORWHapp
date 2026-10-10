@@ -31,8 +31,11 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     : base;
 
   if (process.env.APP_VARIANT !== 'preview') return withUpdates;
+  // QA builds check for an EAS update on every launch; production keeps
+  // `checkAutomatically: NEVER` so the shipped app makes no network calls.
   return {
     ...withUpdates,
+    updates: { ...withUpdates.updates, checkAutomatically: 'ON_LOAD' },
     name: `${base.name} (تجريبي)`,
     android: { ...base.android, package: `${base.android?.package}.preview` },
     ios: { ...base.ios, bundleIdentifier: `${base.ios?.bundleIdentifier}.preview` },
