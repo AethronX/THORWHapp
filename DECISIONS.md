@@ -258,3 +258,15 @@ amount; (2) `payYourselfFirst` — payday to +3 days, plan amount > 0, open goal
 expose their last contribution day (query only, no migration). Not done (needs design / review): ROSCA (jam'iya)
 tracker, zakat estimator (religious review), cooling-off list, fresh-start moments. Rejected: social comparison
 without real data, spending streaks, fear framing.
+
+### D-040 "Wealth principles" from popular money books, checked against the user's own data — 2026-10-10
+Owner request: suggest wealth strategies from the most famous money books, distinctive and clear. **Decision:** a
+"Wealth principles" screen (home entry with a score, also in Settings) with six ideas — pay yourself first ≥ 1/10
+(Clason, *The Richest Man in Babylon*), room for error ≥ 3 months of essentials in liquid savings (Housel, *The
+Psychology of Money*), measure net worth (Stanley & Danko, *The Millionaire Next Door*), what obligations take from
+income (Kiyosaki, *Rich Dad Poor Dad*), one debt at a time — snowball vs avalanche shown side by side (Ramsey, *The
+Total Money Makeover*), conscious spending on the largest unlimited optional category ≥ 5 % of spending (Sethi,
+*I Will Teach You to Be Rich*). Each shows the book, a status (applying / opportunity / needs data — no verdict
+without data), the user's own numbers and one action. Ideas are summarised in our own words (no quotes), with a
+non-affiliation and not-advice note. Not included: investment product picks or return claims (e.g. index-fund
+advice), books whose ideas can't be checked against recorded data.

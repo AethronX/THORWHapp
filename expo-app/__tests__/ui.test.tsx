@@ -672,3 +672,28 @@ test('Saudi riyal: the new sign is drawn with its bundled font (never an empty b
   const sign = parts.find((x) => typeof x === 'object' && x && (x as { props?: { children?: unknown } }).props?.children === '⃁') as { props: { style: { fontFamily: string } } };
   expect(sign.props.style.fontFamily).toBe('CurrencySAR-Regular'); // small text → regular-weight glyph
 });
+
+test('wealth principles: score on home, book + status + own numbers, action opens the right screen', async () => {
+  const db = await mockDriver.current.open();
+  await migrate(db);
+  const repo = new FinanceRepository(db, () => new Date(2026, 9, 9, 10));
+  await repo.completeOnboarding({ currencyCode: 'OMR', month: { year: 2026, month: 10 }, incomeMinor: 1000000, incomeLabel: 'راتب' });
+  const cat = new Map((await repo.categories()).map((c) => [c.key, c.id]));
+  await repo.addExpense({ amountMinor: 300000, categoryId: cat.get('housing')!, date: { year: 2026, month: 10, day: 1 }, note: '' });
+  await repo.addExpense({ amountMinor: 50000, categoryId: cat.get('entertainment')!, date: { year: 2026, month: 10, day: 5 }, note: '' });
+  await db.close();
+
+  app();
+  // Judged: pay-yourself-first (good) and conscious spending (opportunity); the rest need data.
+  expect((await screen.findByTestId('home.principles.text')).props.children).toBe(ar.principlesEntry(1, 2));
+  press('home.principles');
+  expect((await screen.findByTestId('principles.score')).props.children).toBe(ar.principlesScore(1, 2));
+  expect(screen.getByTestId('principle.payYourselfFirst.status').props.children).toBe(ar.principleStatus.good);
+  expect(screen.getByTestId('principle.measureWealth.status').props.children).toBe(ar.principleStatus.needsData);
+  expect(screen.getByText(ar.principleBook.payYourselfFirst)).toBeTruthy();
+  expect(screen.getByTestId('principle.consciousSpending.text').props.children).toBe(ar.pConscious(ar.cat.entertainment, '‎14%‎'));
+  expect(screen.getByTestId('principles.disclaimer').props.children).toBe(ar.principlesDisclaimer);
+  // Opportunity → set a limit on that category.
+  press('principle.consciousSpending.act');
+  expect(await screen.findByTestId('budget.editor.amount')).toBeTruthy();
+});

@@ -23,7 +23,7 @@ NAMES = {
     'catUtilities': 'Lightning', 'catTelecom': 'DeviceMobile', 'catHealth': 'Heartbeat',
     'catEducation': 'GraduationCap', 'catFamily': 'UsersThree', 'catShopping': 'ShoppingBag',
     'catEntertainment': 'Popcorn', 'catDebt': 'CreditCard', 'catOther': 'Shapes',
-    'target': 'Target', 'hourglass': 'Hourglass', 'scales': 'Scales', 'sparkle': 'Sparkle', 'flag': 'Flag',
+    'target': 'Target', 'hourglass': 'Hourglass', 'scales': 'Scales', 'sparkle': 'Sparkle', 'flag': 'Flag', 'book': 'BookOpenText',
 }
 
 

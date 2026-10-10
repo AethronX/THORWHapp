@@ -13,6 +13,7 @@ import {
 } from '../domain/analytics';
 import { buildGuidance, Guidance, withoutDismissed } from '../domain/guidance';
 import { nextSeason, SeasonKey } from '../domain/seasons';
+import { evaluatePrinciples, PrincipleResult } from '../domain/principles';
 import { netWorth, NetWorth } from '../domain/wealth';
 import { buildInsights, Insight } from '../domain/insights';
 import { dailyTotals, detectRecurring, RecurringPayment, unusualExpense, UnusualExpense, weekdayPattern, WeekdayPattern } from '../domain/smart';
@@ -156,6 +157,23 @@ export function guidance(s: AppState, names: { emergency: string; season: (key: 
     season: next ? { ...next, goalName: names.season(next.key, next.date.year) } : null,
   });
   return withoutDismissed(items, s.dismissedGuidance, s.month);
+}
+
+// -- wealth principles (src/domain/principles.ts) ------------------------------
+
+/** Book principles checked against the CURRENT month's data. */
+export function principles(s: AppState): PrincipleResult[] {
+  return evaluatePrinciples({
+    today: s.today,
+    incomeMinor: incomeTotal(s),
+    expensesMinor: monthEndForecast(s) ?? expenseTotal(s),
+    history: s.history,
+    categories: [...s.categoriesById.values()],
+    spends: spends(s),
+    goals: s.goals,
+    debts: s.debts,
+    assets: s.assets,
+  });
 }
 
 // -- wealth (src/domain/wealth.ts) -------------------------------------------------

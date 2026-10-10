@@ -5,11 +5,12 @@ import { monthsUntil, compareDays } from '../../core/dates';
 import { goalProgress } from '../../domain/financeEngine';
 import type { Insight } from '../../domain/insights';
 import { isGoalReached, spendUsage } from '../../domain/models';
-import { expenseTotal, guidance, health, incomeTotal, insights, isViewingCurrentMonth, netCashFlow, recentSpending, safeToSpend, savingsRate, shortcutCategories, spends } from '../../state/selectors';
+import { expenseTotal, guidance, principles, health, incomeTotal, insights, isViewingCurrentMonth, netCashFlow, recentSpending, safeToSpend, savingsRate, shortcutCategories, spends } from '../../state/selectors';
 import { useAppState, useController, useUi } from '../../ui/AppContext';
 import { AnimatedAmount, Button, Card, Fab, Icon, IconName, LabeledProgress, MonthSwitcher, Row, runGuarded, Screen, T } from '../../ui/components';
 import { haptic } from '../../ui/feedback';
 import { NextStepCard } from '../../ui/Guidance';
+import { principleScore } from '../../domain/principles';
 import { categoryIcon, categoryLabel, formatMonth, formatPercent } from '../../ui/format';
 import { ScoreRing } from '../../ui/charts';
 import { categoryTone, Elevation, MIN_TAP, Radii, Space } from '../../ui/theme';
@@ -110,6 +111,8 @@ export default function Dashboard() {
         {isViewingCurrentMonth(st) && <QuickBar />}
 
         <NextStepCard items={steps} />
+
+        {isViewingCurrentMonth(st) && <PrinciplesEntry />}
 
         <SmartSummary />
 
@@ -280,5 +283,39 @@ function QuickBar() {
         })}
       </View>
     </Card>
+  );
+}
+
+/** Entry to "Wealth principles" with the user's current score. */
+function PrinciplesEntry() {
+  const st = useAppState();
+  const { s, p } = useUi();
+  const score = principleScore(principles(st));
+  const label = s.principlesEntry(score.good, score.judged);
+  return (
+    <PressScale
+      testID="home.principles"
+      accessibilityRole="button"
+      accessibilityLabel={`${s.principlesTitle}: ${label}`}
+      onPress={() => {
+        haptic.tap();
+        router.push('/principles');
+      }}
+    >
+      <Row gap={Space.md} style={{ backgroundColor: p.surface, borderRadius: Radii.lg, borderWidth: 1, borderColor: p.outline, padding: Space.lg, minHeight: MIN_TAP }}>
+        <View style={{ backgroundColor: p.primaryContainer, borderRadius: Radii.pill, padding: Space.sm }}>
+          <Icon name="book" size={20} color={p.primary} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <T variant="label" color={p.primary}>
+            {s.principlesTitle}
+          </T>
+          <T variant="small" muted testID="home.principles.text">
+            {label}
+          </T>
+        </View>
+        <Icon name="forward" weight="regular" size={18} color={p.textSubtle} />
+      </Row>
+    </PressScale>
   );
 }

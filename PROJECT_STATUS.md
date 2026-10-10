@@ -1,5 +1,10 @@
 # Project status
 
+## Update 2026-10-10 (wealth principles)
+"Wealth principles" screen (D-040; ANALYTICS.md §7): six ideas from popular money books checked against the user's
+own data, with status, numbers and one action; home entry with a score. Strategy note: docs/STRATEGY_3Y.md.
+Verified here: `tsc` 0 errors · **322 tests passing** · web-render screenshots. Not verified: a real device.
+
 ## Update 2026-10-10 (behaviour study): season funds + pay yourself first
 docs/BEHAVIORAL_STUDY.md (Arab money habits, behavioural strategies, sources, reliability labels; desk research only).
 New guidance rules (D-039; ANALYTICS.md §6): Ramadan/Eid season fund (approximate dates, amount chosen by the user)
