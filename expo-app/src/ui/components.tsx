@@ -327,6 +327,8 @@ export function Field({
         }}
       >
         <TextInput
+          keyboardAppearance={p.dark ? 'dark' : 'light'}
+          selectionColor={p.primary}
           accessibilityLabel={label}
           placeholder={hint}
           placeholderTextColor={p.textSubtle}

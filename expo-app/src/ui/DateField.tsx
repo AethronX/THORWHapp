@@ -61,7 +61,12 @@ export function DateField({
         <Icon name="edit" size={18} color={p.onSurfaceMuted} />
       </Pressable>
       {Platform.OS !== 'android' && iosOpen && (
+        <View style={{ backgroundColor: p.surface, borderRadius: Radii.md, borderWidth: 1, borderColor: p.borderStrong, overflow: 'hidden' }}>
         <DateTimePicker
+          // Follow the APP theme, not the phone's: otherwise a dark-mode phone draws white text on our light card.
+          themeVariant={p.dark ? 'dark' : 'light'}
+          accentColor={p.primary}
+          textColor={p.onSurface}
           value={dayToDate(value)}
           mode="date"
           display="inline"
@@ -72,6 +77,7 @@ export function DateField({
             setIosOpen(false);
           }}
         />
+        </View>
       )}
     </View>
   );

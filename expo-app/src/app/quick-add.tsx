@@ -141,6 +141,8 @@ export default function QuickAdd() {
       {/* Note → smart category */}
       <View style={{ gap: Space.xs }}>
         <TextInput
+          keyboardAppearance={p.dark ? 'dark' : 'light'}
+          selectionColor={p.primary}
           testID="quick.note"
           value={note}
           onChangeText={setNote}

@@ -2,7 +2,7 @@ import { useFonts } from 'expo-font';
 import { router, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
-import { AppState as RNAppState, Platform, View } from 'react-native';
+import { Appearance, AppState as RNAppState, Platform, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { expoDbDriver } from '../data/expoDb';
@@ -56,6 +56,10 @@ function Root() {
   // never as a side effect of turning the setting on (that would remount
   // the navigator and drop the user's place).
   useEffect(() => setHapticsEnabled(st.haptics), [st.haptics]);
+  // Native pieces (date picker, alerts, keyboard, switches) follow the APP's light/dark choice, not only the phone's.
+  useEffect(() => {
+    Appearance.setColorScheme?.(st.themeMode === 'system' ? 'unspecified' : st.themeMode);
+  }, [st.themeMode]);
   const [needsUnlock, setNeedsUnlock] = useState(false);
   const lockOn = useRef(st.appLock);
   lockOn.current = st.appLock;

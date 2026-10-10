@@ -46,6 +46,8 @@ export default function Expenses() {
             >
               <Icon name="search" size={20} color={p.onSurfaceMuted} />
               <TextInput
+                keyboardAppearance={p.dark ? 'dark' : 'light'}
+                selectionColor={p.primary}
                 testID="expenses.search"
                 value={query}
                 onChangeText={setQuery}
