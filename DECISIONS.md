@@ -193,3 +193,10 @@ silent without enough data (e.g. emergency fund needs 2+ months of essential spe
 repeat the step shown. Found by a UI test: suggesting last month's total as a limit could be below what was
 already spent — the suggestion is now max(last month, spent so far).
 
+### D-033 Search and filters inside the viewed month — 2026-10-10
+**Decision:** the expenses tab gets a search box (note + category name; every word must match as a word
+prefix; Arabic letter forms, «ال» and diacritics ignored via the same normaliser as smart suggestions) and
+category chips (only categories used that month, biggest first), with a "n of N · total" line and a
+no-results state that offers "Clear filters". The month switcher is the date filter; income stays on its
+own screen. Search across all months needs a repository query — later.
+

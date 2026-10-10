@@ -331,6 +331,15 @@ const en = {
   gSurplusTitle: (amount: string) => `Net cash flow so far this month: ${amount}`,
   gSurplusWhy: (goal: string) => `If this money is really available, you could move part of it to "${goal}". It is calculated only from what you recorded.`,
   gAddToGoal: 'Add to a goal',
+  // Search & filters
+  searchPlaceholder: 'Search notes or categories',
+  searchScope: (month: string) => `Searching in ${month}`,
+  filterAll: 'All',
+  resultsSummary: (n: number, total: number, sum: string) => `${n} of ${total} · total ${sum}`,
+  noResults: 'No matching expenses',
+  noResultsBody: 'Try another word or clear the filters.',
+  clearFilters: 'Clear filters',
+  clearSearch: 'Clear search',
 };
 
 export type Strings = typeof en;
@@ -654,6 +663,14 @@ const ar: Strings = {
   gSurplusTitle: (amount) => `صافي تدفقك هذا الشهر حتى الآن: ${amount}`,
   gSurplusWhy: (goal) => `إن كان هذا المبلغ متاحًا لديك فعلًا، يمكنك إضافة جزء منه إلى هدف «${goal}». المبلغ محسوب مما سجّلته فقط.`,
   gAddToGoal: 'إضافة إلى هدف',
+  searchPlaceholder: 'ابحث في الملاحظات أو التصنيفات',
+  searchScope: (month) => `البحث داخل ${month}`,
+  filterAll: 'الكل',
+  resultsSummary: (n, total, sum) => `${n} من ${total} عملية · المجموع ${sum}`,
+  noResults: 'لا توجد مصروفات مطابقة',
+  noResultsBody: 'جرّب كلمة أخرى أو امسح عوامل التصفية.',
+  clearFilters: 'مسح التصفية',
+  clearSearch: 'مسح البحث',
 };
 
 export const STRINGS: Record<Locale, Strings> = { ar, en };

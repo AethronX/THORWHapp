@@ -456,3 +456,42 @@ test('guidance: rising category → set a limit (prefilled), emergency fund → 
   press('guidance.emergencyFund.dismiss');
   await waitFor(() => expect(screen.queryByTestId('nextStep')).toBeNull());
 });
+
+test('expenses: Arabic-tolerant search, category filter, no-results state', async () => {
+  const db = await mockDriver.current.open();
+  await migrate(db);
+  const repo = new FinanceRepository(db, () => new Date(2026, 9, 9, 10));
+  await repo.completeOnboarding({ currencyCode: 'OMR', month: { year: 2026, month: 10 }, incomeMinor: 800000, incomeLabel: 'راتب' });
+  const cat = new Map((await repo.categories()).map((c) => [c.key, c.id]));
+  const add = (key: string, amountMinor: number, day: number, note: string) =>
+    repo.addExpense({ amountMinor, categoryId: cat.get(key as never)!, date: { year: 2026, month: 10, day }, note });
+  const lulu = await add('food', 12000, 2, 'لولو');
+  const rest = await add('food', 8000, 3, 'مطعم');
+  const hosp = await add('health', 20000, 4, 'مستشفى الجامعة');
+  await db.close();
+
+  app();
+  await screen.findByTestId('dashboard');
+  await nav((router) => router.push('/expenses'));
+  await screen.findByTestId('expenses.search');
+  const rows = () => [lulu, rest, hosp].filter((id) => screen.queryByTestId(`expense.row.${id}`));
+
+  // «مستشفي» (ى written as ي) still finds «مستشفى».
+  type('expenses.search', 'مستشفي');
+  await waitFor(() => expect(rows()).toEqual([hosp]));
+  expect(screen.getByTestId('expenses.results').props.children).toBe(ar.resultsSummary(1, 3, '‎20.000‎ ر.ع.'));
+  press('expenses.search.clear');
+  await waitFor(() => expect(rows()).toHaveLength(3));
+  expect(screen.getByTestId('expenses.total')).toBeTruthy();
+
+  // Category chip.
+  press(`expenses.filter.${cat.get('food')}`);
+  await waitFor(() => expect(rows()).toEqual([lulu, rest]));
+  expect(screen.getByTestId('expenses.results').props.children).toBe(ar.resultsSummary(2, 3, '‎20.000‎ ر.ع.'));
+
+  // Nothing matches → clear state that offers a way out.
+  type('expenses.search', 'كارفور');
+  expect(await screen.findByText(ar.noResults)).toBeTruthy();
+  press('expenses.clearFilters');
+  await waitFor(() => expect(rows()).toHaveLength(3));
+});
