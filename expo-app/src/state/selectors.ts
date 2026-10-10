@@ -1,4 +1,4 @@
-import { dayToDate, monthOf, sameMonth } from '../core/dates';
+import { Day, dayToDate, monthOf, sameMonth } from '../core/dates';
 import * as fe from '../domain/financeEngine';
 import {
   averageSpending,
@@ -211,6 +211,23 @@ export function recentSpending(s: AppState): { todayMinor: number; weekMinor: nu
     if (diff >= 0 && diff < 7) weekMinor += e.amountMinor;
   }
   return { todayMinor, weekMinor };
+}
+
+/** Spending per day for the last 7 days, oldest first (today last). */
+export function lastSevenDays(s: AppState): { day: Day; totalMinor: number; count: number }[] {
+  const t = dayToDate(s.today).getTime();
+  const out = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(t - (6 - i) * 86400000);
+    return { day: { year: d.getFullYear(), month: d.getMonth() + 1, day: d.getDate() } as Day, totalMinor: 0, count: 0 };
+  });
+  for (const e of s.history) {
+    const diff = Math.round((t - dayToDate(e.date).getTime()) / 86400000);
+    if (diff >= 0 && diff < 7) {
+      out[6 - diff].totalMinor += e.amountMinor;
+      out[6 - diff].count += 1;
+    }
+  }
+  return out;
 }
 
 const DEFAULT_SHORTCUTS = ['food', 'transport', 'shopping', 'utilities'];

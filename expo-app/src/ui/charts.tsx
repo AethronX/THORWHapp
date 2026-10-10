@@ -6,7 +6,7 @@
  * - Thin gaps between donut slices so adjacent colours never touch.
  * - Bars start at zero; no 3-D, no gradients, no decoration.
  */
-import { Animated, View } from 'react-native';
+import { Animated, Pressable, View } from 'react-native';
 import Svg, { Circle, G, Line, Rect } from 'react-native-svg';
 
 import { useUi } from './AppContext';
@@ -299,6 +299,66 @@ export function HeatLegend({ less, more }: { less: string; more: string }) {
       <T variant="small" muted>
         {more}
       </T>
+    </View>
+  );
+}
+
+// -----------------------------------------------------------------------------
+// Week bars (interactive): tap a day to see its total and number of entries
+// -----------------------------------------------------------------------------
+
+export function WeekBars({
+  days,
+  selected,
+  onSelect,
+  dayLabel,
+  dayName,
+  testID,
+}: {
+  days: { totalMinor: number; count: number }[];
+  selected: number;
+  onSelect: (i: number) => void;
+  /** Short label under each bar (e.g. «ح»). */
+  dayLabel: (i: number) => string;
+  /** Full spoken label for screen readers. */
+  dayName: (i: number) => string;
+  testID?: string;
+}) {
+  const { p } = useUi();
+  const grow = useDrawIn(600);
+  const max = Math.max(1, ...days.map((d) => d.totalMinor));
+  const H = 96;
+  return (
+    <View testID={testID} style={{ flexDirection: 'row', alignItems: 'flex-end', gap: Space.xs }}>
+      {days.map((d, i) => {
+        const h = d.totalMinor === 0 ? 4 : Math.max(8, (d.totalMinor / max) * H);
+        const on = i === selected;
+        return (
+          <Pressable
+            key={i}
+            testID={`week.bar.${i}`}
+            accessibilityRole="button"
+            accessibilityState={{ selected: on }}
+            accessibilityLabel={dayName(i)}
+            onPress={() => onSelect(i)}
+            style={{ flex: 1, alignItems: 'center', gap: Space.xs, minHeight: H + 40, justifyContent: 'flex-end' }}
+          >
+            <Animated.View
+              style={{
+                width: '70%',
+                maxWidth: 28,
+                height: grow.interpolate({ inputRange: [0, 1], outputRange: [2, h] }),
+                borderRadius: Radii.sm,
+                backgroundColor: on ? p.primary : d.totalMinor === 0 ? p.outline : p.progress,
+                opacity: on || d.totalMinor === 0 ? 1 : 0.55,
+              }}
+            />
+            <T variant="small" center color={on ? p.primary : p.onSurfaceMuted}>
+              {dayLabel(i)}
+            </T>
+          </Pressable>
+        );
+      })}
     </View>
   );
 }

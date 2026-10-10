@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { BackHandler, Pressable, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, BackHandler, Easing, Pressable, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { parseAmount } from '../core/amountParser';
@@ -10,7 +10,8 @@ import { useAppState, useController, useUi } from '../ui/AppContext';
 import { Toggle, Button, Card, Field, Icon, IconName, Row, runGuarded, Screen, T } from '../ui/components';
 import { Quiz } from '../ui/Quiz';
 import { amountErrorText, currencyName, currencySymbol, formatMoney, formatPercent } from '../ui/format';
-import { MIN_TAP, Radii, Space } from '../ui/theme';
+import { Elevation, MIN_TAP, Radii, Space } from '../ui/theme';
+import { useReducedMotion } from '../ui/motion';
 
 /**
  * First run: 3 value pages → 5 questions (≈30 s, skippable) → currency &
@@ -64,6 +65,84 @@ function BackBar({ onBack }: { onBack: () => void }) {
 // 1. Value pages
 // -----------------------------------------------------------------------------
 
+/** Small badges that float around each page's main icon. */
+const INTRO_ACCENTS: [IconName, IconName, IconName][] = [
+  ['coins', 'quick', 'catFood'],
+  ['chartUp', 'health', 'calendar'],
+  ['target', 'shield', 'sparkle'],
+];
+
+/**
+ * Welcome illustration: a soft brand disc with the page's icon, a gold ring,
+ * and three badges that drift gently (off with Reduce Motion). Decorative only.
+ */
+function IntroArt({ icon, accents }: { icon: IconName; accents: [IconName, IconName, IconName] }) {
+  const { p } = useUi();
+  const reduced = useReducedMotion();
+  const enter = useRef(new Animated.Value(reduced ? 1 : 0)).current;
+  const drift = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (reduced) {
+      enter.setValue(1);
+      return;
+    }
+    Animated.spring(enter, { toValue: 1, friction: 6, tension: 60, useNativeDriver: true }).start();
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(drift, { toValue: 1, duration: 1800, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        Animated.timing(drift, { toValue: 0, duration: 1800, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [reduced, enter, drift]);
+  const up = drift.interpolate({ inputRange: [0, 1], outputRange: [0, -8] });
+  const down = drift.interpolate({ inputRange: [0, 1], outputRange: [0, 8] });
+  const badge = (name: IconName, pos: object, t: Animated.AnimatedInterpolation<number>, gold = false) => (
+    <Animated.View
+      style={{
+        position: 'absolute',
+        ...pos,
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        backgroundColor: p.surface,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: p.outline,
+        ...Elevation.raised,
+        transform: [{ translateY: t }, { scale: enter }],
+      }}
+    >
+      <Icon name={name} size={24} color={gold ? p.accentText : p.primary} />
+    </Animated.View>
+  );
+  return (
+    <View importantForAccessibility="no-hide-descendants" accessibilityElementsHidden style={{ width: 220, height: 200, alignItems: 'center', justifyContent: 'center' }}>
+      <Animated.View
+        style={{
+          width: 150,
+          height: 150,
+          borderRadius: 75,
+          backgroundColor: p.primaryContainer,
+          borderWidth: 2,
+          borderColor: p.brandGold,
+          alignItems: 'center',
+          justifyContent: 'center',
+          transform: [{ scale: enter }],
+          opacity: enter,
+        }}
+      >
+        <Icon name={icon} size={72} color={p.primary} />
+      </Animated.View>
+      {badge(accents[0], { top: 4, start: 14 }, up, true)}
+      {badge(accents[1], { top: 40, end: 0 }, down)}
+      {badge(accents[2], { bottom: 0, start: 36 }, down)}
+    </View>
+  );
+}
+
 function Intro({ page, onPage }: { page: number; onPage: (p: number) => void }) {
   const { s, p } = useUi();
   const intro: [IconName, string, string][] = [
@@ -78,9 +157,7 @@ function Intro({ page, onPage }: { page: number; onPage: (p: number) => void }) 
         <Button kind="text" label={s.skip} onPress={() => onPage(3)} testID="onb.skip" />
       </Row>
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: Space.xl, gap: Space.xl }}>
-        <View importantForAccessibility="no-hide-descendants" style={{ width: 120, height: 120, borderRadius: 36, backgroundColor: p.primaryContainer, alignItems: 'center', justifyContent: 'center' }}>
-          <Icon name={icon} size={60} color={p.primary} />
-        </View>
+        <IntroArt key={page} icon={icon} accents={INTRO_ACCENTS[page]} />
         <T variant="headline" center testID="onb.title">
           {title}
         </T>

@@ -811,3 +811,18 @@ test('new official Omani rial sign: shown when chosen, spoken by name, switchabl
   expect(JSON.stringify(screen.toJSON())).toContain('\u20C4');
   expect(amount).toBeTruthy();
 });
+
+test('week chart: last 7 days, tap a day to read its total and entries', async () => {
+  const db = await mockDriver.current.open();
+  await migrate(db);
+  const repo = new FinanceRepository(db, () => new Date(2026, 9, 9, 10));
+  await repo.completeOnboarding({ currencyCode: 'OMR', month: { year: 2026, month: 10 }, incomeMinor: 1000000, incomeLabel: 'راتب' });
+  const cat = new Map((await repo.categories()).map((c) => [c.key, c.id]));
+  await repo.addExpense({ amountMinor: 2500, categoryId: cat.get('food')!, date: { year: 2026, month: 10, day: 7 }, note: '' });
+  await repo.addExpense({ amountMinor: 1500, categoryId: cat.get('food')!, date: { year: 2026, month: 10, day: 7 }, note: '' });
+  await db.close();
+  app();
+  expect((await screen.findByTestId('week.detail')).props.children).toBe(ar.weekDetail(ar.weekToday, '‎0.000‎ ر.ع.', 0));
+  press('week.bar.4'); // Oct 7 = Wednesday
+  expect(screen.getByTestId('week.detail').props.children).toBe(ar.weekDetail('الأربعاء', '‎4.000‎ ر.ع.', 2));
+});

@@ -2,18 +2,18 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
-import { monthsUntil, compareDays } from '../../core/dates';
+import { compareDays, dayToDate, monthsUntil } from '../../core/dates';
 import { goalProgress } from '../../domain/financeEngine';
 import type { Insight } from '../../domain/insights';
 import { isGoalReached, spendUsage } from '../../domain/models';
-import { expenseTotal, guidance, principles, readiness, wealth, health, incomeTotal, insights, isViewingCurrentMonth, netCashFlow, recentSpending, safeToSpend, savingsRate, shortcutCategories, spends } from '../../state/selectors';
+import { expenseTotal, guidance, lastSevenDays, principles, readiness, wealth, health, incomeTotal, insights, isViewingCurrentMonth, netCashFlow, recentSpending, safeToSpend, savingsRate, shortcutCategories, spends } from '../../state/selectors';
 import { useAppState, useController, useUi } from '../../ui/AppContext';
 import { AnimatedAmount, Button, Card, EmptyState, Fab, Icon, IconName, LabeledProgress, MonthSwitcher, Row, runGuarded, Screen, T } from '../../ui/components';
 import { haptic } from '../../ui/feedback';
 import { NextStepCard } from '../../ui/Guidance';
 import { principleScore } from '../../domain/principles';
 import { categoryIcon, categoryLabel, formatMonth, formatPercent } from '../../ui/format';
-import { ScoreRing } from '../../ui/charts';
+import { ScoreRing, WeekBars } from '../../ui/charts';
 import { categoryTone, Elevation, MIN_TAP, Radii, Space } from '../../ui/theme';
 import { PressScale } from '../../ui/motion';
 
@@ -115,6 +115,8 @@ export default function Dashboard() {
         <NextStepCard items={steps} />
 
         <SmartSummary />
+
+        {isViewingCurrentMonth(st) && <WeekCard />}
 
         {/* The next step already says "add income" — keep this card only for its "copy last month" shortcut. */}
         {st.incomes.length === 0 && (st.previousMonthHasIncome || top?.kind !== 'addIncome') && (
@@ -343,5 +345,38 @@ function ToolRow({ testID, icon, title, text, to }: { testID: string; icon: Icon
         <Icon name="forward" weight="regular" size={18} color={p.textSubtle} />
       </Row>
     </PressScale>
+  );
+}
+
+/** Last 7 days as tappable bars; the selected day's total and entries are spelled out. */
+function WeekCard() {
+  const st = useAppState();
+  const { s, p, money, say } = useUi();
+  const days = lastSevenDays(st);
+  const [sel, setSel] = useState(6);
+  const name = (i: number) => (i === 6 ? s.weekToday : s.weekdays[dayToDate(days[i].day).getDay()]);
+  const detail = (i: number) => s.weekDetail(name(i), money(days[i].totalMinor), days[i].count);
+  return (
+    <Card title={s.weekTitle} testID="home.week">
+      <WeekBars
+        testID="week.bars"
+        days={days}
+        selected={sel}
+        onSelect={(i) => {
+          haptic.tick();
+          setSel(i);
+        }}
+        dayLabel={(i) => (i === 6 ? s.weekToday : s.weekdaysShort[dayToDate(days[i].day).getDay()])}
+        dayName={(i) => say(detail(i))}
+      />
+      <View style={{ backgroundColor: p.surfaceMuted, borderRadius: Radii.md, padding: Space.md }}>
+        <T variant="label" testID="week.detail">
+          {detail(sel)}
+        </T>
+        <T variant="small" muted>
+          {s.weekHint}
+        </T>
+      </View>
+    </Card>
   );
 }
