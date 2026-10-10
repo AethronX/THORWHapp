@@ -495,3 +495,79 @@ test('expenses: Arabic-tolerant search, category filter, no-results state', asyn
   press('expenses.clearFilters');
   await waitFor(() => expect(rows()).toHaveLength(3));
 });
+
+test('net worth: assets, an obligation with payoff plan, a payment logged as expense, goal pause', async () => {
+  const { debtPayoff } = require('../src/domain/financeEngine');
+  const { formatMonth } = require('../src/ui/format');
+  const { addMonths } = require('../src/core/dates');
+  const m = (minor: number) => `‎${(minor / 1000).toLocaleString('en-US', { minimumFractionDigits: 3 })}‎ ر.ع.`;
+  app();
+  await onboard('1000');
+  await nav((router) => router.push('/wealth'));
+  await screen.findByTestId('wealth');
+  expect(screen.getByText(ar.noAssets)).toBeTruthy();
+
+  // Two assets, one an estimate.
+  for (const [name, kind, value, est] of [['حساب التوفير', 'bank', '2500', false], ['ذهب', 'gold', '800', true]] as const) {
+    press('wealth.addAsset');
+    await screen.findByTestId('assetForm');
+    type('asset.name', name);
+    press(`asset.kind.${kind}`);
+    type('asset.value', value);
+    if (est) fireEvent(screen.getByTestId('asset.estimate'), 'valueChange', true);
+    press('asset.save');
+    await waitFor(() => expect(screen.queryByTestId('assetForm')).toBeNull());
+  }
+  // One obligation: 4,800 left, 150/month, 4.25 %, due on the 25th. Invalid rate first.
+  press('wealth.addDebt');
+  await screen.findByTestId('debtForm');
+  type('debt.name', 'قرض السيارة');
+  type('debt.remaining', '4800');
+  type('debt.payment', '150');
+  type('debt.rate', '4.255');
+  type('debt.due', '25');
+  press('debt.save');
+  expect(await screen.findByText(ar.errRate)).toBeTruthy();
+  type('debt.rate', '4.25');
+  press('debt.save');
+  await waitFor(() => expect(screen.queryByTestId('debtForm')).toBeNull());
+
+  // Net worth = 3,300 − 4,800 = −1,500; 800 of it estimated.
+  await waitFor(() => expect(screen.getByTestId('wealth.net').props.accessibilityLabel).toContain(m(-1500000).replace('‎-', '‎-')));
+  expect(screen.getByTestId('wealth.assets').props.children).toBe(m(3300000));
+  expect(screen.getByTestId('wealth.debts').props.children).toBe(m(4800000));
+  expect(screen.getByTestId('wealth.estimated').props.children).toBe(ar.estimatedPart(m(800000)));
+
+  // Payoff plan text uses the tested engine; "pay 15 more" scenario shown.
+  const base = debtPayoff({ balanceMinor: 4800000, annualRatePercent: 4.25, monthlyPaymentMinor: 150000 });
+  const extra = debtPayoff({ balanceMinor: 4800000, annualRatePercent: 4.25, monthlyPaymentMinor: 165000 });
+  const debtId = 1;
+  expect(screen.getByTestId(`debt.plan.${debtId}`).props.children).toBe(
+    ar.payoffBase(ar.monthsCount(base.months), formatMonth(addMonths({ year: 2026, month: 10 }, base.months), 'ar'), m(base.totalInterestMinor)),
+  );
+  expect(screen.getByTestId(`debt.extra.${debtId}`).props.children).toBe(
+    ar.payoffExtra(m(15000), ar.monthsCount(base.months - extra.months), m(base.totalInterestMinor - extra.totalInterestMinor)),
+  );
+
+  // Record this month's payment (prefilled 150), also logged as an expense.
+  press(`debt.pay.${debtId}`);
+  expect((await screen.findByTestId('payment.amount')).props.value).toBe('150');
+  press('payment.save');
+  await waitFor(() => expect(screen.getByTestId('wealth.debts').props.children).toBe(m(4650000)));
+  await nav((router) => router.push('/'));
+  await waitFor(() => expect(label('summary.expenses')).toContain('150.000'));
+
+  // Goal pause: no "required monthly" while paused.
+  await nav((router) => router.push('/goal/new'));
+  await screen.findByTestId('goal.name');
+  type('goal.name', 'سفر');
+  type('goal.target', '1200');
+  press('goal.save');
+  await waitFor(() => expect(screen.queryByTestId('goal.name')).toBeNull());
+  await nav((router) => router.push('/goals'));
+  const gid = (await screen.findAllByTestId(/^goal\.card\./))[0].props.testID.split('.').pop();
+  expect(screen.getByTestId(`goal.required.${gid}`)).toBeTruthy();
+  press(`goal.pause.${gid}`);
+  await screen.findByTestId(`goal.paused.${gid}`);
+  expect(screen.queryByTestId(`goal.required.${gid}`)).toBeNull();
+});

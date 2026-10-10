@@ -66,6 +66,7 @@ export default function Settings() {
       </Card>
       <Card>
         <NavRow icon="smart" label={s.yourPlan} onPress={() => router.push('/profile')} testID="settings.profile" />
+        <NavRow icon="coins" label={s.wealthOpen} onPress={() => router.push('/wealth')} testID="settings.wealth" />
         <NavRow icon="plan" label={s.openPlan} onPress={() => router.push('/plan')} testID="settings.plan" />
         <NavRow icon="wallet" label={s.manageIncome} onPress={() => router.push('/income')} testID="settings.income" />
         <NavRow icon="analytics" label={s.budgetsScreenTitle} onPress={() => router.push('/budgets')} testID="settings.budgets" />

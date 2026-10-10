@@ -200,3 +200,13 @@ category chips (only categories used that month, biggest first), with a "n of N 
 no-results state that offers "Clear filters". The month switcher is the date filter; income stays on its
 own screen. Search across all months needs a repository query — later.
 
+### D-034 Obligations, assets and net worth — manual, explicit, no double counting — 2026-10-10
+**Decision (schema v2, additive):** obligations store the amount outstanding when recorded; remaining =
+that − recorded payments (editing sets the current remaining and keeps payment history). A payment can also
+be logged as an expense in the «debt» category in the same transaction, so cash flow stays consistent.
+Assets are valued manually, may be flagged "estimate", and show the date of the value. **Net worth = assets −
+remaining obligations only**: income is a flow, and goal savings are not added (the account holding them can
+be listed as an asset — adding both would count money twice); the screen says so. Payoff plans reuse the
+tested `debtPayoff` engine with a "pay 10 % more" scenario, and state the assumptions (fixed rate, no fees,
+no new borrowing). Goals can be paused (kept, excluded from guidance and "at risk").
+

@@ -135,3 +135,16 @@ describe('keypadInput', () => {
     expect(typeKeys(Array(12).fill('9'))).toBe('999999999');
   });
 });
+
+describe('parsePercent', () => {
+  const { parsePercent } = require('../src/core/percent');
+  test('accepts dot, comma, Arabic digits; at most 2 decimals; 0..100', () => {
+    expect(parsePercent('4.25')).toBe(4.25);
+    expect(parsePercent('4,5')).toBe(4.5);
+    expect(parsePercent('٤٫٢٥')).toBe(4.25);
+    expect(parsePercent('0')).toBe(0);
+    expect(parsePercent('100')).toBe(100);
+    expect(parsePercent('7%')).toBe(7);
+    for (const bad of ['', '4.255', '101', '-1', 'abc', '1.2.3']) expect(parsePercent(bad)).toBeNull();
+  });
+});

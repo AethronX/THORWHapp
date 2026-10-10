@@ -17,7 +17,10 @@ export default function Goals() {
   return (
     <View style={{ flex: 1 }}>
       <Screen testID="goals">
-        <Button kind="tonal" icon="plan" label={s.openPlan} onPress={() => router.push('/plan')} testID="goals.plan" />
+        <Row style={{ flexWrap: 'wrap' }} gap={Space.sm}>
+          <Button kind="tonal" icon="coins" label={s.wealthOpen} onPress={() => router.push('/wealth')} testID="goals.wealth" />
+          <Button kind="tonal" icon="plan" label={s.openPlan} onPress={() => router.push('/plan')} testID="goals.plan" />
+        </Row>
         {st.goals.length === 0 ? (
           <EmptyState icon="goals" title={s.goalsEmpty} body={s.goalsEmptyBody} />
         ) : (
@@ -62,7 +65,17 @@ function GoalCard({ goal }: { goal: SavingsGoal }) {
           <T variant="small" muted>{`${s.goalDue(formatDate(goal.targetDate, st.locale))} · ${status}`}</T>
         </View>
       </Row>
-      {!reached && !overdue && (
+      {goal.paused && (
+        <Row testID={`goal.paused.${goal.id}`} style={{ alignItems: 'flex-start' }} gap={Space.xs}>
+          <Icon name="info" size={16} color={p.onSurfaceMuted} />
+          <View style={{ flex: 1 }}>
+            <T variant="small" muted>
+              {s.goalPausedNote}
+            </T>
+          </View>
+        </Row>
+      )}
+      {!reached && !overdue && !goal.paused && (
         <T variant="subtitle" testID={`goal.required.${goal.id}`}>
           {s.goalRequiredMonthly(money(required))}
         </T>
@@ -82,6 +95,14 @@ function GoalCard({ goal }: { goal: SavingsGoal }) {
         <Row style={{ flexWrap: 'wrap' }} gap={Space.sm}>
           <Button kind="tonal" icon="add" label={s.addMoney} onPress={() => setMode('add')} testID={`goal.add.${goal.id}`} />
           {goal.savedMinor > 0 && <Button kind="outlined" icon="remove" label={s.withdraw} onPress={() => setMode('withdraw')} testID={`goal.withdraw.${goal.id}`} />}
+          {!reached && (
+            <Button
+              kind="text"
+              label={goal.paused ? s.goalResume : s.goalPause}
+              onPress={() => runGuarded(() => c.setGoalPaused(goal.id, !goal.paused), s.errGeneric)}
+              testID={`goal.pause.${goal.id}`}
+            />
+          )}
         </Row>
       )}
     </Card>
