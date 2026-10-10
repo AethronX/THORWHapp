@@ -72,6 +72,19 @@ export default function Settings() {
           onChange={(l) => c.setLocale(l)}
         />
       </Card>
+      {st.locale === 'ar' && (
+        <Card title={s.digitsLabel}>
+          <Segmented<'latn' | 'arab'>
+            testID="settings.digits"
+            value={st.arabicDigits ? 'arab' : 'latn'}
+            options={[
+              ['latn', '123'],
+              ['arab', '١٢٣'],
+            ]}
+            onChange={(v) => runGuarded(() => c.setArabicDigits(v === 'arab'), s.errGeneric)}
+          />
+        </Card>
+      )}
       <Card title={s.theme}>
         <Segmented<ThemeMode>
           testID="settings.theme"

@@ -20,6 +20,7 @@ export interface AppState {
   readonly appLock: boolean;
   readonly hideAmounts: boolean;
   readonly haptics: boolean;
+  readonly arabicDigits: boolean;
   /** Guidance the user dismissed: id → month key "YYYY-MM". */
   readonly dismissedGuidance: Readonly<Record<string, string>>;
   readonly onboarded: boolean;
@@ -74,6 +75,7 @@ export class AppController {
       appLock: false,
       hideAmounts: false,
       haptics: true,
+      arabicDigits: false,
       dismissedGuidance: {},
       onboarded: false,
       month: monthOf(today),
@@ -138,6 +140,7 @@ export class AppController {
         appLock: s[SettingKeys.appLock] === '1',
         hideAmounts: s[SettingKeys.hideAmounts] === '1',
         haptics: s[SettingKeys.haptics] !== '0',
+        arabicDigits: s[SettingKeys.digits] === 'arab',
         dismissedGuidance: parseDismissed(s[SettingKeys.dismissedGuidance]),
       };
       this.set({ ...patch, ...(await this.load(this.state.month)), status: 'ready' });
@@ -261,6 +264,11 @@ export class AppController {
     const dismissedGuidance = { ...kept, [id]: key };
     await this.r.setSetting(SettingKeys.dismissedGuidance, JSON.stringify(dismissedGuidance));
     this.set({ dismissedGuidance });
+  }
+
+  async setArabicDigits(arabicDigits: boolean) {
+    await this.r.setSetting(SettingKeys.digits, arabicDigits ? 'arab' : 'latn');
+    this.set({ arabicDigits });
   }
 
   async setHaptics(haptics: boolean) {

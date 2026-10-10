@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Keyboard, ScrollView, TextInput, View } from 'react-native';
 
@@ -6,6 +6,8 @@ import { parseAmount } from '../core/amountParser';
 import { Day, dayFromDate, dayToDate } from '../core/dates';
 import { keypadInput, KeypadKey } from '../core/keypad';
 import { suggestCategory } from '../domain/smart';
+import { parseTextEntry } from '../domain/textEntry';
+import { minorToEditable } from '../core/amountParser';
 import { useAppState, useController, useUi } from '../ui/AppContext';
 import { Button, Icon, Row, runGuarded, T } from '../ui/components';
 import { haptic } from '../ui/feedback';
@@ -27,13 +29,19 @@ export default function QuickAdd() {
   const st = useAppState();
   const c = useController();
   const { s, p, money } = useUi();
+  // `cat`: opened from a home shortcut with the category already chosen.
+  const { cat } = useLocalSearchParams<{ cat?: string }>();
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
-  const [picked, setPicked] = useState<number | null>(null);
+  const [picked, setPicked] = useState<number | null>(cat && /^\d+$/.test(cat) ? Number(cat) : null);
   const [yesterday, setYesterday] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  const suggestion = useMemo(() => suggestCategory(note, st.history, st.categories), [note, st.history, st.categories]);
+  // Free text ("قهوة 1.5", "قهوة 500 بيسة", dictated or typed) → amount + clean note, when the keypad is empty.
+  const fromText = useMemo(() => parseTextEntry(note, st.currency), [note, st.currency]);
+  const usingText = amount === '' && fromText.amountMinor != null;
+  const cleanNote = usingText ? fromText.note : note.trim();
+  const suggestion = useMemo(() => suggestCategory(cleanNote, st.history, st.categories), [cleanNote, st.history, st.categories]);
   const categoryId = picked ?? suggestion?.categoryId ?? null;
 
   // Suggested first, then the categories this user uses most, then the rest.
@@ -49,11 +57,11 @@ export default function QuickAdd() {
   }, [st.categories, st.history, suggestion?.categoryId]);
 
   const parsed = amount === '' ? null : parseAmount(amount, st.currency);
-  const amountMinor = parsed?.ok ? parsed.minor : 0;
+  const amountMinor = usingText ? fromText.amountMinor! : parsed?.ok ? parsed.minor : 0;
   const canSave = amountMinor > 0 && categoryId != null && !busy;
   const date: Day = yesterday ? dayFromDate(new Date(dayToDate(st.today).getTime() - 86400000)) : st.today;
 
-  const [whole, frac] = (amount || '0').split('.');
+  const [whole, frac] = ((usingText ? minorToEditable(amountMinor, st.currency) : amount) || '0').split('.');
   const typed = group(whole) + (frac !== undefined ? `.${frac}` : '');
   const symbol = currencySymbol(st.currency, st.locale);
   const display = st.locale === 'ar' ? `${LRM}${typed}${LRM}\u00A0${symbol}` : `${symbol}\u00A0${typed}`;
@@ -67,7 +75,7 @@ export default function QuickAdd() {
   async function save() {
     if (!canSave || categoryId == null) return;
     setBusy(true);
-    const ok = await runGuarded(() => c.addExpense({ amountMinor, categoryId, date, note: note.trim() }), s.errGeneric);
+    const ok = await runGuarded(() => c.addExpense({ amountMinor, categoryId, date, note: cleanNote }), s.errGeneric);
     setBusy(false);
     if (ok) {
       // Warning pattern if this expense takes the category over its budget.
@@ -88,10 +96,15 @@ export default function QuickAdd() {
       {/* Amount */}
       <View style={{ alignItems: 'center', paddingTop: Space.lg, gap: Space.sm }}>
         <View accessible accessibilityLiveRegion="polite" accessibilityLabel={`${s.amount}: ${amount === '' ? money(0) : display}`}>
-          <T testID="quick.amount" variant="display" center color={amount === '' ? p.textSubtle : p.onSurface} style={{ fontSize: 44, lineHeight: 60 }}>
+          <T testID="quick.amount" variant="display" center color={amount === '' && !usingText ? p.textSubtle : p.onSurface} style={{ fontSize: 44, lineHeight: 60 }}>
             {display}
           </T>
         </View>
+        {usingText && (
+          <T variant="small" color={p.accentText} testID="quick.fromText">
+            {s.amountFromText}
+          </T>
+        )}
         <Row gap={Space.xs}>
           {[false, true].map((y) => (
             <PressScale

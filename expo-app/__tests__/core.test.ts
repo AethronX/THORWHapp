@@ -148,3 +148,13 @@ describe('parsePercent', () => {
     for (const bad of ['', '4.255', '101', '-1', 'abc', '1.2.3']) expect(parsePercent(bad)).toBeNull();
   });
 });
+
+describe('toArabicDigits', () => {
+  const { toArabicDigits } = require('../src/core/digits');
+  test('numbers, separators and percent; currency symbol untouched', () => {
+    expect(toArabicDigits('‎1,234.500‎ ر.ع.')).toBe('‎١٬٢٣٤٫٥٠٠‎ ر.ع.');
+    expect(toArabicDigits('أكتوبر 2026')).toBe('أكتوبر ٢٠٢٦');
+    expect(toArabicDigits('57%')).toBe('٥٧٪');
+    expect(toArabicDigits('لا أرقام')).toBe('لا أرقام');
+  });
+});

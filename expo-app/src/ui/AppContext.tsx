@@ -32,6 +32,8 @@ export interface UiKit {
   money: (minor: number, signed?: boolean) => string;
   /** Amounts are masked ("hide amounts" privacy mode). */
   hidden: boolean;
+  /** Draw digits as ١٢٣ (Arabic only). */
+  arabicDigits: boolean;
 }
 
 export function useUi(): UiKit {
@@ -50,7 +52,8 @@ export function useUi(): UiKit {
             : `${st.currency.code}\u00A0••••`
           : formatMoney(minor, st.currency, st.locale, signed),
       hidden: st.hideAmounts,
+      arabicDigits: st.locale === 'ar' && st.arabicDigits,
     }),
-    [st.locale, st.currency, isDark, st.hideAmounts],
+    [st.locale, st.currency, isDark, st.hideAmounts, st.arabicDigits],
   );
 }

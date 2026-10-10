@@ -622,3 +622,28 @@ test('export: full JSON backup and an Excel-ready CSV, via the share sheet', asy
   expect(mockShared[1].uri).toBe('file:///cache/tharwati-expenses-2026-10-09.csv');
   expect(mockFiles[1].content).toBe(`﻿${ar.csvHeader.join(',')}\r\n2026-10-09,${ar.cat.food},12.500,OMR,"لولو, ""عروض"""\r\n`);
 });
+
+test('beat the locals: one-tap shortcuts, "قهوة 500 بيسة" text entry, Arabic-Indic digits', async () => {
+  app();
+  await onboard('800');
+  await screen.findByTestId('quickBar');
+  // Default shortcuts before any history: food first.
+  press('quickBar.2');
+  await screen.findByTestId('quickAdd');
+  expect(screen.getByTestId('quick.cat.2').props.accessibilityState.selected).toBe(true);
+  // No keypad: the amount comes from the text (baisa → 0.500 OMR) and the note is cleaned.
+  type('quick.note', 'قهوة 500 بيسة');
+  expect(await screen.findByTestId('quick.fromText')).toBeTruthy();
+  expect(screen.getByTestId('quick.amount').props.children).toBe('‎0.5‎ ر.ع.');
+  press('quick.save');
+  await waitFor(() => expect(screen.queryByTestId('quickAdd')).toBeNull());
+  await waitFor(() => expect(screen.getByTestId('quickBar.today').props.children).toBe(`${ar.todayLabel} ‎0.500‎ ر.ع.`));
+  await nav((router) => router.push('/expenses'));
+  expect(await screen.findByText(/قهوة/)).toBeTruthy();
+
+  // Digits: ١٢٣ everywhere text is drawn; data unchanged.
+  await nav((router) => router.push('/settings'));
+  press('settings.digits.arab');
+  await nav((router) => router.push('/'));
+  await waitFor(() => expect(screen.getByTestId('quickBar.today').props.children).toBe(`${ar.todayLabel} ‎٠٫٥٠٠‎ ر.ع.`));
+});

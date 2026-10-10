@@ -5,14 +5,15 @@ import { monthsUntil, compareDays } from '../../core/dates';
 import { goalProgress } from '../../domain/financeEngine';
 import type { Insight } from '../../domain/insights';
 import { isGoalReached, spendUsage } from '../../domain/models';
-import { expenseTotal, guidance, health, incomeTotal, insights, netCashFlow, safeToSpend, savingsRate, spends } from '../../state/selectors';
+import { expenseTotal, guidance, health, incomeTotal, insights, isViewingCurrentMonth, netCashFlow, recentSpending, safeToSpend, savingsRate, shortcutCategories, spends } from '../../state/selectors';
 import { useAppState, useController, useUi } from '../../ui/AppContext';
 import { AnimatedAmount, Button, Card, Fab, Icon, IconName, LabeledProgress, MonthSwitcher, Row, runGuarded, Screen, T } from '../../ui/components';
 import { haptic } from '../../ui/feedback';
 import { NextStepCard } from '../../ui/Guidance';
-import { categoryLabel, formatMonth, formatPercent } from '../../ui/format';
+import { categoryIcon, categoryLabel, formatMonth, formatPercent } from '../../ui/format';
 import { ScoreRing } from '../../ui/charts';
-import { Elevation, MIN_TAP, Radii, Space } from '../../ui/theme';
+import { categoryTone, Elevation, MIN_TAP, Radii, Space } from '../../ui/theme';
+import { PressScale } from '../../ui/motion';
 
 export default function Dashboard() {
   const st = useAppState();
@@ -105,6 +106,8 @@ export default function Dashboard() {
             </View>
           </Row>
         </View>
+
+        {isViewingCurrentMonth(st) && <QuickBar />}
 
         <NextStepCard items={steps} />
 
@@ -238,5 +241,44 @@ function SmartSummary() {
         </Row>
       </Card>
     </Pressable>
+  );
+}
+
+/** One-tap logging (most used categories → quick add, category preset) + today / last 7 days. */
+function QuickBar() {
+  const st = useAppState();
+  const { s, p, money } = useUi();
+  const r = recentSpending(st);
+  const cats = shortcutCategories(st);
+  return (
+    <Card testID="quickBar">
+      <Row style={{ justifyContent: 'space-between' }}>
+        <T variant="label">{s.quickBarTitle}</T>
+        <Row gap={Space.md}>
+          <T variant="small" muted testID="quickBar.today">{`${s.todayLabel} ${money(r.todayMinor)}`}</T>
+          <T variant="small" muted testID="quickBar.week">{`${s.last7Label} ${money(r.weekMinor)}`}</T>
+        </Row>
+      </Row>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: Space.sm }}>
+        {[...cats, null].map((c) => {
+          const tone = c ? categoryTone(p, c.key, c.iconCode) : null;
+          return (
+            <PressScale
+              key={c?.id ?? 'more'}
+              testID={`quickBar.${c?.id ?? 'more'}`}
+              accessibilityRole="button"
+              accessibilityLabel={c ? `${s.addExpense}: ${categoryLabel(c, s)}` : s.addExpense}
+              onPress={() => router.push(c ? { pathname: '/quick-add', params: { cat: String(c.id) } } : '/quick-add')}
+              style={{ minHeight: MIN_TAP, flexDirection: 'row', alignItems: 'center', gap: Space.xs, paddingHorizontal: Space.md, borderRadius: Radii.pill, borderWidth: 1, borderColor: p.outline, backgroundColor: tone ? tone.bg : p.surfaceMuted }}
+            >
+              <Icon name={c ? categoryIcon(c) : 'add'} size={18} color={tone ? tone.fg : p.primary} />
+              <T variant="label" color={tone ? tone.fg : p.primary}>
+                {c ? categoryLabel(c, s) : s.moreCategories}
+              </T>
+            </PressScale>
+          );
+        })}
+      </View>
+    </Card>
   );
 }

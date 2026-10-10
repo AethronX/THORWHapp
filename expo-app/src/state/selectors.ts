@@ -1,4 +1,4 @@
-import { monthOf, sameMonth } from '../core/dates';
+import { dayToDate, monthOf, sameMonth } from '../core/dates';
 import * as fe from '../domain/financeEngine';
 import {
   averageSpending,
@@ -16,7 +16,7 @@ import { netWorth, NetWorth } from '../domain/wealth';
 import { buildInsights, Insight } from '../domain/insights';
 import { dailyTotals, detectRecurring, RecurringPayment, unusualExpense, UnusualExpense, weekdayPattern, WeekdayPattern } from '../domain/smart';
 import { suggestPlan } from '../domain/profile';
-import type { CategorySpend } from '../domain/models';
+import type { Category, CategorySpend } from '../domain/models';
 import type { AppState } from './appController';
 
 export const incomeTotal = (s: AppState) => fe.sumMinor(s.incomes.map((i) => i.amountMinor));
@@ -155,3 +155,31 @@ export function guidance(s: AppState, emergencyGoalName: string): Guidance[] {
 // -- wealth (src/domain/wealth.ts) -------------------------------------------------
 
 export const wealth = (s: AppState): NetWorth => netWorth(s.assets, s.debts);
+
+// -- quick bar (home) ------------------------------------------------------------
+
+/** Spent today and over the last 7 days (today included), from the loaded history. */
+export function recentSpending(s: AppState): { todayMinor: number; weekMinor: number } {
+  const t = dayToDate(s.today).getTime();
+  let todayMinor = 0;
+  let weekMinor = 0;
+  for (const e of s.history) {
+    const diff = Math.round((t - dayToDate(e.date).getTime()) / 86400000);
+    if (diff === 0) todayMinor += e.amountMinor;
+    if (diff >= 0 && diff < 7) weekMinor += e.amountMinor;
+  }
+  return { todayMinor, weekMinor };
+}
+
+const DEFAULT_SHORTCUTS = ['food', 'transport', 'shopping', 'utilities'];
+
+/** The user's most used everyday categories (fallback: common ones), for one-tap entry. */
+export function shortcutCategories(s: AppState, n = 4): Category[] {
+  const uses = new Map<number, number>();
+  for (const e of s.history) uses.set(e.categoryId, (uses.get(e.categoryId) ?? 0) + 1);
+  const fixed = fixedCategoryIds(s);
+  const ranked = [...s.categories].filter((c) => !fixed.has(c.id)).sort((a, b) => (uses.get(b.id) ?? 0) - (uses.get(a.id) ?? 0) || a.id - b.id);
+  const used = ranked.filter((c) => (uses.get(c.id) ?? 0) > 0);
+  const fill = DEFAULT_SHORTCUTS.map((k) => s.categories.find((c) => c.key === k)).filter((c): c is Category => !!c && !used.includes(c));
+  return [...used, ...fill].slice(0, n);
+}

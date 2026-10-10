@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 
 import { addMonths } from '../core/dates';
+import { toArabicDigits } from '../core/digits';
 import { useAppState, useController, useUi } from './AppContext';
 import { categoryIcon, formatMonth } from './format';
 import { PressScale, useCountUp } from './motion';
@@ -56,7 +57,7 @@ export function T({
   testID?: string;
   numberOfLines?: number;
 }) {
-  const { p, rtl } = useUi();
+  const { p, rtl, arabicDigits } = useUi();
   return (
     <Text
       testID={testID}
@@ -72,9 +73,16 @@ export function T({
         style,
       ]}
     >
-      {children}
+      {arabicDigits ? withArabicDigits(children) : children}
     </Text>
   );
+}
+
+function withArabicDigits(c: ReactNode): ReactNode {
+  if (typeof c === 'string') return toArabicDigits(c);
+  if (typeof c === 'number') return toArabicDigits(String(c));
+  if (Array.isArray(c)) return c.map(withArabicDigits);
+  return c;
 }
 
 /** App icon (Phosphor duotone by default); mirrors directional icons in RTL. */

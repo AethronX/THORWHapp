@@ -28,6 +28,8 @@ export const SettingKeys = {
   hideAmounts: 'hide_amounts',
   /** '0' = haptic feedback off. */
   haptics: 'haptics',
+  /** 'arab' = show Arabic-Indic digits (١٢٣); default Western (123). */
+  digits: 'digits',
   /** JSON { guidanceId: "YYYY-MM" } — steps the user said "not now" to, per month. */
   dismissedGuidance: 'dismissed_guidance',
 } as const;

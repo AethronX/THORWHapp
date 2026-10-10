@@ -227,3 +227,11 @@ a muddy-brown near-limit bar; default system switches. **Decision:** categories 
 line; near/over-limit bars use golden amber #A86F12 and brand red #C94F4F (non-text, ≥ 3:1, tested); one
 branded `Toggle` replaces every Switch.
 
+### D-037 Answers to close local competitors — 2026-10-10
+From the owner's screenshots of «مصاريف» and «مصاريفي» (docs/COMPETITORS_LOCAL.md). **Decision:** (1) home
+"Log in one tap": the user's most-used everyday categories open quick add with the category preset, plus today /
+last 7 days; (2) free-text entry parsed on the device — "قهوة 1.5", "بنزين ٥٫٥ ر.ع", "قهوة 500 بيسة" (baisa → OMR) —
+works with keyboard dictation, no AI service, no data sent; (3) optional Arabic-Indic digits (١٢٣) applied only when
+text is drawn (the shared T component), never to stored data or inputs. Not copied: a spending-day streak (it would
+punish no-spend days) and a day-one paywall.
+
