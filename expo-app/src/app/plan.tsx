@@ -49,7 +49,7 @@ export default function Plan() {
     }
   }
 
-  const sym = currencySymbol(cur, st.locale);
+  const sym = currencySymbol(cur, st.locale, st.classicSign);
   return (
     <Screen testID="plan">
       <T muted>{s.calcIntro}</T>
@@ -87,9 +87,9 @@ export default function Plan() {
 }
 
 function ResultRow({ label, value, emphasize, muted, testID }: { label: string; value: string; emphasize?: boolean; muted?: boolean; testID?: string }) {
-  const { p } = useUi();
+  const { p, say } = useUi();
   return (
-    <View accessible accessibilityLabel={`${label}: ${value}`} testID={testID} style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: Space.sm }}>
+    <View accessible accessibilityLabel={say(`${label}: ${value}`)} testID={testID} style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: Space.sm }}>
       <T variant={muted ? 'small' : 'body'} muted={muted}>
         {label}
       </T>

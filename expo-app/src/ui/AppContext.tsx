@@ -3,7 +3,7 @@ import { useColorScheme } from 'react-native';
 
 import type { AppController, AppState } from '../state/appController';
 import { STRINGS, Strings } from './i18n';
-import { currencySymbol, formatMoney } from './format';
+import { currencySymbol, formatMoney, speakSigns } from './format';
 import { dark, light, Palette } from './theme';
 
 const Ctx = createContext<AppController | null>(null);
@@ -34,6 +34,8 @@ export interface UiKit {
   hidden: boolean;
   /** Draw digits as ١٢٣ (Arabic only). */
   arabicDigits: boolean;
+  /** Text for screen readers: new currency signs spoken by name («ريال عماني»). */
+  say: (text: string) => string;
 }
 
 export function useUi(): UiKit {
@@ -48,12 +50,13 @@ export function useUi(): UiKit {
       money: (minor: number, signed = false) =>
         st.hideAmounts
           ? st.locale === 'ar'
-            ? `••••\u00A0${currencySymbol(st.currency, st.locale)}`
+            ? `••••\u00A0${currencySymbol(st.currency, st.locale, st.classicSign)}`
             : `${st.currency.code}\u00A0••••`
-          : formatMoney(minor, st.currency, st.locale, signed),
+          : formatMoney(minor, st.currency, st.locale, signed, st.classicSign),
       hidden: st.hideAmounts,
       arabicDigits: st.locale === 'ar' && st.arabicDigits,
+      say: (text: string) => speakSigns(text, st.locale),
     }),
-    [st.locale, st.currency, isDark, st.hideAmounts, st.arabicDigits],
+    [st.locale, st.currency, isDark, st.hideAmounts, st.arabicDigits, st.classicSign],
   );
 }

@@ -312,3 +312,12 @@ Plan have Back (and Android back steps back instead of leaving); retaking the qu
 answers kept when going back; (3) compact EmptyState in cards (assets, obligations, holdings, budgets, goals — with an
 "Add goal" action on Home); (4) tokens instead of raw numbers (spacing, info icon 16, badge 40, tab label 12); list amounts
 use the `amount` style; Settings icons share the primary colour.
+
+### D-044 Omani rial sign ⃄ (U+20C4) added; new signs default, classic switch in Settings — 2026-10-10
+The owner supplied the published images of the new Omani rial, Saudi riyal and UAE dirham signs. Saudi (U+20C1) and
+UAE (U+20C3) were already drawn from MIT fonts (D-038). **Decision:** the Omani sign is redrawn as clean vector
+geometry matched to the published image (not a raster trace) and bundled as a tiny TrueType font (CurrencyOMR-Regular,
+U+20C4 only; script in expo-app/scripts/omr-sign/). New signs are the default for OMR/SAR/AED; Settings → «رمز العملة»
+switches back to «ر.ع.»/«ر.س»/«د.إ» for users who don't recognise the new signs yet. Screen readers can't read the new
+characters, so text and amount labels speak the name («ريال عماني»). Replace the glyph with the official CBO vector
+once published. Not verified on a real device.

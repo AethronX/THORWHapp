@@ -11,7 +11,7 @@ import { MIN_TAP, Space } from '../ui/theme';
 export default function Income() {
   const st = useAppState();
   const c = useController();
-  const { s, p, money } = useUi();
+  const { s, p, money, say } = useUi();
   const [editing, setEditing] = useState<number | 'new' | null>(null);
   const current = typeof editing === 'number' ? st.incomes.find((i) => i.id === editing) : undefined;
   // Switching month closes an open editor (the entry being edited belongs to the old month).
@@ -65,7 +65,7 @@ export default function Income() {
             key={i.id}
             testID={`income.row.${i.id}`}
             accessibilityRole="button"
-            accessibilityLabel={`${i.label || s.income}${s.listSep}${money(i.amountMinor)}`}
+            accessibilityLabel={say(`${i.label || s.income}${s.listSep}${money(i.amountMinor)}`)}
             accessibilityHint={s.edit}
             onPress={() => setEditing(i.id)}
             style={{ minHeight: MIN_TAP, justifyContent: 'center', borderBottomWidth: 1, borderBottomColor: p.outline }}

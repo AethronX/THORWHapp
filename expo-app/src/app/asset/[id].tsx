@@ -75,7 +75,7 @@ export default function AssetForm() {
           keyboardType="decimal-pad"
           value={value}
           onChangeText={setValue}
-          suffix={currencySymbol(st.currency, st.locale)}
+          suffix={currencySymbol(st.currency, st.locale, st.classicSign)}
           error={submitted && !parsed.ok ? amountErrorText(parsed.error, st.currency, s) : null}
           ltr
         />

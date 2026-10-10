@@ -12,7 +12,7 @@ import { categoryTone, Fonts, MIN_TAP, Radii, Space } from '../../ui/theme';
 /** Expenses of the viewed month, with search (note + category) and a category filter. */
 export default function Expenses() {
   const st = useAppState();
-  const { s, p, money, rtl } = useUi();
+  const { s, p, money, rtl, say } = useUi();
   const [query, setQuery] = useState('');
   const [categoryId, setCategoryId] = useState<number | null>(null);
 
@@ -109,7 +109,7 @@ export default function Expenses() {
                 key={e.id}
                 testID={`expense.row.${e.id}`}
                 accessibilityRole="button"
-                accessibilityLabel={`${name}${s.listSep}${money(e.amountMinor)}${s.listSep}${sub}`}
+                accessibilityLabel={say(`${name}${s.listSep}${money(e.amountMinor)}${s.listSep}${sub}`)}
                 accessibilityHint={s.edit}
                 onPress={() => router.push(`/expense/${e.id}`)}
                 style={{ minHeight: MIN_TAP, borderBottomWidth: 1, borderBottomColor: p.outline, paddingVertical: Space.sm }}

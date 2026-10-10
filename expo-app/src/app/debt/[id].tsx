@@ -14,7 +14,7 @@ export default function DebtForm() {
   const c = useController();
   const { s } = useUi();
   const existing = id === 'new' ? undefined : st.debts.find((d) => String(d.id) === id);
-  const sym = currencySymbol(st.currency, st.locale);
+  const sym = currencySymbol(st.currency, st.locale, st.classicSign);
 
   const [name, setName] = useState(existing?.name ?? '');
   const [remaining, setRemaining] = useState(existing ? minorToEditable(existing.remainingMinor, st.currency) : '');

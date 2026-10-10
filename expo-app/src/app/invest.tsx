@@ -166,7 +166,7 @@ function CostOfWaiting() {
   const d = num(delay);
   const valid = m.ok && r != null && r >= 0 && r <= 100 && y != null && Number.isInteger(y) && y >= 1 && y <= 50 && d != null && Number.isInteger(d) && d >= 1 && d < y;
   const res = valid ? costOfWaiting({ monthlyMinor: m.minor, annualRatePercent: r!, years: y!, delayYears: d! }) : null;
-  const sym = currencySymbol(st.currency, st.locale);
+  const sym = currencySymbol(st.currency, st.locale, st.classicSign);
 
   return (
     <Card title={s.waitTitle} testID="invest.wait">

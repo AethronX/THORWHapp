@@ -1,4 +1,4 @@
-import { Currency, currencyFromCode, DEFAULT_CURRENCY } from '../core/currency';
+import { CLASSIC_SIGN_BY_DEFAULT, Currency, currencyFromCode, DEFAULT_CURRENCY } from '../core/currency';
 import { addMonths, Day, dayFromDate, monthOf, sameMonth, YearMonth } from '../core/dates';
 import type { DbDriver } from '../data/db';
 import { FinanceRepository, SettingKeys } from '../data/repository';
@@ -19,6 +19,8 @@ export interface AppState {
   readonly themeMode: ThemeMode;
   readonly appLock: boolean;
   readonly hideAmounts: boolean;
+  /** Show «ر.ع.»-style abbreviations instead of the new official signs. */
+  readonly classicSign: boolean;
   readonly haptics: boolean;
   readonly arabicDigits: boolean;
   /** Guidance the user dismissed: id → month key "YYYY-MM". */
@@ -74,6 +76,7 @@ export class AppController {
       themeMode: 'light',
       appLock: false,
       hideAmounts: false,
+      classicSign: CLASSIC_SIGN_BY_DEFAULT,
       haptics: true,
       arabicDigits: false,
       dismissedGuidance: {},
@@ -139,6 +142,7 @@ export class AppController {
         profile: parseProfile(s[SettingKeys.profile]),
         appLock: s[SettingKeys.appLock] === '1',
         hideAmounts: s[SettingKeys.hideAmounts] === '1',
+        classicSign: s[SettingKeys.currencySign] ? s[SettingKeys.currencySign] === 'classic' : CLASSIC_SIGN_BY_DEFAULT,
         haptics: s[SettingKeys.haptics] !== '0',
         arabicDigits: s[SettingKeys.digits] === 'arab',
         dismissedGuidance: parseDismissed(s[SettingKeys.dismissedGuidance]),
@@ -261,6 +265,11 @@ export class AppController {
   async setAppLock(appLock: boolean) {
     await this.r.setSetting(SettingKeys.appLock, appLock ? '1' : '0');
     this.set({ appLock });
+  }
+
+  async setClassicSign(classicSign: boolean) {
+    await this.r.setSetting(SettingKeys.currencySign, classicSign ? 'classic' : 'new');
+    this.set({ classicSign });
   }
 
   async setHideAmounts(hideAmounts: boolean) {

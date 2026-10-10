@@ -72,7 +72,7 @@ export default function ExpenseForm() {
           value={amount}
           onChangeText={setAmount}
           autoFocus={!existing}
-          suffix={currencySymbol(st.currency, st.locale)}
+          suffix={currencySymbol(st.currency, st.locale, st.classicSign)}
           error={amountError}
           ltr
         />

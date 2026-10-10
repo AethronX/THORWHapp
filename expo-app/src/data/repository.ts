@@ -30,6 +30,8 @@ export const SettingKeys = {
   haptics: 'haptics',
   /** 'arab' = show Arabic-Indic digits (١٢٣); default Western (123). */
   digits: 'digits',
+  /** 'classic' = «ر.ع.»-style abbreviations instead of the new official currency signs. */
+  currencySign: 'currency_sign',
   /** JSON { guidanceId: "YYYY-MM" } — steps the user said "not now" to, per month. */
   dismissedGuidance: 'dismissed_guidance',
 } as const;

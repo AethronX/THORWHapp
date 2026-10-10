@@ -15,6 +15,8 @@ import { SqlJsDriver } from './helpers/sqlJsDriver';
 jest.setTimeout(60000);
 
 const mockDriver = { current: new SqlJsDriver() };
+// Existing journeys assert the classic «ر.ع.»; the new official sign has its own test below.
+jest.mock('../src/core/currency', () => ({ ...jest.requireActual('../src/core/currency'), CLASSIC_SIGN_BY_DEFAULT: true }));
 jest.mock('../src/data/expoDb', () => ({
   expoDbDriver: {
     open: () => mockDriver.current.open(),
@@ -667,6 +669,10 @@ test('Saudi riyal: the new sign is drawn with its bundled font (never an empty b
   type('setup.income', '5000');
   press('setup.finish');
   await screen.findByTestId('dashboard');
+  await nav((router) => router.push('/settings'));
+  press('settings.sign.new');
+  await nav((router) => router.push('/'));
+  await waitFor(() => expect(JSON.stringify(screen.toJSON())).toContain('\u20C1'));
   const today = await screen.findByTestId('quickBar.today');
   const parts = [today.props.children].flat(3) as unknown[];
   const sign = parts.find((x) => typeof x === 'object' && x && (x as { props?: { children?: unknown } }).props?.children === '⃁') as { props: { style: { fontFamily: string } } };
@@ -792,4 +798,16 @@ test('undo instead of "are you sure?": quick add and delete both offer Undo that
   await waitFor(() => expect(screen.queryByTestId(/^expense\.row\./)).toBeNull());
   press('toast.action');
   expect(await screen.findByTestId(/^expense\.row\./)).toBeTruthy();
+});
+
+test('new official Omani rial sign: shown when chosen, spoken by name, switchable in Settings', async () => {
+  app();
+  await onboard('800');
+  await nav((router) => router.push('/settings'));
+  press('settings.sign.new');
+  await nav((router) => router.push('/'));
+  const amount = await screen.findByTestId('summary.expenses');
+  await waitFor(() => expect(JSON.stringify(screen.getByTestId('summary.net').props.accessibilityLabel)).toContain('ريال عماني'));
+  expect(JSON.stringify(screen.toJSON())).toContain('\u20C4');
+  expect(amount).toBeTruthy();
 });

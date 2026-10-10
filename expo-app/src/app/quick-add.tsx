@@ -29,7 +29,7 @@ const group = (digits: string) => digits.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 export default function QuickAdd() {
   const st = useAppState();
   const c = useController();
-  const { s, p, money, rtl } = useUi();
+  const { s, p, money, rtl, say } = useUi();
   // `cat`: opened from a home shortcut with the category already chosen.
   const { cat } = useLocalSearchParams<{ cat?: string }>();
   const [amount, setAmount] = useState('');
@@ -64,7 +64,7 @@ export default function QuickAdd() {
 
   const [whole, frac] = ((usingText ? minorToEditable(amountMinor, st.currency) : amount) || '0').split('.');
   const typed = group(whole) + (frac !== undefined ? `.${frac}` : '');
-  const symbol = currencySymbol(st.currency, st.locale);
+  const symbol = currencySymbol(st.currency, st.locale, st.classicSign);
   const display = st.locale === 'ar' ? `${LRM}${typed}${LRM}\u00A0${symbol}` : `${symbol}\u00A0${typed}`;
 
   const press = (k: KeypadKey) => {
@@ -106,7 +106,7 @@ export default function QuickAdd() {
     <View testID="quickAdd" style={{ flex: 1, backgroundColor: p.background, paddingHorizontal: Space.gutter, paddingBottom: Space.lg, gap: Space.md }}>
       {/* Amount */}
       <View style={{ alignItems: 'center', paddingTop: Space.lg, gap: Space.sm }}>
-        <View accessible accessibilityLiveRegion="polite" accessibilityLabel={`${s.amount}: ${amount === '' ? money(0) : display}`}>
+        <View accessible accessibilityLiveRegion="polite" accessibilityLabel={say(`${s.amount}: ${amount === '' ? money(0) : display}`)}>
           <T testID="quick.amount" variant="display" center color={amount === '' && !usingText ? p.textSubtle : p.onSurface} style={{ fontSize: 44, lineHeight: 60 }}>
             {display}
           </T>

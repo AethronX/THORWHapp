@@ -57,10 +57,13 @@ export function T({
   testID?: string;
   numberOfLines?: number;
 }) {
-  const { p, rtl, arabicDigits } = useUi();
+  const { p, rtl, arabicDigits, say } = useUi();
+  // Screen readers don't know the new currency characters yet: speak their names.
+  const spoken = typeof children === 'string' && SIGN_RE.test(children) ? say(children) : undefined;
   return (
     <Text
       testID={testID}
+      accessibilityLabel={spoken}
       numberOfLines={numberOfLines}
       maxFontSizeMultiplier={2}
       style={[
@@ -370,7 +373,7 @@ export function Field({
 
 /** Progress bar that always states its value in text (never colour alone). */
 export function LabeledProgress({ value, label, trailing, budget = false }: { value: number; label: string; trailing?: string; budget?: boolean }) {
-  const { p, s } = useUi();
+  const { p, s, say } = useUi();
   const over = budget && value > 1;
   const near = budget && !over && value >= 0.8;
   const color = over ? p.dangerBar : near ? p.cautionBar : p.progress;
@@ -382,7 +385,7 @@ export function LabeledProgress({ value, label, trailing, budget = false }: { va
     </T>
   ) : null;
   return (
-    <View accessible accessibilityLabel={[label, trailing].filter(Boolean).join(s.listSep)} style={{ gap: Space.xs }}>
+    <View accessible accessibilityLabel={say([label, trailing].filter(Boolean).join(s.listSep))} style={{ gap: Space.xs }}>
       <Row style={{ alignItems: 'flex-start' }}>
         {over && <Icon name="warning" size={18} color={p.negative} />}
         <View style={{ flex: 1 }}>
@@ -400,8 +403,9 @@ export function LabeledProgress({ value, label, trailing, budget = false }: { va
 
 /** "Label ..... value" that wraps the value below at large text sizes. */
 export function TotalRow({ label, value, testID }: { label: string; value: string; testID?: string }) {
+  const { say } = useUi();
   return (
-    <View accessible accessibilityLabel={`${label}: ${value}`} testID={testID} style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: Space.sm }}>
+    <View accessible accessibilityLabel={say(`${label}: ${value}`)} testID={testID} style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: Space.sm }}>
       <T>{label}</T>
       <T variant="subtitle" style={{ fontFamily: Fonts.bold }}>
         {value}

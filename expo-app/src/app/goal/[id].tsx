@@ -32,7 +32,7 @@ export default function GoalForm() {
   const nameError = submitted && name.trim() === '' ? s.errNameEmpty : null;
   const targetError = submitted && !targetParsed.ok ? amountErrorText(targetParsed.error, st.currency, s) : null;
   const savedError = submitted && savedParsed && !savedParsed.ok ? amountErrorText(savedParsed.error, st.currency, s) : null;
-  const sym = currencySymbol(st.currency, st.locale);
+  const sym = currencySymbol(st.currency, st.locale, st.classicSign);
 
   async function save() {
     setSubmitted(true);

@@ -161,7 +161,7 @@ function Setup({ profile, onContinue, onBack }: { profile: Profile | null; onCon
           keyboardType="decimal-pad"
           value={income}
           onChangeText={setIncome}
-          suffix={currencySymbol(currency, st.locale)}
+          suffix={currencySymbol(currency, st.locale, st.classicSign)}
           error={error}
           ltr
         />
@@ -187,7 +187,7 @@ function PlanReview({ profile, currency, incomeMinor, onBack }: { profile: Profi
   const c = useController();
   const st = useAppState();
   const { s, p } = useUi();
-  const fmt = (minor: number) => formatMoney(minor, currency, st.locale);
+  const fmt = (minor: number) => formatMoney(minor, currency, st.locale, false, st.classicSign);
   const plan = suggestPlan(profile ?? DEFAULT_PROFILE, incomeMinor ?? 0, currency);
   const [useGoal, setUseGoal] = useState(plan.goal != null);
   const [useBudget, setUseBudget] = useState(plan.focusBudget != null);

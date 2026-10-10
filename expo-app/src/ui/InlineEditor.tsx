@@ -79,7 +79,7 @@ export function AmountEditor({
         value={amount}
         onChangeText={setAmount}
         autoFocus
-        suffix={currencySymbol(st.currency, st.locale)}
+        suffix={currencySymbol(st.currency, st.locale, st.classicSign)}
         error={error}
         ltr
       />

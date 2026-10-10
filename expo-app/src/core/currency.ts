@@ -34,3 +34,6 @@ export function minorPerMajor(c: Currency): number {
   for (let i = 0; i < c.exponent; i++) v *= 10;
   return v;
 }
+
+/** New official currency signs (⃁ ⃃ ⃄) are shown by default; users can choose the classic «ر.ع.» in Settings. */
+export const CLASSIC_SIGN_BY_DEFAULT = false;

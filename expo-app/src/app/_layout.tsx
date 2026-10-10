@@ -24,6 +24,7 @@ export default function RootLayout() {
     'CurrencySAR-Regular': require('../../assets/fonts/CurrencySAR-Regular.ttf'),
     'CurrencySAR-Bold': require('../../assets/fonts/CurrencySAR-Bold.ttf'),
     'CurrencyAED-Regular': require('../../assets/fonts/CurrencyAED-Regular.ttf'),
+    'CurrencyOMR-Regular': require('../../assets/fonts/CurrencyOMR-Regular.ttf'),
   });
 
   useEffect(() => {

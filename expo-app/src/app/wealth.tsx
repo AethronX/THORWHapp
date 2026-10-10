@@ -20,14 +20,14 @@ import { MIN_TAP, Radii, Space } from '../ui/theme';
  */
 export default function Wealth() {
   const st = useAppState();
-  const { s, p, money } = useUi();
+  const { s, p, money, say } = useUi();
   const w = wealth(st);
 
   return (
     <Screen testID="wealth">
       {/* Summary */}
       <HeroPanel>
-        <View accessible accessibilityLabel={`${s.wealthTitle}: ${money(w.netMinor)}. ${s.wealthDefinition}`} testID="wealth.net">
+        <View accessible accessibilityLabel={say(`${s.wealthTitle}: ${money(w.netMinor)}. ${s.wealthDefinition}`)} testID="wealth.net">
           <T variant="label" color={p.heroAccent}>
             {s.wealthTitle}
           </T>
@@ -81,7 +81,7 @@ export default function Wealth() {
               key={a.id}
               testID={`asset.row.${a.id}`}
               accessibilityRole="button"
-              accessibilityLabel={`${a.name}${s.listSep}${s.assetKind[a.kind]}${s.listSep}${money(a.valueMinor)}${a.isEstimate ? `${s.listSep}${s.estimateTag}` : ''}`}
+              accessibilityLabel={say(`${a.name}${s.listSep}${s.assetKind[a.kind]}${s.listSep}${money(a.valueMinor)}${a.isEstimate ? `${s.listSep}${s.estimateTag}` : ''}`)}
               accessibilityHint={s.edit}
               onPress={() => router.push(`/asset/${a.id}`)}
               style={{ minHeight: MIN_TAP, paddingVertical: Space.xs, borderBottomWidth: 1, borderBottomColor: p.outline }}

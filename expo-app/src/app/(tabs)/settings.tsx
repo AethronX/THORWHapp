@@ -4,6 +4,7 @@ import { Alert, Pressable, View } from 'react-native';
 
 import type { Locale, ThemeMode } from '../../state/appController';
 import { useAppState, useController, useUi } from '../../ui/AppContext';
+import { currencySymbol, hasNewSign } from '../../ui/format';
 import { Toggle, Button, Card, confirm, Icon, IconName, Row, runGuarded, Screen, T } from '../../ui/components';
 import { shareExpensesCsv, shareJsonBackup } from '../../ui/exportData';
 import { haptic } from '../../ui/feedback';
@@ -82,6 +83,19 @@ export default function Settings() {
               ['arab', '١٢٣'],
             ]}
             onChange={(v) => runGuarded(() => c.setArabicDigits(v === 'arab'), s.errGeneric)}
+          />
+        </Card>
+      )}
+      {hasNewSign(st.currency.code) && (
+        <Card title={s.currencySignTitle}>
+          <Segmented<'new' | 'classic'>
+            testID="settings.sign"
+            value={st.classicSign ? 'classic' : 'new'}
+            options={[
+              ['new', `${s.currencySignNew} ${currencySymbol(st.currency, st.locale)}`],
+              ['classic', `${s.currencySignClassic} ${currencySymbol(st.currency, st.locale, true)}`],
+            ]}
+            onChange={(v) => runGuarded(() => c.setClassicSign(v === 'classic'), s.errGeneric)}
           />
         </Card>
       )}

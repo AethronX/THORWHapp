@@ -13,7 +13,7 @@ import { MIN_TAP, Space } from '../ui/theme';
 export default function Budgets() {
   const st = useAppState();
   const c = useController();
-  const { s, p, money } = useUi();
+  const { s, p, money, say } = useUi();
   // `focus` + `suggest`: opened from a guidance step to set or change one limit.
   const { focus, suggest } = useLocalSearchParams<{ focus?: string; suggest?: string }>();
   const [editing, setEditing] = useState<number | null>(focus ? Number(focus) : null);
@@ -48,7 +48,7 @@ export default function Budgets() {
             key={cat.id}
             testID={`budget.row.${cat.id}`}
             accessibilityRole="button"
-            accessibilityLabel={`${categoryLabel(cat, s)}${s.listSep}${limit == null ? s.noLimit : money(limit)}`}
+            accessibilityLabel={say(`${categoryLabel(cat, s)}${s.listSep}${limit == null ? s.noLimit : money(limit)}`)}
             accessibilityHint={s.edit}
             onPress={() => setEditing(cat.id)}
             style={{ minHeight: MIN_TAP, justifyContent: 'center', paddingVertical: Space.xs, borderBottomWidth: 1, borderBottomColor: p.outline }}

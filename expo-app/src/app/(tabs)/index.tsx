@@ -20,7 +20,7 @@ import { PressScale } from '../../ui/motion';
 export default function Dashboard() {
   const st = useAppState();
   const c = useController();
-  const { s, p, money } = useUi();
+  const { s, p, money, say } = useUi();
   const net = netCashFlow(st);
   const rate = savingsRate(st);
   // Next step first; alerts below skip whatever the top step already says.
@@ -68,7 +68,7 @@ export default function Dashboard() {
           <View style={{ position: 'absolute', top: 0, start: Space.xl, end: Space.xl, height: 2, backgroundColor: p.brandGold, borderBottomLeftRadius: 2, borderBottomRightRadius: 2 }} />
           <Row style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
             {/* Net cash flow of the viewed month — NOT a bank balance (defined on screen). */}
-            <View accessible accessibilityLabel={`${s.net}${s.listSep}${formatMonth(st.month, st.locale)}: ${money(net)}. ${s.netDefinition}`} testID="summary.net" style={{ flex: 1 }}>
+            <View accessible accessibilityLabel={say(`${s.net}${s.listSep}${formatMonth(st.month, st.locale)}: ${money(net)}. ${s.netDefinition}`)} testID="summary.net" style={{ flex: 1 }}>
               <T variant="label" color={p.heroAccent}>
                 {`${s.net} · ${formatMonth(st.month, st.locale)}`}
               </T>
@@ -201,9 +201,9 @@ export default function Dashboard() {
 }
 
 function Metric({ label, value, icon, testID }: { label: string; value: string; icon: IconName; testID?: string }) {
-  const { p } = useUi();
+  const { p, say } = useUi();
   return (
-    <View accessible accessibilityLabel={`${label}: ${value}`} testID={testID} style={{ flexDirection: 'row', gap: Space.xs, alignItems: 'flex-start', flexShrink: 1 }}>
+    <View accessible accessibilityLabel={say(`${label}: ${value}`)} testID={testID} style={{ flexDirection: 'row', gap: Space.xs, alignItems: 'flex-start', flexShrink: 1 }}>
       <Icon name={icon} size={18} color={p.onHeroMuted} />
       <View>
         <T variant="small" color={p.onHeroMuted}>
@@ -220,7 +220,7 @@ function Metric({ label, value, icon, testID }: { label: string; value: string; 
 /** Health score + safe daily spend at a glance; opens Insights. */
 function SmartSummary() {
   const st = useAppState();
-  const { s, p, money } = useUi();
+  const { s, p, money, say } = useUi();
   if (incomeTotal(st) === 0 && expenseTotal(st) === 0) return null;
   const h = health(st);
   const safe = safeToSpend(st);
@@ -229,7 +229,7 @@ function SmartSummary() {
     <Pressable
       testID="dashboard.smart"
       accessibilityRole="button"
-      accessibilityLabel={`${s.healthTitle}: ${s.healthOutOf(h.score)}${safe ? `${s.listSep}${s.safeTitle}: ${money(safe.perDayMinor)}` : ''}`}
+      accessibilityLabel={say(`${s.healthTitle}: ${s.healthOutOf(h.score)}${safe ? `${s.listSep}${s.safeTitle}: ${money(safe.perDayMinor)}` : ''}`)}
       onPress={() => router.push('/analytics')}
       style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
     >
