@@ -6,7 +6,25 @@ import { compareDays, dayToDate, monthsUntil } from '../../core/dates';
 import { goalProgress } from '../../domain/financeEngine';
 import type { Insight } from '../../domain/insights';
 import { isGoalReached, spendUsage } from '../../domain/models';
-import { expenseTotal, guidance, lastSevenDays, principles, readiness, wealth, health, incomeTotal, insights, isViewingCurrentMonth, netCashFlow, recentSpending, safeToSpend, savingsRate, shortcutCategories, spends } from '../../state/selectors';
+import {
+  expenseTotal,
+  guidance,
+  persona,
+  lastSevenDays,
+  principles,
+  readiness,
+  wealth,
+  health,
+  incomeTotal,
+  insights,
+  isViewingCurrentMonth,
+  netCashFlow,
+  recentSpending,
+  safeToSpend,
+  savingsRate,
+  shortcutCategories,
+  spends,
+} from '../../state/selectors';
 import { useAppState, useController, useUi } from '../../ui/AppContext';
 import { AnimatedAmount, Button, Card, EmptyState, Fab, Icon, IconName, LabeledProgress, MonthSwitcher, Row, runGuarded, Screen, T } from '../../ui/components';
 import { haptic } from '../../ui/feedback';
@@ -55,8 +73,7 @@ export default function Dashboard() {
         return s.insightGoalOverdue(i.goal!.name, amount);
     }
   };
-  const insightIcon = (i: Insight): [IconName, string] =>
-    i.severity === 'critical' ? ['error', p.negative] : i.severity === 'warning' ? ['warning', p.warning] : ['info', p.primary];
+  const insightIcon = (i: Insight): [IconName, string] => (i.severity === 'critical' ? ['error', p.negative] : i.severity === 'warning' ? ['warning', p.warning] : ['info', p.primary]);
 
   return (
     <View style={{ flex: 1 }}>
@@ -65,8 +82,16 @@ export default function Dashboard() {
 
         <View style={{ backgroundColor: p.hero, borderRadius: Radii.lg, padding: Space.xl, gap: Space.lg, overflow: 'hidden', ...Elevation.raised }}>
           {/* Quiet depth: two large soft rings in the corner (decorative). */}
-          <View pointerEvents="none" importantForAccessibility="no-hide-descendants" style={{ position: 'absolute', top: -70, end: -70, width: 220, height: 220, borderRadius: 110, borderWidth: 28, borderColor: p.onHero, opacity: 0.05 }} />
-          <View pointerEvents="none" importantForAccessibility="no-hide-descendants" style={{ position: 'absolute', bottom: -90, start: -60, width: 180, height: 180, borderRadius: 90, backgroundColor: p.onHero, opacity: 0.04 }} />
+          <View
+            pointerEvents="none"
+            importantForAccessibility="no-hide-descendants"
+            style={{ position: 'absolute', top: -70, end: -70, width: 220, height: 220, borderRadius: 110, borderWidth: 28, borderColor: p.onHero, opacity: 0.05 }}
+          />
+          <View
+            pointerEvents="none"
+            importantForAccessibility="no-hide-descendants"
+            style={{ position: 'absolute', bottom: -90, start: -60, width: 180, height: 180, borderRadius: 90, backgroundColor: p.onHero, opacity: 0.04 }}
+          />
           {/* Signature detail: a fine gold rule along the top edge. */}
           <View style={{ position: 'absolute', top: 0, start: Space.xl, end: Space.xl, height: 2, backgroundColor: p.brandGold, borderBottomLeftRadius: 2, borderBottomRightRadius: 2 }} />
           <Row style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -184,16 +209,23 @@ export default function Dashboard() {
 
         <Card title={s.goalsTitle} action={<Button kind="text" label={s.seeAll} onPress={() => router.push('/goals')} />}>
           {st.goals.length === 0 ? (
-            <EmptyState compact icon="target" title={s.noGoalsShort} action={<Button kind="tonal" icon="add" label={s.addGoal} onPress={() => router.push('/goal/new')} testID="dashboard.addGoal" />} />
+            <EmptyState
+              compact
+              icon="target"
+              title={s.noGoalsShort}
+              action={<Button kind="tonal" icon="add" label={s.addGoal} onPress={() => router.push('/goal/new')} testID="dashboard.addGoal" />}
+            />
           ) : (
-            st.goals.slice(0, 3).map((g) => (
-              <LabeledProgress
-                key={g.id}
-                value={goalProgress(g.savedMinor, g.targetMinor)}
-                label={g.name}
-                trailing={isGoalReached(g) ? s.goalReached : compareDays(g.targetDate, st.today) < 0 ? s.goalOverdue : s.monthsLeft(monthsUntil(st.today, g.targetDate))}
-              />
-            ))
+            st.goals
+              .slice(0, 3)
+              .map((g) => (
+                <LabeledProgress
+                  key={g.id}
+                  value={goalProgress(g.savedMinor, g.targetMinor)}
+                  label={g.name}
+                  trailing={isGoalReached(g) ? s.goalReached : compareDays(g.targetDate, st.today) < 0 ? s.goalOverdue : s.monthsLeft(monthsUntil(st.today, g.targetDate))}
+                />
+              ))
           )}
         </Card>
 
@@ -319,7 +351,17 @@ function QuickBar() {
               accessibilityRole="button"
               accessibilityLabel={c ? `${s.addExpense}: ${categoryLabel(c, s)}` : s.addExpense}
               onPress={() => router.push(c ? { pathname: '/quick-add', params: { cat: String(c.id) } } : '/quick-add')}
-              style={{ minHeight: MIN_TAP, flexDirection: 'row', alignItems: 'center', gap: Space.xs, paddingHorizontal: Space.md, borderRadius: Radii.pill, borderWidth: 1, borderColor: p.outline, backgroundColor: tone ? tone.bg : p.surfaceMuted }}
+              style={{
+                minHeight: MIN_TAP,
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: Space.xs,
+                paddingHorizontal: Space.md,
+                borderRadius: Radii.pill,
+                borderWidth: 1,
+                borderColor: p.outline,
+                backgroundColor: tone ? tone.bg : p.surfaceMuted,
+              }}
             >
               <Icon name={c ? categoryIcon(c) : 'add'} size={18} color={tone ? tone.fg : p.primary} />
               <T variant="label" color={tone ? tone.fg : p.primary}>
@@ -338,11 +380,13 @@ function ToolsCard() {
   const st = useAppState();
   const { s, money } = useUi();
   const score = principleScore(principles(st));
+  const per = persona(st);
   const ready = readiness(st).items.filter((i) => i.status === 'good').length;
   const w = wealth(st);
   const hasWealth = st.assets.length > 0 || st.debts.length > 0;
   return (
     <Card title={s.toolsTitle} testID="home.tools">
+      <ToolRow testID="home.persona" icon="sparkle" title={s.personaTitle} text={per.status === 'ready' ? s.personaEntry(s.personaName[per.key]) : s.personaEntryNoData} to="/persona" />
       <ToolRow testID="home.principles" icon="book" title={s.principlesTitle} text={s.principlesEntry(score.good, score.judged)} to="/principles" />
       <ToolRow testID="home.invest" icon="chartUp" title={s.investTitle} text={s.investEntry(ready)} to="/invest" />
       <ToolRow testID="home.wealth" icon="coins" title={s.wealthOpen} text={hasWealth ? `${s.wealthTitle}: ${money(w.netMinor)}` : s.pMeasureNoData} to="/wealth" />
@@ -350,7 +394,7 @@ function ToolsCard() {
   );
 }
 
-function ToolRow({ testID, icon, title, text, to }: { testID: string; icon: IconName; title: string; text: string; to: '/principles' | '/invest' | '/wealth' }) {
+function ToolRow({ testID, icon, title, text, to }: { testID: string; icon: IconName; title: string; text: string; to: '/principles' | '/invest' | '/wealth' | '/persona' }) {
   const { p } = useUi();
   return (
     <PressScale

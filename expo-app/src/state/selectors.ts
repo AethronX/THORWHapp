@@ -16,6 +16,7 @@ import { buildGuidance, Guidance, withoutDismissed } from '../domain/guidance';
 import { nextSeason, SeasonKey } from '../domain/seasons';
 import { essentialMonthTotals, evaluatePrinciples, liquidSavings, PrincipleResult } from '../domain/principles';
 import { investReadiness } from '../domain/investing';
+import { Persona, readPersona } from '../domain/persona';
 import { netWorth, NetWorth } from '../domain/wealth';
 import { buildInsights, Insight } from '../domain/insights';
 import { dailyTotals, detectRecurring, RecurringPayment, unusualExpense, UnusualExpense, weekdayPattern, WeekdayPattern } from '../domain/smart';
@@ -55,7 +56,6 @@ export function insights(s: AppState): Insight[] {
 }
 
 // -- analytics ------------------------------------------------------------------
-
 
 /** Previous month's totals from the trend (null if not loaded). */
 export function previousMonthTotals(s: AppState): MonthTotals | null {
@@ -135,7 +135,10 @@ export const unusual = (s: AppState): UnusualExpense | null => unusualExpense(s.
 /** Everyday spending per day of the viewed month (rent and bills excluded, so habits show). */
 export function calendar(s: AppState): number[] {
   const fixed = fixedCategoryIds(s);
-  return dailyTotals(s.expenses.filter((e) => !fixed.has(e.categoryId)), s.month);
+  return dailyTotals(
+    s.expenses.filter((e) => !fixed.has(e.categoryId)),
+    s.month,
+  );
 }
 
 // -- guidance (src/domain/guidance.ts) -------------------------------------------
@@ -178,6 +181,11 @@ export function principles(s: AppState): PrincipleResult[] {
     debts: s.debts,
     assets: s.assets,
   });
+}
+
+/** How the user actually spends (src/domain/persona.ts, D-045). */
+export function persona(s: AppState): Persona {
+  return readPersona({ history: s.history, categories: [...s.categoriesById.values()], currencyCode: s.currency.code, payday: s.profile?.payday ?? null });
 }
 
 // -- investing (src/domain/investing.ts) ----------------------------------------
