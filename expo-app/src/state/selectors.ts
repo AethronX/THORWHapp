@@ -13,7 +13,8 @@ import {
 } from '../domain/analytics';
 import { buildGuidance, Guidance, withoutDismissed } from '../domain/guidance';
 import { nextSeason, SeasonKey } from '../domain/seasons';
-import { evaluatePrinciples, PrincipleResult } from '../domain/principles';
+import { essentialMonthTotals, evaluatePrinciples, liquidSavings, PrincipleResult } from '../domain/principles';
+import { investReadiness } from '../domain/investing';
 import { netWorth, NetWorth } from '../domain/wealth';
 import { buildInsights, Insight } from '../domain/insights';
 import { dailyTotals, detectRecurring, RecurringPayment, unusualExpense, UnusualExpense, weekdayPattern, WeekdayPattern } from '../domain/smart';
@@ -173,6 +174,20 @@ export function principles(s: AppState): PrincipleResult[] {
     goals: s.goals,
     debts: s.debts,
     assets: s.assets,
+  });
+}
+
+// -- investing (src/domain/investing.ts) ----------------------------------------
+
+/** Investment readiness from the CURRENT month's data. */
+export function readiness(s: AppState) {
+  const totals = essentialMonthTotals(s.history, [...s.categoriesById.values()], monthOf(s.today));
+  return investReadiness({
+    monthlyEssentialMinor: totals.length >= 2 ? Math.round(totals.reduce((a, b) => a + b, 0) / totals.length) : null,
+    liquidMinor: liquidSavings(s.goals, s.assets),
+    debts: s.debts,
+    incomeMinor: incomeTotal(s),
+    expensesMinor: monthEndForecast(s) ?? expenseTotal(s),
   });
 }
 

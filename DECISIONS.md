@@ -270,3 +270,17 @@ Total Money Makeover*), conscious spending on the largest unlimited optional cat
 without data), the user's own numbers and one action. Ideas are summarised in our own words (no quotes), with a
 non-affiliation and not-advice note. Not included: investment product picks or return claims (e.g. index-fund
 advice), books whose ideas can't be checked against recorded data.
+
+### D-041 Investing section: readiness, holdings, cost of waiting, learning — no product advice — 2026-10-10
+Owner request: add an investment section. Constraint: personalised investment advice / product recommendations are a
+licensed activity (in Oman, the Financial Services Authority — Royal Decree 20/2024 replaced the Capital Market
+Authority), and the app has no market data and must not promise returns. **Decision:** an "Investing" screen (home
+entry with readiness score, also from Wealth and Settings) with: (1) readiness from the user's own data — 3-month
+cushion of essentials in liquid savings, no interest-bearing debt (the highest-rate one is named: repaying it is a
+certain saving at that rate), a monthly surplus on the month-end forecast; (2) holdings by asset kind from recorded
+assets (values as entered, no live prices); (3) the cost of waiting — same monthly amount and end date, started now
+vs later, on a return the USER types (prefilled 4 % like the existing calculator, labelled an assumption; can be 0);
+(4) neutral learning cards (deposits, sukuk/bonds, funds, stocks, gold, property) with general risk/liquidity and
+Sharia-compliant forms mentioned where they exist; (5) safety tips (licence check, "guaranteed high return" = scam
+sign, don't invest the emergency fund, fees, never share OTP). Not done: product/fund/stock suggestions, live prices,
+portfolio returns, brokerage links.

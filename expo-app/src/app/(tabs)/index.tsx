@@ -5,7 +5,7 @@ import { monthsUntil, compareDays } from '../../core/dates';
 import { goalProgress } from '../../domain/financeEngine';
 import type { Insight } from '../../domain/insights';
 import { isGoalReached, spendUsage } from '../../domain/models';
-import { expenseTotal, guidance, principles, health, incomeTotal, insights, isViewingCurrentMonth, netCashFlow, recentSpending, safeToSpend, savingsRate, shortcutCategories, spends } from '../../state/selectors';
+import { expenseTotal, guidance, principles, readiness, health, incomeTotal, insights, isViewingCurrentMonth, netCashFlow, recentSpending, safeToSpend, savingsRate, shortcutCategories, spends } from '../../state/selectors';
 import { useAppState, useController, useUi } from '../../ui/AppContext';
 import { AnimatedAmount, Button, Card, Fab, Icon, IconName, LabeledProgress, MonthSwitcher, Row, runGuarded, Screen, T } from '../../ui/components';
 import { haptic } from '../../ui/feedback';
@@ -286,32 +286,42 @@ function QuickBar() {
   );
 }
 
-/** Entry to "Wealth principles" with the user's current score. */
+/** Entries to "Wealth principles" and "Investing", each with the user's current score. */
 function PrinciplesEntry() {
   const st = useAppState();
-  const { s, p } = useUi();
+  const { s } = useUi();
   const score = principleScore(principles(st));
-  const label = s.principlesEntry(score.good, score.judged);
+  const ready = readiness(st).items.filter((i) => i.status === 'good').length;
+  return (
+    <>
+      <EntryCard testID="home.principles" icon="book" title={s.principlesTitle} text={s.principlesEntry(score.good, score.judged)} to="/principles" />
+      <EntryCard testID="home.invest" icon="chartUp" title={s.investTitle} text={s.investEntry(ready)} to="/invest" />
+    </>
+  );
+}
+
+function EntryCard({ testID, icon, title, text, to }: { testID: string; icon: IconName; title: string; text: string; to: '/principles' | '/invest' }) {
+  const { p } = useUi();
   return (
     <PressScale
-      testID="home.principles"
+      testID={testID}
       accessibilityRole="button"
-      accessibilityLabel={`${s.principlesTitle}: ${label}`}
+      accessibilityLabel={`${title}: ${text}`}
       onPress={() => {
         haptic.tap();
-        router.push('/principles');
+        router.push(to);
       }}
     >
       <Row gap={Space.md} style={{ backgroundColor: p.surface, borderRadius: Radii.lg, borderWidth: 1, borderColor: p.outline, padding: Space.lg, minHeight: MIN_TAP }}>
         <View style={{ backgroundColor: p.primaryContainer, borderRadius: Radii.pill, padding: Space.sm }}>
-          <Icon name="book" size={20} color={p.primary} />
+          <Icon name={icon} size={20} color={p.primary} />
         </View>
         <View style={{ flex: 1 }}>
           <T variant="label" color={p.primary}>
-            {s.principlesTitle}
+            {title}
           </T>
-          <T variant="small" muted testID="home.principles.text">
-            {label}
+          <T variant="small" muted testID={`${testID}.text`}>
+            {text}
           </T>
         </View>
         <Icon name="forward" weight="regular" size={18} color={p.textSubtle} />

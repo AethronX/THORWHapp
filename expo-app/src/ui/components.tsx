@@ -338,6 +338,8 @@ export function Field({
           maxFontSizeMultiplier={2}
           style={{
             flex: 1,
+            // Lets the input shrink so a suffix (currency) stays inside the box.
+            minWidth: 0,
             color: p.onSurface,
             fontFamily: Fonts.regular,
             fontSize: 16,

@@ -697,3 +697,37 @@ test('wealth principles: score on home, book + status + own numbers, action open
   press('principle.consciousSpending.act');
   expect(await screen.findByTestId('budget.editor.amount')).toBeTruthy();
 });
+
+test('investing: readiness from own data, holdings, cost of waiting on the user’s assumption, learn, no product advice', async () => {
+  const db = await mockDriver.current.open();
+  await migrate(db);
+  const repo = new FinanceRepository(db, () => new Date(2026, 9, 9, 10));
+  await repo.completeOnboarding({ currencyCode: 'OMR', month: { year: 2026, month: 10 }, incomeMinor: 1000000, incomeLabel: 'راتب' });
+  await repo.addDebt({ name: 'بطاقة', remainingMinor: 600000, annualRatePercent: 18, monthlyPaymentMinor: 50000, dueDay: null });
+  await repo.addAsset({ name: 'توفير', kind: 'bank', valueMinor: 2400000, isEstimate: false, today: { year: 2026, month: 10, day: 9 } });
+  await repo.addAsset({ name: 'ذهب', kind: 'gold', valueMinor: 600000, isEstimate: true, today: { year: 2026, month: 10, day: 9 } });
+  await db.close();
+
+  const omr = (v: string) => `\u200E${v}\u200E\u00A0ر.ع.`;
+  app();
+  // No essential-spending history → cushion needs data; the 18 % card is an opportunity; no spending → surplus good.
+  expect((await screen.findByTestId('home.invest.text')).props.children).toBe(ar.investEntry(1));
+  press('home.invest');
+  expect((await screen.findByTestId('invest.ready')).props.children).toBe(ar.readyNo(1));
+  expect(screen.getByTestId('invest.r.emergency.status').props.children).toBe(ar.principleStatus.needsData);
+  expect(screen.getByTestId('invest.r.interestDebt.text').props.children).toBe(ar.rDebt('بطاقة', '18'));
+  expect(screen.getByTestId('invest.holdings.total').props.children).toBe(omr('3,000.000'));
+  expect(screen.getByTestId('invest.slice.bank')).toBeTruthy();
+  // Cost of waiting: 100 a month, 0 % assumed, 20 years, wait 5 → 24,000 vs 18,000.
+  type('wait.monthly', '100');
+  type('wait.rate', '0');
+  expect(screen.getByTestId('wait.diff').props.children).toBe(ar.waitDiff(omr('6,000.000')));
+  expect(screen.getByTestId('wait.later').props.children).toBe(ar.waitLater('5 سنوات', omr('18,000.000'), omr('18,000.000')));
+  type('wait.delay', '25');
+  expect(screen.getByTestId('wait.invalid')).toBeTruthy();
+  // Learn: expands in place.
+  expect(screen.queryByTestId('learn.sukuk.body')).toBeNull();
+  press('learn.sukuk');
+  expect(screen.getByTestId('learn.sukuk.body')).toBeTruthy();
+  expect(screen.getByTestId('invest.disclaimer').props.children).toBe(ar.investDisclaimer);
+});

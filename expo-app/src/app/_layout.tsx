@@ -102,6 +102,7 @@ function Root() {
           <Stack.Screen name="expense/[id]" options={{ presentation: 'modal', title: s.addExpense }} />
           <Stack.Screen name="wealth" options={{ title: s.wealthOpen }} />
           <Stack.Screen name="principles" options={{ title: s.principlesTitle }} />
+          <Stack.Screen name="invest" options={{ title: s.investTitle }} />
           <Stack.Screen name="debt/[id]" options={{ presentation: 'modal', title: s.addDebt }} />
           <Stack.Screen name="asset/[id]" options={{ presentation: 'modal', title: s.addAsset }} />
           <Stack.Screen name="quick-add" options={{ presentation: 'modal', title: s.quickAdd }} />

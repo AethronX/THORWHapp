@@ -1,5 +1,11 @@
 # Project status
 
+## Update 2026-10-10 (investing section)
+"Investing" screen (D-041; ANALYTICS.md §8): readiness from own data, holdings by type, cost of waiting on the user's
+own assumed return, neutral learning cards, safety tips; no product advice, no live prices. Text inputs no longer
+overflow their suffix. Verified here: `tsc` 0 errors · **326 tests passing** · web-render screenshots. Not verified:
+a real device; legal review of the investing wording (recommended before launch).
+
 ## Update 2026-10-10 (wealth principles)
 "Wealth principles" screen (D-040; ANALYTICS.md §7): six ideas from popular money books checked against the user's
 own data, with status, numbers and one action; home entry with a score. Strategy note: docs/STRATEGY_3Y.md.

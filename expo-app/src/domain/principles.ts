@@ -9,7 +9,7 @@
  * essentials); no investment product advice, no promised returns.
  * Tests: __tests__/principles.test.ts. Money in integer minor units.
  */
-import { addMonths, Day, monthOf, sameMonth } from '../core/dates';
+import { addMonths, Day, monthOf, sameMonth, YearMonth } from '../core/dates';
 import { FIXED_CATEGORY_KEYS } from './analytics';
 import type { Asset, Category, CategorySpend, Debt, Expense, SavingsGoal } from './models';
 
@@ -49,6 +49,20 @@ export const CONSCIOUS_MIN_SHARE = 0.05;
 /** Liquid = what can be used quickly. */
 const LIQUID_KINDS = new Set<Asset['kind']>(['cash', 'bank']);
 
+/** Recorded essential spending of each of the 3 months before `month` that has any (0–3 values). */
+export function essentialMonthTotals(history: readonly Expense[], categories: readonly Category[], month: YearMonth): number[] {
+  const essential = new Set(categories.filter((c) => c.isEssential).map((c) => c.id));
+  return [1, 2, 3]
+    .map((k) => addMonths(month, -k))
+    .map((m) => history.filter((e) => essential.has(e.categoryId) && sameMonth(monthOf(e.date), m)).reduce((t, e) => t + e.amountMinor, 0))
+    .filter((t) => t > 0);
+}
+
+/** Money usable quickly: goal savings + cash/bank assets. */
+export function liquidSavings(goals: readonly SavingsGoal[], assets: readonly Asset[]): number {
+  return goals.reduce((t, g) => t + Math.max(0, g.savedMinor), 0) + assets.filter((a) => LIQUID_KINDS.has(a.kind)).reduce((t, a) => t + a.valueMinor, 0);
+}
+
 export function evaluatePrinciples(args: {
   today: Day;
   incomeMinor: number;
@@ -74,14 +88,8 @@ export function evaluatePrinciples(args: {
   }
 
   // 2. Room for error: liquid savings vs monthly essential spending (needs ≥ 2 months of data).
-  const essential = new Set(args.categories.filter((c) => c.isEssential).map((c) => c.id));
-  const totals = [1, 2, 3]
-    .map((k) => addMonths(month, -k))
-    .map((m) => args.history.filter((e) => essential.has(e.categoryId) && sameMonth(monthOf(e.date), m)).reduce((t, e) => t + e.amountMinor, 0))
-    .filter((t) => t > 0);
-  const liquid =
-    args.goals.reduce((t, g) => t + Math.max(0, g.savedMinor), 0) +
-    args.assets.filter((a) => LIQUID_KINDS.has(a.kind)).reduce((t, a) => t + a.valueMinor, 0);
+  const totals = essentialMonthTotals(args.history, args.categories, month);
+  const liquid = liquidSavings(args.goals, args.assets);
   if (totals.length < 2) out.push({ key: 'roomForError', status: 'needsData', months: null, liquidMinor: liquid, monthlyEssentialMinor: 0, action: { type: 'openGoals' } });
   else {
     const monthly = Math.round(totals.reduce((a, b) => a + b, 0) / totals.length);

@@ -69,6 +69,8 @@ export default function Wealth() {
         </View>
       </Row>
 
+      <Button kind="tonal" icon="chartUp" label={s.investTitle} onPress={() => router.push('/invest')} testID="wealth.invest" style={{ alignSelf: 'flex-start' }} />
+
       {/* Assets */}
       <Card title={s.assetsTitle} action={<Button kind="text" icon="add" label={s.addAsset} onPress={() => router.push('/asset/new')} testID="wealth.addAsset" />}>
         {st.assets.length === 0 ? (
