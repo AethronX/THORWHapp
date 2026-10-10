@@ -7,7 +7,16 @@ import type { ConfigContext, ExpoConfig } from 'expo/config';
  *    written it to app.json (`expo.extra.eas.projectId`), so `eas update`
  *    never has to edit this file. Installed builds never check for updates
  *    on their own (`updates.checkAutomatically: NEVER` in app.json): the app
- *    makes no network calls. Expo Go loads published updates by itself.
+ *    makes no network calls.
+ *
+ *    IMPORTANT (corrected 2026-10-10): **Expo Go cannot load EAS updates.**
+ *    Expo's own docs state that an update published with a runtimeVersion
+ *    does not load in Expo Go and that a development build (expo-dev-client)
+ *    is required: https://docs.expo.dev/build/updates/ . The earlier note
+ *    here claimed the opposite — that was the behaviour of the retired
+ *    `expo publish`, not of EAS Update. To see changes on a phone today, run
+ *    the dev server (`npx expo start`) and scan the QR in Expo Go; `eas
+ *    update` only reaches development or production builds.
  *
  * 2. Build variants:
  *      APP_VARIANT unset    -> production  (om.tharwati.tharwati)
