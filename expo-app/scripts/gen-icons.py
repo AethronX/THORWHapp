@@ -41,6 +41,9 @@ for key, ph in NAMES.items():
     out[key] = {'r': regular, 'f': [d for d, o in paths if o], 'l': [d for d, o in paths if not o]}
     assert out[key]['r'] and out[key]['l'], key
 
+# Custom drawings that replace a library icon (bank-vault door for savings: scripts/vault-icon/build.py).
+out['savings'] = json.load(open('scripts/custom-icons-savings.json'))
+
 lines = [
     '/* GENERATED from Phosphor Icons (https://phosphoricons.com) — MIT License,',
     ' * Copyright (c) 2023 Phosphor Icons. Regenerate with scripts/gen-icons.py.',
