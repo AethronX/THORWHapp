@@ -19,6 +19,10 @@ export default function RootLayout() {
     [Fonts.regular]: require('../../assets/fonts/IBMPlexSansArabic_400Regular.ttf'),
     [Fonts.medium]: require('../../assets/fonts/IBMPlexSansArabic_500Medium.ttf'),
     [Fonts.bold]: require('../../assets/fonts/IBMPlexSansArabic_700Bold.ttf'),
+    // Only for the new currency signs (U+20C1, U+20C3); see assets/fonts/LICENSE-currency-fonts.txt.
+    'CurrencySAR-Regular': require('../../assets/fonts/CurrencySAR-Regular.ttf'),
+    'CurrencySAR-Bold': require('../../assets/fonts/CurrencySAR-Bold.ttf'),
+    'CurrencyAED-Regular': require('../../assets/fonts/CurrencyAED-Regular.ttf'),
   });
 
   useEffect(() => {

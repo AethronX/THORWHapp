@@ -235,3 +235,14 @@ works with keyboard dictation, no AI service, no data sent; (3) optional Arabic-
 text is drawn (the shared T component), never to stored data or inputs. Not copied: a spending-day streak (it would
 punish no-spend days) and a day-one paywall.
 
+### D-038 New official currency signs — drawn only where we can render them correctly — 2026-10-10
+Owner request: use the newest symbol for each Arab currency / dollar. Verified (web sources, Oct 2026): Saudi riyal
+U+20C1 (Unicode 17.0), UAE dirham U+20C3 (Unicode 18.0, Sept 2026), Omani rial U+20C4 (Central Bank of Oman,
+20 Nov 2025; Unicode 18.0). System fonts and IBM Plex Sans Arabic don't have these glyphs yet, so raw characters would
+show as empty boxes. **Decision:** bundle tiny MIT fonts (npm `riyal`, `dirham`) used ONLY for the sign character —
+the shared T component draws U+20C1/U+20C3 with them — so SAR and AED show the new signs in Arabic and English.
+**OMR stays «ر.ع.» for now:** no licensed, verifiable vector of the official glyph was reachable (CBO and Oman
+Observer were blocked here; the only package found has an unofficial raster). The code is ready (`NEW_SIGNS.OMR`):
+add a font with the official U+20C4 glyph to `CURRENCY_SIGN_FONTS` and it switches. No new symbols found for QAR, KWD,
+BHD, EGP, JOD; USD «$» and EUR «€» unchanged. Data, CSV export and inputs keep ISO codes.
+

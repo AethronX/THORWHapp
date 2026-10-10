@@ -20,7 +20,7 @@ import {
 import { addMonths } from '../core/dates';
 import { toArabicDigits } from '../core/digits';
 import { useAppState, useController, useUi } from './AppContext';
-import { categoryIcon, formatMonth } from './format';
+import { categoryIcon, CURRENCY_SIGN_FONTS, formatMonth } from './format';
 import { PressScale, useCountUp } from './motion';
 import { IconName, PhIcon } from './icons';
 import type { Category } from '../domain/models';
@@ -73,9 +73,28 @@ export function T({
         style,
       ]}
     >
-      {arabicDigits ? withArabicDigits(children) : children}
+      {withCurrencySigns(arabicDigits ? withArabicDigits(children) : children, variant === 'body' || variant === 'small' ? 'regular' : 'bold')}
     </Text>
   );
+}
+
+/** Draw new currency signs (U+20C1 / U+20C3) with their bundled font; system fonts don't have them yet. */
+const SIGN_RE = new RegExp(`([${Object.keys(CURRENCY_SIGN_FONTS).join('')}])`);
+function withCurrencySigns(c: ReactNode, weight: 'regular' | 'bold'): ReactNode {
+  if (typeof c === 'string') {
+    if (!SIGN_RE.test(c)) return c;
+    return c.split(SIGN_RE).map((part, i) =>
+      CURRENCY_SIGN_FONTS[part] ? (
+        <Text key={i} style={{ fontFamily: CURRENCY_SIGN_FONTS[part][weight] }}>
+          {part}
+        </Text>
+      ) : (
+        part
+      ),
+    );
+  }
+  if (Array.isArray(c)) return c.map((x) => withCurrencySigns(x, weight));
+  return c;
 }
 
 function withArabicDigits(c: ReactNode): ReactNode {

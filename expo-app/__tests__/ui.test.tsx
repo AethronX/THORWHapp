@@ -647,3 +647,20 @@ test('beat the locals: one-tap shortcuts, "قهوة 500 بيسة" text entry, Ar
   await nav((router) => router.push('/'));
   await waitFor(() => expect(screen.getByTestId('quickBar.today').props.children).toBe(`${ar.todayLabel} ‎٠٫٥٠٠‎ ر.ع.`));
 });
+
+test('Saudi riyal: the new sign is drawn with its bundled font (never an empty box)', async () => {
+  app();
+  await screen.findByTestId('onb.skip');
+  press('onb.skip');
+  await screen.findByTestId('quiz.skipAll');
+  press('quiz.skipAll');
+  await screen.findByTestId('setup.income');
+  press('setup.currency.SAR');
+  type('setup.income', '5000');
+  press('setup.finish');
+  await screen.findByTestId('dashboard');
+  const today = await screen.findByTestId('quickBar.today');
+  const parts = [today.props.children].flat(3) as unknown[];
+  const sign = parts.find((x) => typeof x === 'object' && x && (x as { props?: { children?: unknown } }).props?.children === '⃁') as { props: { style: { fontFamily: string } } };
+  expect(sign.props.style.fontFamily).toBe('CurrencySAR-Regular'); // small text → regular-weight glyph
+});

@@ -158,3 +158,17 @@ describe('toArabicDigits', () => {
     expect(toArabicDigits('لا أرقام')).toBe('لا أرقام');
   });
 });
+
+describe('new official currency signs', () => {
+  const { formatMoney, currencySymbol } = require('../src/ui/format');
+  const { currencyFromCode } = require('../src/core/currency');
+  test('Saudi riyal U+20C1 and UAE dirham U+20C3 in both languages; others unchanged', () => {
+    expect(formatMoney(1250, currencyFromCode('SAR'), 'ar')).toBe('‎12.50‎ ⃁');
+    expect(formatMoney(1250, currencyFromCode('SAR'), 'en')).toBe('⃁ 12.50');
+    expect(currencySymbol(currencyFromCode('AED'), 'ar')).toBe('⃃');
+    // Omani rial keeps «ر.ع.» until a licensed font with the official U+20C4 glyph is bundled.
+    expect(currencySymbol(currencyFromCode('OMR'), 'ar')).toBe('ر.ع.');
+    expect(formatMoney(12500, currencyFromCode('OMR'), 'en')).toBe('OMR 12.500');
+    expect(currencySymbol(currencyFromCode('USD'), 'ar')).toBe('$');
+  });
+});

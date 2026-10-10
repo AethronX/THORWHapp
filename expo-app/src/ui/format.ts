@@ -6,6 +6,20 @@ import type { Locale } from '../state/appController';
 import { CATEGORY_ICON_NAMES, type IconName } from './icons';
 import type { Strings } from './i18n';
 
+/**
+ * Official new signs (drawn with a bundled font — see CURRENCY_SIGN_FONTS):
+ * Saudi riyal U+20C1 (Unicode 17.0), UAE dirham U+20C3 (Unicode 18.0).
+ * Omani rial U+20C4 (Central Bank of Oman, Nov 2025; Unicode 18.0) is ready in
+ * NEW_SIGNS but stays «ر.ع.» until a licensed font with the official glyph is bundled.
+ */
+export const NEW_SIGNS: Record<string, string> = { SAR: '\u20C1', AED: '\u20C3', OMR: '\u20C4' };
+/** Sign character → font family that draws it (only signs we can render correctly). */
+export const CURRENCY_SIGN_FONTS: Record<string, { regular: string; bold: string }> = {
+  '\u20C1': { regular: 'CurrencySAR-Regular', bold: 'CurrencySAR-Bold' },
+  '\u20C3': { regular: 'CurrencyAED-Regular', bold: 'CurrencyAED-Regular' },
+};
+const signFor = (code: string) => (NEW_SIGNS[code] && CURRENCY_SIGN_FONTS[NEW_SIGNS[code]] ? NEW_SIGNS[code] : null);
+
 const AR_SYMBOLS: Record<string, string> = {
   OMR: 'ر.ع.',
   AED: 'د.إ',
@@ -35,8 +49,8 @@ export const CURRENCY_NAMES: Record<string, [string, string]> = {
 export const currencyName = (c: Currency, l: Locale) =>
   CURRENCY_NAMES[c.code]?.[l === 'ar' ? 0 : 1] ?? c.code;
 
-export const currencySymbol = (c: Currency, l: Locale) =>
-  l === 'ar' ? (AR_SYMBOLS[c.code] ?? c.code) : c.code;
+/** Arabic: the new official sign when we can draw it, else the Arabic abbreviation. English: the sign or the ISO code. */
+export const currencySymbol = (c: Currency, l: Locale) => signFor(c.code) ?? (l === 'ar' ? (AR_SYMBOLS[c.code] ?? c.code) : c.code);
 
 /** 1234567 -> "1,234,567" (no Intl dependency: identical on every device). */
 function group(n: number): string {
@@ -61,7 +75,7 @@ export function formatMoney(minor: number, c: Currency, l: Locale, signed = fals
       ? group(abs)
       : `${group(Math.floor(abs / per))}.${String(abs % per).padStart(c.exponent, '0')}`;
   const sign = neg ? '-' : signed && minor > 0 ? '+' : '';
-  return l === 'ar' ? `${LRM}${sign}${body}${LRM}${NBSP}${currencySymbol(c, l)}` : `${c.code}${NBSP}${sign}${body}`;
+  return l === 'ar' ? `${LRM}${sign}${body}${LRM}${NBSP}${currencySymbol(c, l)}` : `${currencySymbol(c, l)}${NBSP}${sign}${body}`;
 }
 
 /**
