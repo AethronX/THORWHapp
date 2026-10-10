@@ -26,9 +26,7 @@ import type { ConfigContext, ExpoConfig } from 'expo/config';
 export default ({ config }: ConfigContext): ExpoConfig => {
   const base = config as ExpoConfig;
   const projectId: string | undefined = base.extra?.eas?.projectId;
-  const withUpdates: ExpoConfig = projectId
-    ? { ...base, updates: { ...base.updates, url: `https://u.expo.dev/${projectId}` } }
-    : base;
+  const withUpdates: ExpoConfig = projectId ? { ...base, updates: { ...base.updates, url: `https://u.expo.dev/${projectId}` } } : base;
 
   if (process.env.APP_VARIANT !== 'preview') return withUpdates;
   // QA builds check for an EAS update on every launch; production keeps
