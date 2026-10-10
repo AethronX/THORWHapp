@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, Switch, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { addMonths, monthOf } from '../core/dates';
 import { minorPerMajor } from '../core/currency';
@@ -8,7 +8,7 @@ import type { Debt } from '../domain/models';
 import { payoffPlan, suggestedExtra } from '../domain/wealth';
 import { wealth } from '../state/selectors';
 import { useAppState, useController, useUi } from '../ui/AppContext';
-import { AnimatedAmount, Button, Card, Icon, IconButton, LabeledProgress, Row, runGuarded, Screen, T } from '../ui/components';
+import { Toggle, AnimatedAmount, Button, Card, Icon, IconButton, LabeledProgress, Row, runGuarded, Screen, T } from '../ui/components';
 import { haptic } from '../ui/feedback';
 import { formatDate, formatMonth } from '../ui/format';
 import { AmountEditor } from '../ui/InlineEditor';
@@ -172,7 +172,7 @@ function DebtItem({ debt }: { debt: Debt }) {
               <View style={{ flex: 1 }}>
                 <T variant="small">{s.alsoExpense}</T>
               </View>
-              <Switch testID={`debt.alsoExpense.${debt.id}`} value={alsoExpense} onValueChange={setAlsoExpense} trackColor={{ true: p.primary, false: p.outline }} accessibilityLabel={s.alsoExpense} />
+              <Toggle testID={`debt.alsoExpense.${debt.id}`} value={alsoExpense} onValueChange={setAlsoExpense} accessibilityLabel={s.alsoExpense} />
             </Row>
             <AmountEditor
               testID="payment"

@@ -70,6 +70,16 @@ The free plan is enough; builds may wait in a queue.
 
 Not needed for the APK and not done: `eas submit`, Google Play, paid EAS plans.
 
+## 3b. iPhone build (to test Face ID / app lock for real)
+Expo Go may use its own Face ID permission; if the lock shows the passcode instead of Face ID, install a real
+build. iOS builds on a phone require a **paid Apple Developer Program membership** (owner decision — not enabled here).
+```bash
+npx eas-cli@latest device:create                       # register your iPhone (open the link on the phone)
+npx eas-cli@latest build -p ios --profile preview      # ad-hoc build, installs as «ثروتي (تجريبي)»
+```
+Open the link/QR code EAS prints on the iPhone to install. On iOS 16+ enable Settings → Privacy & Security →
+Developer Mode the first time.
+
 ## Project layout
 ```
 src/app/          screens (Expo Router: (tabs)/ incl. analytics, onboarding, profile, income, budgets, categories,

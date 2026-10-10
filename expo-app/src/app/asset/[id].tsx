@@ -1,11 +1,11 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, Switch, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { minorToEditable, parseAmount } from '../../core/amountParser';
 import { ASSET_KINDS, AssetKind } from '../../domain/models';
 import { useAppState, useController, useUi } from '../../ui/AppContext';
-import { Button, confirm, Field, Row, runGuarded, Screen, T } from '../../ui/components';
+import { Toggle, Button, confirm, Field, Row, runGuarded, Screen, T } from '../../ui/components';
 import { amountErrorText, currencySymbol } from '../../ui/format';
 import { Radii, Space } from '../../ui/theme';
 
@@ -82,7 +82,7 @@ export default function AssetForm() {
           <View style={{ flex: 1 }}>
             <T>{s.assetIsEstimate}</T>
           </View>
-          <Switch testID="asset.estimate" value={estimate} onValueChange={setEstimate} trackColor={{ true: p.primary, false: p.outline }} accessibilityLabel={s.assetIsEstimate} />
+          <Toggle testID="asset.estimate" value={estimate} onValueChange={setEstimate} accessibilityLabel={s.assetIsEstimate} />
         </Row>
         <Button label={s.save} onPress={save} disabled={busy} testID="asset.save" />
         {existing && <Button kind="danger" icon="delete" label={s.delete} onPress={remove} disabled={busy} testID="asset.delete" />}

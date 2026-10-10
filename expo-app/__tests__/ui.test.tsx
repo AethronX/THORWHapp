@@ -449,7 +449,7 @@ test('guidance: rising category → set a limit (prefilled), emergency fund → 
   app();
   await screen.findByTestId('dashboard');
   const rising = `guidance.categoryRising:${ent}`;
-  expect((await screen.findByTestId(`${rising}.title`)).props.children).toBe(ar.gRisingTitle(ar.cat.entertainment, '200%'));
+  expect((await screen.findByTestId(`${rising}.title`)).props.children).toBe(ar.gRisingTitle(ar.cat.entertainment, '\u200E200%\u200E'));
   // Why: the user's own numbers, same days compared, suggested limit = last month's total rounded up.
   press(`${rising}.why`);
   expect(screen.getByTestId(`${rising}.reason`).props.children).toBe(

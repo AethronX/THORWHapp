@@ -6,6 +6,7 @@ import {
   Platform,
   Pressable,
   ScrollView,
+  Switch,
   StyleProp,
   StyleSheet,
   Text,
@@ -343,21 +344,23 @@ export function LabeledProgress({ value, label, trailing, budget = false }: { va
   const { p } = useUi();
   const over = budget && value > 1;
   const near = budget && !over && value >= 0.8;
-  const color = over ? p.negative : near ? p.warning : p.progress;
+  const color = over ? p.dangerBar : near ? p.cautionBar : p.progress;
+  // Long trailing text (e.g. "350.000 ر.ع. من 360.000 ر.ع.") goes on its own line so amounts never break mid-way.
+  const stacked = (trailing?.length ?? 0) > 16;
+  const trailingText = trailing ? (
+    <T variant="small" color={over ? p.negative : p.onSurfaceMuted}>
+      {trailing}
+    </T>
+  ) : null;
   return (
     <View accessible accessibilityLabel={[label, trailing].filter(Boolean).join('، ')} style={{ gap: Space.xs }}>
       <Row style={{ alignItems: 'flex-start' }}>
         {over && <Icon name="warning" size={18} color={p.negative} />}
-        <View style={{ flex: 3 }}>
+        <View style={{ flex: 1 }}>
           <T>{label}</T>
+          {stacked && trailingText}
         </View>
-        {trailing ? (
-          <View style={{ flex: 2 }}>
-            <T variant="small" color={over ? p.negative : p.onSurfaceMuted} style={{ textAlign: 'auto' }}>
-              {trailing}
-            </T>
-          </View>
-        ) : null}
+        {!stacked && trailingText && <View style={{ flexShrink: 0 }}>{trailingText}</View>}
       </Row>
       <View style={{ height: 8, borderRadius: Radii.pill, backgroundColor: p.surfaceMuted, overflow: 'hidden' }}>
         <View style={{ height: 8, width: `${Math.round(Math.min(1, Math.max(0, value)) * 100)}%`, backgroundColor: color }} />
@@ -467,5 +470,21 @@ export function CategoryBadge({ category, size = 40 }: { category: Category | un
     >
       <Icon name={category ? categoryIcon(category) : 'catOther'} size={Math.round(size * 0.55)} color={tone.fg} />
     </View>
+  );
+}
+
+/** Brand switch: emerald when on, clear track when off, white thumb on Android (iOS draws its own). */
+export function Toggle({ value, onValueChange, testID, accessibilityLabel }: { value: boolean; onValueChange: (v: boolean) => void; testID?: string; accessibilityLabel?: string }) {
+  const { p } = useUi();
+  return (
+    <Switch
+      testID={testID}
+      accessibilityLabel={accessibilityLabel}
+      value={value}
+      onValueChange={onValueChange}
+      trackColor={{ true: p.primary, false: p.borderStrong }}
+      ios_backgroundColor={p.borderStrong}
+      thumbColor={Platform.OS === 'android' ? '#FFFFFF' : undefined}
+    />
   );
 }

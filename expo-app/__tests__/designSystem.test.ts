@@ -76,6 +76,8 @@ for (const [name, p] of [
       ['brand gold on the deep-green hero', p.brandGold, p.hero],
       ['progress bar on its track', p.progress, p.surfaceMuted],
       ['progress bar on surface', p.progress, p.surface],
+      ['near-limit bar on its track', p.cautionBar, p.surfaceMuted],
+      ['over-limit bar on its track', p.dangerBar, p.surfaceMuted],
     ])(`UI boundary: %s >= 3:1`, (_label, fg, bg) => {
       expect(contrast(fg, bg)).toBeGreaterThanOrEqual(AA_UI);
     });

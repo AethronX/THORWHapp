@@ -1,10 +1,10 @@
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
-import { Alert, Pressable, Switch, View } from 'react-native';
+import { Alert, Pressable, View } from 'react-native';
 
 import type { Locale, ThemeMode } from '../../state/appController';
 import { useAppState, useController, useUi } from '../../ui/AppContext';
-import { Button, Card, confirm, Icon, IconName, Row, runGuarded, Screen, T } from '../../ui/components';
+import { Toggle, Button, Card, confirm, Icon, IconName, Row, runGuarded, Screen, T } from '../../ui/components';
 import { shareExpensesCsv, shareJsonBackup } from '../../ui/exportData';
 import { haptic } from '../../ui/feedback';
 import { categoryLabel } from '../../ui/format';
@@ -192,7 +192,7 @@ function ToggleRow({ icon, label, hint, value, onChange, testID }: { icon: IconN
           {hint}
         </T>
       </View>
-      <Switch testID={testID} value={value} onValueChange={onChange} trackColor={{ true: p.primary, false: p.outline }} accessibilityLabel={label} />
+      <Toggle testID={testID} value={value} onValueChange={onChange} accessibilityLabel={label} />
     </Row>
   );
 }

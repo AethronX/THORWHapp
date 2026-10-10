@@ -218,3 +218,12 @@ injection guard, plain decimal amounts). Files are written to the app cache and 
 sheet — the user chooses the destination; Tharwati uploads nothing. The screen states that restore is not
 available yet. Uses expo-file-system and expo-sharing (both in Expo Go).
 
+### D-036 Design & colour polish: brand-family category colours, LRM percents, stacked amounts — 2026-10-10
+Review of every screen found: saturated "chart-library" category colours (royal blue, purple, orange) clashing
+with the emerald/gold identity; «%57» instead of «57%» in Arabic; amounts split across lines in progress rows;
+a muddy-brown near-limit bar; default system switches. **Decision:** categories are regenerated as one family
+(OKLCH L 0.50 / C 0.12, hues 30° apart, housing on the brand emerald hue; dark mode L 0.79) — text ≥ 4.76:1,
+ΔE ≥ 0.051, tested; percentages are wrapped in LRM like amounts; long progress-row values move to their own
+line; near/over-limit bars use golden amber #A86F12 and brand red #C94F4F (non-text, ≥ 3:1, tested); one
+branded `Toggle` replaces every Switch.
+

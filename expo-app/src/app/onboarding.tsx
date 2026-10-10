@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pressable, Switch, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { parseAmount } from '../core/amountParser';
@@ -7,7 +7,7 @@ import { Currency, CURRENCIES, DEFAULT_CURRENCY } from '../core/currency';
 import { addMonths, daysInMonth, monthOf } from '../core/dates';
 import { DEFAULT_PROFILE, Profile, suggestPlan } from '../domain/profile';
 import { useAppState, useController, useUi } from '../ui/AppContext';
-import { Button, Card, Field, Icon, IconName, Row, runGuarded, Screen, T } from '../ui/components';
+import { Toggle, Button, Card, Field, Icon, IconName, Row, runGuarded, Screen, T } from '../ui/components';
 import { Quiz } from '../ui/Quiz';
 import { amountErrorText, currencyName, currencySymbol, formatMoney } from '../ui/format';
 import { MIN_TAP, Radii, Space } from '../ui/theme';
@@ -231,7 +231,7 @@ function PlanReview({ profile, currency, incomeMinor }: { profile: Profile | nul
                     <T>{plan.goal.kind === 'emergency' ? s.planGoalEmergency(fmt(plan.goal.targetMinor)) : s.planGoalPurchase(fmt(plan.goal.targetMinor))}</T>
                   </View>
                 </Row>
-                <Switch testID="plan.goal.toggle" value={useGoal} onValueChange={setUseGoal} trackColor={{ true: p.primary, false: p.outline }} accessibilityLabel={s.goalsTitle} />
+                <Toggle testID="plan.goal.toggle" value={useGoal} onValueChange={setUseGoal} accessibilityLabel={s.goalsTitle} />
               </Row>
             )}
             {plan.focusBudget && (
@@ -242,7 +242,7 @@ function PlanReview({ profile, currency, incomeMinor }: { profile: Profile | nul
                     <T>{s.planBudget(s.cat[plan.focusBudget.category], fmt(plan.focusBudget.limitMinor))}</T>
                   </View>
                 </Row>
-                <Switch testID="plan.budget.toggle" value={useBudget} onValueChange={setUseBudget} trackColor={{ true: p.primary, false: p.outline }} accessibilityLabel={s.budgetsTitle} />
+                <Toggle testID="plan.budget.toggle" value={useBudget} onValueChange={setUseBudget} accessibilityLabel={s.budgetsTitle} />
               </Row>
             )}
           </Card>

@@ -64,10 +64,13 @@ export function formatMoney(minor: number, c: Currency, l: Locale, signed = fals
   return l === 'ar' ? `${LRM}${sign}${body}${LRM}${NBSP}${currencySymbol(c, l)}` : `${c.code}${NBSP}${sign}${body}`;
 }
 
-/** Whole percent, toward zero, so an unfinished goal never reads "100%". */
+/**
+ * Whole percent, toward zero, so an unfinished goal never reads "100%".
+ * Wrapped in LRM marks so «57%» never displays as «%57» inside Arabic text.
+ */
 export function formatPercent(fraction: number): string {
   const p = fraction * 100;
-  return `${p >= 0 ? Math.floor(p) : Math.ceil(p)}%`;
+  return `${LRM}${p >= 0 ? Math.floor(p) : Math.ceil(p)}%${LRM}`;
 }
 
 const MONTHS: Record<Locale, string[]> = {

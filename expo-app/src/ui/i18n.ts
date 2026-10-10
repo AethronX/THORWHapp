@@ -756,7 +756,7 @@ const ar: Strings = {
   debtRemaining: (remaining, original) => `المتبقي ${remaining} من ${original}`,
   debtMonthly: (amount) => `${amount} شهريًا`,
   debtDue: (day) => `يستحق يوم ${day}`,
-  debtRate: (rate) => `فائدة سنوية ${rate}%`,
+  debtRate: (rate) => `فائدة سنوية \u200E${rate}%\u200E`,
   debtNoRate: 'بلا فائدة مسجلة',
   debtPaidOff: 'تم السداد',
   payoffBase: (months, when, interest) => `بهذا القسط: ينتهي السداد خلال ${months} (نحو ${when})، بفائدة إجمالية تقريبية ${endSentence(interest)}`,

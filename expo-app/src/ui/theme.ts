@@ -68,6 +68,9 @@ export interface Palette {
   brandGold: string;
   /** Progress bars and rings (non-text, >= 3:1). */
   progress: string;
+  /** Budget bar near its limit / over it (non-text, >= 3:1). */
+  cautionBar: string;
+  dangerBar: string;
 
   // Text
   onSurface: string;
@@ -128,6 +131,8 @@ export const light: Palette = {
   heroAccent: '#D6B35F', // brand gold, a hair lighter for 4.6:1 text on the hero
   brandGold: '#D4AF57',
   progress: '#2E7D68', // brand mid green
+  cautionBar: '#A86F12', // golden amber, 3.6:1 on the track
+  dangerBar: '#C94F4F', // brand red (non-text use, 3.7:1)
 
   onSurface: S.ink[900],
   onSurfaceMuted: S.ink[700],
@@ -161,18 +166,20 @@ export const light: Palette = {
   expense: S.ink[900],
 
   categories: {
-    housing: { fg: '#345197', bg: '#EAF0FE' },
-    food: { fg: '#3E6C1D', bg: '#E8F5E1' },
-    transport: { fg: '#066D90', bg: '#DFF4FF' },
-    utilities: { fg: '#7E5E01', bg: '#F9EFDA' },
-    telecom: { fg: '#584995', bg: '#EFEEFE' },
-    health: { fg: '#983F4A', bg: '#FFEBEB' },
-    education: { fg: '#0E4786', bg: '#E7F1FE' },
-    family: { fg: '#8A3A64', bg: '#FFE9F3' },
-    shopping: { fg: '#6F397B', bg: '#FAEAFD' },
-    entertainment: { fg: '#A04F27', bg: '#FFECE3' },
-    debt: { fg: '#742E2B', bg: '#FFEBE9' },
-    other: { fg: '#666457', bg: '#F1F0EA' },
+    // One family (OKLCH L 0.50, C 0.12, hues 30° apart; housing on the brand emerald hue), so charts
+    // read as Tharwati rather than a generic chart library. Text >= 4.76:1, ΔE >= 0.051.
+    housing: { fg: '#007852', bg: '#E2F6EC' },
+    food: { fg: '#8A5700', bg: '#FAEEDE' },
+    transport: { fg: '#007096', bg: '#DFF4FD' },
+    utilities: { fg: '#994920', bg: '#FFEBE3' },
+    telecom: { fg: '#2E64A6', bg: '#E5F1FF' },
+    health: { fg: '#9B424D', bg: '#FFEAEB' },
+    education: { fg: '#007778', bg: '#DEF6F5' },
+    family: { fg: '#914373', bg: '#FDEAF4' },
+    shopping: { fg: '#7D4B92', bg: '#F7EBFC' },
+    entertainment: { fg: '#5D57A4', bg: '#EEEEFF' },
+    debt: { fg: '#6E6600', bg: '#F2F1DE' },
+    other: { fg: '#65635E', bg: '#F2F0EC' },
   },
 };
 
@@ -187,6 +194,8 @@ export const dark: Palette = {
   heroAccent: S.gold[300],
   brandGold: '#D4AF57',
   progress: S.emerald[300],
+  cautionBar: S.amber[300],
+  dangerBar: S.ruby[300],
 
   onSurface: S.ink[50],
   onSurfaceMuted: S.ink[300],
@@ -220,18 +229,18 @@ export const dark: Palette = {
   expense: S.ink[50],
 
   categories: {
-    housing: { fg: '#9EBDFF', bg: '#202B42' },
-    food: { fg: '#AFDA97', bg: '#213019' },
-    transport: { fg: '#A6E1FE', bg: '#0F2F3D' },
-    utilities: { fg: '#CEAC64', bg: '#36290E' },
-    telecom: { fg: '#A497EA', bg: '#2B2740' },
-    health: { fg: '#E5848C', bg: '#3F2224' },
-    education: { fg: '#6FA7EE', bg: '#1C2C41' },
-    family: { fg: '#F89DC9', bg: '#3C222E' },
-    shopping: { fg: '#D398E0', bg: '#352439' },
-    entertainment: { fg: '#FEA47C', bg: '#3E2418' },
-    debt: { fg: '#FEC8C3', bg: '#3F2220' },
-    other: { fg: '#CCCBC0', bg: '#2C2B27' },
+    housing: { fg: '#74D0AA', bg: '#183026' },
+    food: { fg: '#E2B16B', bg: '#342816' },
+    transport: { fg: '#67C9ED', bg: '#152E37' },
+    utilities: { fg: '#F3A582', bg: '#39251B' },
+    telecom: { fg: '#8CBEFD', bg: '#1E2B3B' },
+    health: { fg: '#F69EA5', bg: '#3A2324' },
+    education: { fg: '#5BD0CF', bg: '#12302F' },
+    family: { fg: '#EB9FCA', bg: '#37232E' },
+    shopping: { fg: '#D4A6E9', bg: '#312536' },
+    entertainment: { fg: '#B3B1FC', bg: '#28283B' },
+    debt: { fg: '#C4BF6C', bg: '#2D2B16' },
+    other: { fg: '#BCBAB5', bg: '#2B2A27' },
   },
 };
 
