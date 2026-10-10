@@ -111,7 +111,7 @@ export function buildGuidance(args: {
   // 4. A goal that this month's recorded net can't keep on schedule.
   if (incomeMinor > 0) {
     for (const g of args.goals) {
-      if (isGoalReached(g) || compareDays(g.targetDate, today) < 0) continue;
+      if (g.paused || isGoalReached(g) || compareDays(g.targetDate, today) < 0) continue;
       const required = requiredMonthlySaving({ targetMinor: g.targetMinor, savedMinor: g.savedMinor, months: monthsUntil(today, g.targetDate) });
       if (required > Math.max(0, net)) {
         out.push({ id: `goalAtRisk:${g.id}`, kind: 'goalAtRisk', priority: 70, goal: g, requiredMinor: required, netMinor: net, action: { type: 'openGoals' } });
@@ -187,7 +187,7 @@ export function buildGuidance(args: {
   }
 
   // 7. Late in the month with a positive net and an open goal: suggest putting some aside.
-  const open = args.goals.find((g) => !isGoalReached(g) && compareDays(g.targetDate, today) >= 0);
+  const open = args.goals.find((g) => !g.paused && !isGoalReached(g) && compareDays(g.targetDate, today) >= 0);
   if (incomeMinor > 0 && net > 0 && open && today.day >= 20) {
     out.push({ id: `saveSurplus:${open.id}`, kind: 'saveSurplus', priority: 20, netMinor: net, goal: open, action: { type: 'openGoals' } });
   }

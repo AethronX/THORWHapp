@@ -12,7 +12,7 @@ const id = (k: CategoryKey) => KEYS.findIndex(([x]) => x === k) + 1;
 let n = 1;
 const ex = (k: CategoryKey, omr: number, m: number, d: number, y = 2026): Expense => ({ id: n++, amountMinor: Math.round(omr * 1000), categoryId: id(k), date: { year: y, month: m, day: d }, note: '' });
 const spend = (k: CategoryKey, omr: number, limit: number | null = null): CategorySpend => ({ category: cats[id(k) - 1], spentMinor: omr * 1000, limitMinor: limit == null ? null : limit * 1000 });
-const goal = (gid: number, name: string, target: number, saved: number, y = 2027, m = 10): SavingsGoal => ({ id: gid, name, targetMinor: target * 1000, savedMinor: saved * 1000, targetDate: { year: y, month: m, day: 1 } });
+const goal = (gid: number, name: string, target: number, saved: number, y = 2027, m = 10): SavingsGoal => ({ id: gid, name, targetMinor: target * 1000, savedMinor: saved * 1000, targetDate: { year: y, month: m, day: 1 }, paused: false });
 const today = { year: 2026, month: 10, day: 12 };
 const base = { today, incomeMinor: 1000000, expensesMinor: 0, spends: [], history: [], categories: cats, goals: [], currency: OMR, emergencyGoalName: 'صندوق الطوارئ' };
 const kinds = (g: { kind: string }[]) => g.map((x) => x.kind);
@@ -78,6 +78,13 @@ test('goal at risk and late-month surplus', () => {
   const late = buildGuidance({ ...base, today: { year: 2026, month: 10, day: 22 }, incomeMinor: 500000, expensesMinor: 300000, goals: [goal(4, 'سفر', 1200, 0, 2027, 10)] });
   expect(late.find((x) => x.kind === 'saveSurplus')).toMatchObject({ netMinor: 200000 });
   expect(kinds(late)).not.toContain('goalAtRisk'); // 200 ≥ 100 needed
+});
+
+test('paused goals are never "at risk" and get no surplus suggestion', () => {
+  const paused = { ...goal(3, 'سفر', 1200, 0, 2027, 10), paused: true };
+  const g = buildGuidance({ ...base, today: { year: 2026, month: 10, day: 22 }, incomeMinor: 500000, expensesMinor: 450000, goals: [paused] });
+  expect(kinds(g)).not.toContain('goalAtRisk');
+  expect(kinds(g)).not.toContain('saveSurplus');
 });
 
 test('dismissed items stay hidden for that month only', () => {

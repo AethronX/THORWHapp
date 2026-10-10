@@ -4,7 +4,7 @@ import type { DbDriver } from '../data/db';
 import { FinanceRepository, SettingKeys } from '../data/repository';
 import { migrate } from '../data/schema';
 import type { MonthTotals } from '../domain/analytics';
-import type { Category, Expense, IncomeEntry, SavingsGoal } from '../domain/models';
+import type { Asset, AssetKind, Category, Debt, Expense, IncomeEntry, SavingsGoal } from '../domain/models';
 import { parseProfile, Profile } from '../domain/profile';
 import type { Day as DayT } from '../core/dates';
 
@@ -33,6 +33,8 @@ export interface AppState {
   readonly incomes: readonly IncomeEntry[];
   readonly budgets: ReadonlyMap<number, number>;
   readonly goals: readonly SavingsGoal[];
+  readonly debts: readonly Debt[];
+  readonly assets: readonly Asset[];
   readonly previousMonthHasIncome: boolean;
   /** Questionnaire answers; null if skipped. */
   readonly profile: Profile | null;
@@ -82,6 +84,8 @@ export class AppController {
       incomes: [],
       budgets: new Map(),
       goals: [],
+      debts: [],
+      assets: [],
       previousMonthHasIncome: false,
       profile: null,
       trend: [],
@@ -158,6 +162,8 @@ export class AppController {
       incomes,
       budgets: new Map((await r.budgets()).map((b) => [b.categoryId, b.limitMinor])),
       goals: await r.goals(),
+      debts: await r.debts(),
+      assets: await r.assets(),
       previousMonthHasIncome:
         incomes.length === 0 && (await r.incomesFor(addMonths(month, -1))).length > 0,
       trend: await r.monthlyTotals(month, 6),
@@ -293,6 +299,22 @@ export class AppController {
   deleteGoal = (id: number) => this.mutate((r) => r.deleteGoal(id));
   addContribution = (goalId: number, amountMinor: number) =>
     this.mutate((r) => r.addContribution(goalId, amountMinor, dayFromDate(this.clock())));
+
+  setGoalPaused = (id: number, paused: boolean) => this.mutate((r) => r.setGoalPaused(id, paused));
+
+  addDebt = (d: { name: string; remainingMinor: number; annualRatePercent: number; monthlyPaymentMinor: number; dueDay: number | null }) =>
+    this.mutate((r) => r.addDebt(d));
+  updateDebt = (d: { id: number; name: string; remainingMinor: number; annualRatePercent: number; monthlyPaymentMinor: number; dueDay: number | null }) =>
+    this.mutate((r) => r.updateDebt(d));
+  deleteDebt = (id: number) => this.mutate((r) => r.deleteDebt(id));
+  addDebtPayment = (args: { debtId: number; amountMinor: number; alsoExpense: boolean; note: string }) =>
+    this.mutate((r) => r.addDebtPayment({ ...args, date: dayFromDate(this.clock()) }));
+
+  addAsset = (a: { name: string; kind: AssetKind; valueMinor: number; isEstimate: boolean }) =>
+    this.mutate((r) => r.addAsset({ ...a, today: dayFromDate(this.clock()) }));
+  updateAsset = (a: { id: number; name: string; kind: AssetKind; valueMinor: number; isEstimate: boolean }) =>
+    this.mutate((r) => r.updateAsset({ ...a, today: dayFromDate(this.clock()) }));
+  deleteAsset = (id: number) => this.mutate((r) => r.deleteAsset(id));
 
   /** Permanently deletes the database and returns to first run. */
   async deleteAllData() {

@@ -12,6 +12,7 @@ import {
   safeToSpendPerDay,
 } from '../domain/analytics';
 import { buildGuidance, Guidance, withoutDismissed } from '../domain/guidance';
+import { netWorth, NetWorth } from '../domain/wealth';
 import { buildInsights, Insight } from '../domain/insights';
 import { dailyTotals, detectRecurring, RecurringPayment, unusualExpense, UnusualExpense, weekdayPattern, WeekdayPattern } from '../domain/smart';
 import { suggestPlan } from '../domain/profile';
@@ -43,7 +44,7 @@ export function insights(s: AppState): Insight[] {
     incomeMinor: incomeTotal(s),
     expensesMinor: expenseTotal(s),
     spends: spends(s),
-    goals: [...s.goals],
+    goals: s.goals.filter((g) => !g.paused),
     today: s.today,
     assessGoalFeasibility: isViewingCurrentMonth(s),
   });
@@ -150,3 +151,7 @@ export function guidance(s: AppState, emergencyGoalName: string): Guidance[] {
   });
   return withoutDismissed(items, s.dismissedGuidance, s.month);
 }
+
+// -- wealth (src/domain/wealth.ts) -------------------------------------------------
+
+export const wealth = (s: AppState): NetWorth => netWorth(s.assets, s.debts);

@@ -11,7 +11,8 @@ import {
   YearMonth,
 } from '../core/dates';
 import type { MonthTotals } from '../domain/analytics';
-import type { Budget, Category, Expense, IncomeEntry, SavingsGoal } from '../domain/models';
+import { ASSET_KINDS } from '../domain/models';
+import type { Asset, AssetKind, Budget, Category, Debt, Expense, IncomeEntry, SavingsGoal } from '../domain/models';
 import type { Db, DbExecutor } from './db';
 
 export const SettingKeys = {
@@ -372,8 +373,9 @@ export class FinanceRepository {
       target_minor: number;
       target_day: string;
       saved_minor: number;
+      paused: number;
     }>(`
-      SELECT g.id, g.name, g.target_minor, g.target_day,
+      SELECT g.id, g.name, g.target_minor, g.target_day, g.paused,
              COALESCE(SUM(c.amount_minor), 0) AS saved_minor
       FROM goals g LEFT JOIN goal_contributions c ON c.goal_id = g.id
       GROUP BY g.id ORDER BY g.target_day, g.id`);
@@ -383,7 +385,143 @@ export class FinanceRepository {
       targetMinor: r.target_minor,
       savedMinor: r.saved_minor,
       targetDate: parseDayKey(r.target_day),
+      paused: r.paused === 1,
     }));
+  }
+
+  async setGoalPaused(id: number, paused: boolean) {
+    await this.db.run('UPDATE goals SET paused = ?, updated_at = ? WHERE id = ?', [paused ? 1 : 0, this.nowUtc, id]);
+  }
+
+  // -- obligations (v2) ---------------------------------------------------------
+
+  async debts(): Promise<Debt[]> {
+    const rows = await this.db.all<{
+      id: number;
+      name: string;
+      original_minor: number;
+      annual_rate_bp: number;
+      monthly_payment_minor: number;
+      due_day: number | null;
+      paid_minor: number;
+    }>(`
+      SELECT d.id, d.name, d.original_minor, d.annual_rate_bp, d.monthly_payment_minor, d.due_day,
+             COALESCE(SUM(p.amount_minor), 0) AS paid_minor
+      FROM debts d LEFT JOIN debt_payments p ON p.debt_id = d.id
+      GROUP BY d.id ORDER BY d.id`);
+    return rows.map((r) => ({
+      id: r.id,
+      name: r.name,
+      originalMinor: r.original_minor,
+      paidMinor: r.paid_minor,
+      remainingMinor: Math.max(0, r.original_minor - r.paid_minor),
+      annualRatePercent: r.annual_rate_bp / 100,
+      monthlyPaymentMinor: r.monthly_payment_minor,
+      dueDay: r.due_day,
+    }));
+  }
+
+  async addDebt(d: { name: string; remainingMinor: number; annualRatePercent: number; monthlyPaymentMinor: number; dueDay: number | null }): Promise<number> {
+    const v = validDebt(d);
+    const now = this.nowUtc;
+    const r = await this.db.run(
+      'INSERT INTO debts (name, original_minor, annual_rate_bp, monthly_payment_minor, due_day, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [v.name, d.remainingMinor, v.rateBp, d.monthlyPaymentMinor, d.dueDay, now, now],
+    );
+    return r.lastInsertRowId;
+  }
+
+  /** Editing sets the CURRENT remaining amount; recorded payments are kept. */
+  updateDebt(d: { id: number; name: string; remainingMinor: number; annualRatePercent: number; monthlyPaymentMinor: number; dueDay: number | null }): Promise<void> {
+    const v = validDebt(d);
+    return this.db.transaction(async (tx) => {
+      const paid = await tx.first<{ s: number }>('SELECT COALESCE(SUM(amount_minor), 0) AS s FROM debt_payments WHERE debt_id = ?', [d.id]);
+      await tx.run(
+        'UPDATE debts SET name = ?, original_minor = ?, annual_rate_bp = ?, monthly_payment_minor = ?, due_day = ?, updated_at = ? WHERE id = ?',
+        [v.name, d.remainingMinor + (paid?.s ?? 0), v.rateBp, d.monthlyPaymentMinor, d.dueDay, this.nowUtc, d.id],
+      );
+    });
+  }
+
+  async deleteDebt(id: number) {
+    await this.db.run('DELETE FROM debts WHERE id = ?', [id]);
+  }
+
+  /**
+   * Record a payment (cannot exceed what remains). With `alsoExpense`, the
+   * same amount is logged as an expense in the built-in «debt» category in
+   * the same transaction, so cash flow and the debt stay consistent.
+   */
+  addDebtPayment(args: { debtId: number; amountMinor: number; date: Day; alsoExpense: boolean; note: string }): Promise<void> {
+    positive(args.amountMinor);
+    return this.db.transaction(async (tx) => {
+      const d = await tx.first<{ original_minor: number; paid: number }>(
+        `SELECT d.original_minor, COALESCE((SELECT SUM(amount_minor) FROM debt_payments WHERE debt_id = d.id), 0) AS paid
+         FROM debts d WHERE d.id = ?`,
+        [args.debtId],
+      );
+      if (!d) throw new ValidationError('Unknown debt');
+      if (args.amountMinor > d.original_minor - d.paid) throw new ValidationError('Payment exceeds remaining amount');
+      const now = this.nowUtc;
+      await tx.run('INSERT INTO debt_payments (debt_id, amount_minor, day, created_at) VALUES (?, ?, ?, ?)', [args.debtId, args.amountMinor, dayKey(args.date), now]);
+      if (args.alsoExpense) {
+        const cat = await tx.first<{ id: number }>("SELECT id FROM categories WHERE key = 'debt'");
+        if (!cat) throw new ValidationError('Debt category missing');
+        await tx.run('INSERT INTO expenses (amount_minor, category_id, day, note, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)', [
+          args.amountMinor,
+          cat.id,
+          dayKey(args.date),
+          args.note.trim(),
+          now,
+          now,
+        ]);
+      }
+    });
+  }
+
+  // -- assets (v2) ---------------------------------------------------------------
+
+  async assets(): Promise<Asset[]> {
+    const rows = await this.db.all<{ id: number; name: string; kind: string; value_minor: number; is_estimate: number; updated_day: string }>(
+      'SELECT id, name, kind, value_minor, is_estimate, updated_day FROM assets ORDER BY value_minor DESC, id',
+    );
+    return rows.map((r) => ({
+      id: r.id,
+      name: r.name,
+      kind: (ASSET_KINDS as readonly string[]).includes(r.kind) ? (r.kind as AssetKind) : 'other',
+      valueMinor: r.value_minor,
+      isEstimate: r.is_estimate === 1,
+      updatedDay: parseDayKey(r.updated_day),
+    }));
+  }
+
+  async addAsset(a: { name: string; kind: AssetKind; valueMinor: number; isEstimate: boolean; today: Day }): Promise<number> {
+    const name = nonBlank(a.name, 'Asset name');
+    nonNegative(a.valueMinor);
+    const now = this.nowUtc;
+    const r = await this.db.run(
+      'INSERT INTO assets (name, kind, value_minor, is_estimate, updated_day, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [name, a.kind, a.valueMinor, a.isEstimate ? 1 : 0, dayKey(a.today), now, now],
+    );
+    return r.lastInsertRowId;
+  }
+
+  async updateAsset(a: { id: number; name: string; kind: AssetKind; valueMinor: number; isEstimate: boolean; today: Day }) {
+    const name = nonBlank(a.name, 'Asset name');
+    nonNegative(a.valueMinor);
+    await this.db.run('UPDATE assets SET name = ?, kind = ?, value_minor = ?, is_estimate = ?, updated_day = ?, updated_at = ? WHERE id = ?', [
+      name,
+      a.kind,
+      a.valueMinor,
+      a.isEstimate ? 1 : 0,
+      dayKey(a.today),
+      this.nowUtc,
+      a.id,
+    ]);
+  }
+
+  async deleteAsset(id: number) {
+    await this.db.run('DELETE FROM assets WHERE id = ?', [id]);
   }
 
   addGoal(args: {
@@ -445,4 +583,21 @@ export class FinanceRepository {
       );
     });
   }
+}
+
+function nonNegative(minor: number) {
+  if (!Number.isSafeInteger(minor) || minor < 0) throw new ValidationError('Amount must be zero or more');
+}
+
+/** Rate 0..100 % with at most 2 decimals → basis points; payment and remaining checked. */
+function validDebt(d: { name: string; remainingMinor: number; annualRatePercent: number; monthlyPaymentMinor: number; dueDay: number | null }) {
+  const name = nonBlank(d.name, 'Debt name');
+  positive(d.remainingMinor);
+  nonNegative(d.monthlyPaymentMinor);
+  const rateBp = Math.round(d.annualRatePercent * 100);
+  if (!Number.isFinite(d.annualRatePercent) || rateBp < 0 || rateBp > 10000 || Math.abs(rateBp - d.annualRatePercent * 100) > 1e-6) {
+    throw new ValidationError('Rate must be 0–100 with at most 2 decimals');
+  }
+  if (d.dueDay != null && (!Number.isInteger(d.dueDay) || d.dueDay < 1 || d.dueDay > 31)) throw new ValidationError('Due day must be 1–31');
+  return { name, rateBp };
 }

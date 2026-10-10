@@ -17,6 +17,7 @@ const kinds = (xs: { kind: string }[]) => xs.map((i) => i.kind);
 const goal = (p: Partial<SavingsGoal>): SavingsGoal => ({
   id: 1,
   name: 'Car',
+  paused: false,
   targetMinor: 6000000,
   savedMinor: 0,
   targetDate: { year: 2027, month: 10, day: 9 },

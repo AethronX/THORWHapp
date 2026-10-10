@@ -4,7 +4,7 @@ import type { Db, DbExecutor } from './db';
  * Schema versioning via `PRAGMA user_version`. Bump SCHEMA_VERSION and append
  * a step to MIGRATIONS for every change; never edit a shipped step.
  */
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 /** [key, iconCode, isEssential] — key is localised in the UI. */
 export const DEFAULT_CATEGORIES: ReadonlyArray<[string, number, boolean]> = [
@@ -89,7 +89,47 @@ async function v1(db: DbExecutor) {
   }
 }
 
-const MIGRATIONS: Record<number, (db: DbExecutor) => Promise<void>> = { 1: v1 };
+/**
+ * v2 (Tharwati 2030): obligations (debts + payments), assets for net worth,
+ * and pausing a goal. Additive only — no existing row is changed.
+ */
+async function v2(db: DbExecutor) {
+  await db.exec(`
+    ALTER TABLE goals ADD COLUMN paused INTEGER NOT NULL DEFAULT 0 CHECK (paused IN (0, 1));
+    CREATE TABLE debts (
+      id                    INTEGER PRIMARY KEY AUTOINCREMENT,
+      name                  TEXT NOT NULL CHECK (length(trim(name)) > 0),
+      -- Outstanding amount when recorded; remaining = original - payments.
+      original_minor        INTEGER NOT NULL CHECK (original_minor > 0),
+      -- Annual rate in basis points (4.25 % = 425); 0 = interest-free / unknown.
+      annual_rate_bp        INTEGER NOT NULL DEFAULT 0 CHECK (annual_rate_bp BETWEEN 0 AND 10000),
+      monthly_payment_minor INTEGER NOT NULL DEFAULT 0 CHECK (monthly_payment_minor >= 0),
+      due_day               INTEGER CHECK (due_day IS NULL OR due_day BETWEEN 1 AND 31),
+      created_at            INTEGER NOT NULL,
+      updated_at            INTEGER NOT NULL
+    );
+    CREATE TABLE debt_payments (
+      id           INTEGER PRIMARY KEY AUTOINCREMENT,
+      debt_id      INTEGER NOT NULL REFERENCES debts(id) ON DELETE CASCADE,
+      amount_minor INTEGER NOT NULL CHECK (amount_minor > 0),
+      day          TEXT NOT NULL CHECK (length(day) = 10),
+      created_at   INTEGER NOT NULL
+    );
+    CREATE INDEX idx_debt_payments_debt ON debt_payments(debt_id);
+    CREATE TABLE assets (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      name        TEXT NOT NULL CHECK (length(trim(name)) > 0),
+      kind        TEXT NOT NULL CHECK (kind IN ('cash', 'bank', 'investment', 'gold', 'property', 'vehicle', 'other')),
+      value_minor INTEGER NOT NULL CHECK (value_minor >= 0),
+      is_estimate INTEGER NOT NULL DEFAULT 0 CHECK (is_estimate IN (0, 1)),
+      updated_day TEXT NOT NULL CHECK (length(updated_day) = 10),
+      created_at  INTEGER NOT NULL,
+      updated_at  INTEGER NOT NULL
+    );
+  `);
+}
+
+const MIGRATIONS: Record<number, (db: DbExecutor) => Promise<void>> = { 1: v1, 2: v2 };
 
 export class NewerSchemaError extends Error {
   constructor(readonly found: number) {
@@ -102,17 +142,22 @@ export class NewerSchemaError extends Error {
  * Brings the database to SCHEMA_VERSION inside one transaction. A database
  * written by a newer app version is refused, never wiped.
  */
-export async function migrate(db: Db): Promise<void> {
+export function migrate(db: Db): Promise<void> {
+  return migrateTo(db, SCHEMA_VERSION);
+}
+
+/** Migrate up to `target` (tests use it to build an older database first). */
+export async function migrateTo(db: Db, target: number): Promise<void> {
   const row = await db.first<{ user_version: number }>('PRAGMA user_version');
   const current = row?.user_version ?? 0;
   if (current > SCHEMA_VERSION) throw new NewerSchemaError(current);
-  if (current === SCHEMA_VERSION) return;
+  if (current >= target) return;
   await db.transaction(async (tx) => {
-    for (let v = current + 1; v <= SCHEMA_VERSION; v++) {
+    for (let v = current + 1; v <= target; v++) {
       const step = MIGRATIONS[v];
       if (!step) throw new Error(`Missing migration to v${v}`);
       await step(tx);
     }
-    await tx.exec(`PRAGMA user_version = ${SCHEMA_VERSION}`);
+    await tx.exec(`PRAGMA user_version = ${target}`);
   });
 }
