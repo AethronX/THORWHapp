@@ -197,7 +197,7 @@ export default function Analytics() {
             {rec.slice(0, 6).map((r, i) => (
               <Row key={i} style={{ justifyContent: 'space-between' }}>
                 <Row style={{ flex: 1 }}>
-                  <CategoryBadge category={st.categoriesById.get(r.categoryId)} size={36} />
+                  <CategoryBadge category={st.categoriesById.get(r.categoryId)} />
                   <View style={{ flex: 1 }}>
                     <T numberOfLines={1}>{r.label || catName(r.categoryId)}</T>
                     <T variant="small" color={r.paidThisMonth ? p.positive : p.onSurfaceMuted}>

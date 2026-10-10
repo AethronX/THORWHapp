@@ -6,7 +6,7 @@ import { minorToEditable, parseAmount } from '../core/amountParser';
 import { allocation, costOfWaiting, ReadinessItem } from '../domain/investing';
 import { isViewingCurrentMonth, readiness, safeToSpend } from '../state/selectors';
 import { useAppState, useUi } from '../ui/AppContext';
-import { Button, Card, CurrentMonthOnly, Field, HeroPanel, Icon, LabeledProgress, Row, Screen, StatusChip, T } from '../ui/components';
+import { Button, Card, CurrentMonthOnly, EmptyState, Field, HeroPanel, Icon, LabeledProgress, Row, Screen, StatusChip, T } from '../ui/components';
 import { haptic } from '../ui/feedback';
 import { currencySymbol, formatPercent } from '../ui/format';
 import { MIN_TAP, Radii, Space } from '../ui/theme';
@@ -128,7 +128,7 @@ function Holdings() {
   return (
     <Card title={s.holdingsTitle} testID="invest.holdings" action={<Button kind="text" icon="add" label={s.addAsset} onPress={() => router.push('/asset/new')} testID="invest.addAsset" />}>
       {a.slices.length === 0 ? (
-        <T muted>{s.holdingsEmpty}</T>
+        <EmptyState compact icon="chartUp" title={s.holdingsEmpty} testID="invest.holdings.empty" />
       ) : (
         <>
           <T variant="subtitle" testID="invest.holdings.total">

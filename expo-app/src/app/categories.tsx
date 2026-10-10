@@ -44,7 +44,7 @@ export default function Categories() {
       )}
       {st.categories.map((cat) => (
         <Row key={cat.id} style={{ borderBottomWidth: 1, borderBottomColor: p.outline }}>
-          <CategoryBadge category={cat} size={36} />
+          <CategoryBadge category={cat} />
           <View style={{ flex: 1 }}>
             <T>{categoryLabel(cat, s)}</T>
           </View>

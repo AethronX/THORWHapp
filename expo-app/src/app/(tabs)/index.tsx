@@ -8,7 +8,7 @@ import type { Insight } from '../../domain/insights';
 import { isGoalReached, spendUsage } from '../../domain/models';
 import { expenseTotal, guidance, principles, readiness, wealth, health, incomeTotal, insights, isViewingCurrentMonth, netCashFlow, recentSpending, safeToSpend, savingsRate, shortcutCategories, spends } from '../../state/selectors';
 import { useAppState, useController, useUi } from '../../ui/AppContext';
-import { AnimatedAmount, Button, Card, Fab, Icon, IconName, LabeledProgress, MonthSwitcher, Row, runGuarded, Screen, T } from '../../ui/components';
+import { AnimatedAmount, Button, Card, EmptyState, Fab, Icon, IconName, LabeledProgress, MonthSwitcher, Row, runGuarded, Screen, T } from '../../ui/components';
 import { haptic } from '../../ui/feedback';
 import { NextStepCard } from '../../ui/Guidance';
 import { principleScore } from '../../domain/principles';
@@ -101,7 +101,7 @@ export default function Dashboard() {
           </Row>
           {/* Honest about the data: only what the user recorded. */}
           <Row gap={Space.xs} style={{ alignItems: 'flex-start' }}>
-            <Icon name="info" size={14} color={p.onHeroMuted} />
+            <Icon name="info" size={16} color={p.onHeroMuted} />
             <View style={{ flex: 1 }}>
               <T variant="small" color={p.onHeroMuted} testID="summary.dataNote">
                 {s.dataNote}
@@ -164,7 +164,7 @@ export default function Dashboard() {
 
         <Card title={s.budgetsTitle} action={<Button kind="text" label={s.setBudgets} onPress={() => router.push('/budgets')} testID="dashboard.budgets" />}>
           {budgeted.length === 0 ? (
-            <T>{s.noBudgets}</T>
+            <EmptyState compact icon="analytics" title={s.noBudgets} />
           ) : (
             budgeted.map((x) => (
               <LabeledProgress
@@ -180,7 +180,7 @@ export default function Dashboard() {
 
         <Card title={s.goalsTitle} action={<Button kind="text" label={s.seeAll} onPress={() => router.push('/goals')} />}>
           {st.goals.length === 0 ? (
-            <T>{s.noGoalsShort}</T>
+            <EmptyState compact icon="target" title={s.noGoalsShort} action={<Button kind="tonal" icon="add" label={s.addGoal} onPress={() => router.push('/goal/new')} testID="dashboard.addGoal" />} />
           ) : (
             st.goals.slice(0, 3).map((g) => (
               <LabeledProgress

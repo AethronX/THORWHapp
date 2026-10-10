@@ -6,7 +6,9 @@ import { minorToEditable, parseAmount } from '../../core/amountParser';
 import { Day } from '../../core/dates';
 import { isViewingCurrentMonth } from '../../state/selectors';
 import { useAppState, useController, useUi } from '../../ui/AppContext';
-import { Button, confirm, Field, Icon, runGuarded, Screen, T } from '../../ui/components';
+import { Button, Field, Icon, runGuarded, Screen, T } from '../../ui/components';
+import { haptic } from '../../ui/feedback';
+import { showToast } from '../../ui/toast';
 import { DateField } from '../../ui/DateField';
 import { amountErrorText, categoryIcon, categoryLabel, currencySymbol } from '../../ui/format';
 import { categoryTone, MIN_TAP, Radii, Space } from '../../ui/theme';
@@ -48,11 +50,15 @@ export default function ExpenseForm() {
     if (ok) router.back();
   }
 
+  // No "are you sure?": delete at once and offer Undo (recover instead of interrupt).
   async function remove() {
     if (!existing) return;
-    const yes = await confirm({ title: s.deleteExpenseConfirm, confirmLabel: s.delete, cancelLabel: s.cancel, destructive: true });
-    if (!yes) return;
-    if (await runGuarded(() => c.deleteExpense(existing.id), s.errGeneric)) router.back();
+    const { amountMinor, categoryId, date, note } = existing;
+    if (await runGuarded(() => c.deleteExpense(existing.id), s.errGeneric)) {
+      haptic.success();
+      router.back();
+      showToast({ message: s.toastExpenseDeleted, actionLabel: s.undo, onAction: () => runGuarded(() => c.addExpense({ amountMinor, categoryId, date, note }), s.errGeneric) });
+    }
   }
 
   return (

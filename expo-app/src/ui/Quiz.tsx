@@ -14,7 +14,7 @@ import { categoryTone, MIN_TAP, Radii, Space } from './theme';
  */
 type StepKey = 'goal' | 'income' | 'payday' | 'focus' | 'habit';
 
-export function Quiz({ onDone, initial }: { onDone: (p: Profile | null) => void; initial?: Profile | null }) {
+export function Quiz({ onDone, initial, skipLabel }: { onDone: (p: Profile | null) => void; initial?: Profile | null; skipLabel?: string }) {
   const { s, p } = useUi();
   const [answers, setAnswers] = useState<Profile>(initial ?? DEFAULT_PROFILE);
   const [step, setStep] = useState(0);
@@ -99,7 +99,7 @@ export function Quiz({ onDone, initial }: { onDone: (p: Profile | null) => void;
     <SafeAreaView style={{ flex: 1, backgroundColor: p.background }}>
       <Row style={{ justifyContent: 'space-between', paddingHorizontal: Space.sm }}>
         {step > 0 ? <Button kind="text" icon="back" label={s.quizBack} onPress={() => setStep(step - 1)} testID="quiz.back" /> : <View />}
-        <Button kind="text" label={s.quizSkipAll} onPress={() => onDone(null)} testID="quiz.skipAll" />
+        <Button kind="text" label={skipLabel ?? s.quizSkipAll} onPress={() => onDone(null)} testID="quiz.skipAll" />
       </Row>
       {/* Progress: text + bar (never colour alone). */}
       <View style={{ paddingHorizontal: Space.gutter, gap: Space.sm }}>

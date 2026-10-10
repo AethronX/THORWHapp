@@ -33,7 +33,7 @@ export default function TabsLayout() {
         // IBM Plex Sans Arabic has tall line metrics: the library's 49 pt bar
         // clips the labels, so the bar is taller and the line height explicit.
         tabBarStyle: { backgroundColor: p.surface, borderTopColor: p.outline, height: 64 + insets.bottom, paddingTop: 6 },
-        tabBarLabelStyle: { fontFamily: Fonts.medium, fontSize: 11, lineHeight: 18 },
+        tabBarLabelStyle: { fontFamily: Fonts.medium, fontSize: 12, lineHeight: 18 },
         sceneStyle: { backgroundColor: p.background },
       }}
     >

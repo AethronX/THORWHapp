@@ -11,6 +11,7 @@ import { AppProvider, useAppState, useController, useUi } from '../ui/AppContext
 import { Button, EmptyState, Loading } from '../ui/components';
 import { setHapticsEnabled } from '../ui/feedback';
 import { LockScreen } from '../ui/lock';
+import { ToastHost } from '../ui/toast';
 import { Fonts } from '../ui/theme';
 
 export default function RootLayout() {
@@ -124,6 +125,7 @@ function Root() {
     <View style={{ flex: 1, direction: rtl ? 'rtl' : 'ltr', backgroundColor: p.background }}>
       <StatusBar style={p.dark ? 'light' : 'dark'} />
       {content}
+      <ToastHost />
     </View>
   );
 }

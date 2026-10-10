@@ -302,3 +302,13 @@ around percentages, localised list separators for screen readers, unused strings
 investing, net worth) grouped in one card at the end; Settings separates tools from app settings; shared HeroPanel and
 StatusChip. Docs (README, store listing, checklist) updated. **Not changed (noted):** react-native-web shows the Switch
 thumb outside its track in RTL (web preview only); deeper visual unification of list rows and badge sizes left for later.
+
+### D-043 UI/UX polish: undo instead of confirm, back everywhere, one visual language — 2026-10-10
+Owner request: raise UI and UX to 10/10. Measured against Nielsen's 10 heuristics and WCAG 2.2 AA with evidence per item
+(docs/UX_SCORECARD.md; "10/10" = no known open gap, not user-validated). **Decision:** (1) snackbar with **Undo** after
+quick add and after deleting an expense, replacing the "are you sure?" dialog (recover rather than interrupt); placed
+above the tab bar and add button, announced to screen readers, inverse colours tested ≥ 4.5:1; (2) onboarding Setup and
+Plan have Back (and Android back steps back instead of leaving); retaking the quiz says "Cancel", not "Skip all"; quiz
+answers kept when going back; (3) compact EmptyState in cards (assets, obligations, holdings, budgets, goals — with an
+"Add goal" action on Home); (4) tokens instead of raw numbers (spacing, info icon 16, badge 40, tab label 12); list amounts
+use the `amount` style; Settings icons share the primary colour.

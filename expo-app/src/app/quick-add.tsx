@@ -11,6 +11,7 @@ import { minorToEditable } from '../core/amountParser';
 import { useAppState, useController, useUi } from '../ui/AppContext';
 import { Button, Icon, Row, runGuarded, T } from '../ui/components';
 import { haptic } from '../ui/feedback';
+import { showToast } from '../ui/toast';
 import { PhIcon } from '../ui/icons';
 import { categoryIcon, categoryLabel, currencySymbol } from '../ui/format';
 import { PressScale } from '../ui/motion';
@@ -75,7 +76,10 @@ export default function QuickAdd() {
   async function save() {
     if (!canSave || categoryId == null) return;
     setBusy(true);
-    const ok = await runGuarded(() => c.addExpense({ amountMinor, categoryId, date, note: cleanNote }), s.errGeneric);
+    let newId: number | null = null;
+    const ok = await runGuarded(async () => {
+      newId = await c.addExpense({ amountMinor, categoryId, date, note: cleanNote });
+    }, s.errGeneric);
     setBusy(false);
     if (ok) {
       // Warning pattern if this expense takes the category over its budget.
@@ -84,6 +88,13 @@ export default function QuickAdd() {
       if (limit != null && before <= limit && before + amountMinor > limit) haptic.warning();
       else haptic.success();
       router.back();
+      const cat = st.categoriesById.get(categoryId);
+      const id = newId;
+      showToast({
+        message: s.toastExpenseAdded(money(amountMinor), cat ? categoryLabel(cat, s) : ''),
+        actionLabel: s.undo,
+        onAction: id == null ? undefined : () => runGuarded(() => c.deleteExpense(id), s.errGeneric),
+      });
     }
   }
 
@@ -151,7 +162,7 @@ export default function QuickAdd() {
       </View>
 
       {/* Categories */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: Space.sm, paddingVertical: 2 }} accessibilityRole="radiogroup">
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: Space.sm, paddingVertical: Space.xxs }} accessibilityRole="radiogroup">
         {ordered.map((cat) => {
           const selected = cat.id === categoryId;
           const tone = categoryTone(p, cat.key, cat.iconCode);

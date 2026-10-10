@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { BackHandler, Pressable, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { parseAmount } from '../core/amountParser';
@@ -23,11 +23,22 @@ type Stage = { kind: 'intro'; page: number } | { kind: 'quiz' } | { kind: 'setup
 export default function Onboarding() {
   const [stage, setStage] = useState<Stage>({ kind: 'intro', page: 0 });
   const [profile, setProfile] = useState<Profile | null>(null);
+  // One step back: plan → setup → questions (Android back follows the same path instead of leaving the app).
+  const back = () => setStage((st) => (st.kind === 'plan' ? { kind: 'setup' } : st.kind === 'setup' ? { kind: 'quiz' } : st));
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (stage.kind !== 'setup' && stage.kind !== 'plan') return false;
+      back();
+      return true;
+    });
+    return () => sub.remove();
+  }, [stage.kind]);
 
   if (stage.kind === 'intro') return <Intro page={stage.page} onPage={(page) => setStage(page >= 3 ? { kind: 'quiz' } : { kind: 'intro', page })} />;
   if (stage.kind === 'quiz')
     return (
       <Quiz
+        initial={profile}
         onDone={(p) => {
           setProfile(p);
           setStage({ kind: 'setup' });
@@ -35,8 +46,18 @@ export default function Onboarding() {
       />
     );
   if (stage.kind === 'setup')
-    return <Setup profile={profile} onContinue={(currency, incomeMinor) => setStage({ kind: 'plan', currency, incomeMinor })} />;
-  return <PlanReview profile={profile} currency={stage.currency} incomeMinor={stage.incomeMinor} />;
+    return <Setup profile={profile} onBack={back} onContinue={(currency, incomeMinor) => setStage({ kind: 'plan', currency, incomeMinor })} />;
+  return <PlanReview profile={profile} currency={stage.currency} incomeMinor={stage.incomeMinor} onBack={back} />;
+}
+
+/** Top-left "Back" for the later onboarding steps (Android's back button does the same). */
+function BackBar({ onBack }: { onBack: () => void }) {
+  const { s } = useUi();
+  return (
+    <Row style={{ paddingHorizontal: Space.sm }}>
+      <Button kind="text" icon="back" label={s.quizBack} onPress={onBack} testID="onb.back" />
+    </Row>
+  );
 }
 
 // -----------------------------------------------------------------------------
@@ -83,7 +104,7 @@ function Intro({ page, onPage }: { page: number; onPage: (p: number) => void }) 
 // 3. Currency & income
 // -----------------------------------------------------------------------------
 
-function Setup({ profile, onContinue }: { profile: Profile | null; onContinue: (c: Currency, incomeMinor: number | null) => void }) {
+function Setup({ profile, onContinue, onBack }: { profile: Profile | null; onContinue: (c: Currency, incomeMinor: number | null) => void; onBack: () => void }) {
   const c = useController();
   const st = useAppState();
   const { s, p } = useUi();
@@ -105,6 +126,7 @@ function Setup({ profile, onContinue }: { profile: Profile | null; onContinue: (
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: p.background }}>
+      <BackBar onBack={onBack} />
       <Screen>
         <T variant="headline">{s.setupTitle}</T>
         <Card title={s.setupCurrencyLabel}>
@@ -161,7 +183,7 @@ function Setup({ profile, onContinue }: { profile: Profile | null; onContinue: (
 // 4. Personal plan (only when the questions were answered)
 // -----------------------------------------------------------------------------
 
-function PlanReview({ profile, currency, incomeMinor }: { profile: Profile | null; currency: Currency; incomeMinor: number | null }) {
+function PlanReview({ profile, currency, incomeMinor, onBack }: { profile: Profile | null; currency: Currency; incomeMinor: number | null; onBack: () => void }) {
   const c = useController();
   const st = useAppState();
   const { s, p } = useUi();
@@ -200,6 +222,7 @@ function PlanReview({ profile, currency, incomeMinor }: { profile: Profile | nul
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: p.background }}>
+      <BackBar onBack={onBack} />
       <Screen testID="plan.review">
         <View style={{ alignItems: 'center', gap: Space.md }}>
           <View style={{ width: 72, height: 72, borderRadius: 24, backgroundColor: p.accentContainer, alignItems: 'center', justifyContent: 'center' }}>
@@ -253,7 +276,7 @@ function PlanReview({ profile, currency, incomeMinor }: { profile: Profile | nul
         )}
 
         <Row style={{ alignItems: 'flex-start' }}>
-          <Icon name="info" size={18} color={p.textSubtle} />
+          <Icon name="info" size={16} color={p.textSubtle} />
           <View style={{ flex: 1 }}>
             <T variant="small" muted>
               {s.planRuleNote}

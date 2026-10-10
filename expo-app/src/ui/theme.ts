@@ -93,6 +93,10 @@ export interface Palette {
   primaryPressed: string;
   primaryContainer: string;
   onPrimaryContainer: string;
+  /** Snackbar (toast): inverted surface, its text and its action colour. */
+  inverseSurface: string;
+  inverseOnSurface: string;
+  inversePrimary: string;
 
   // Accent (gold): achievements, reached goals, premium moments only.
   accent: string;
@@ -147,6 +151,9 @@ export const light: Palette = {
   primaryPressed: '#0B3D2F',
   primaryContainer: '#E4EFEA',
   onPrimaryContainer: '#0B3D2F',
+  inverseSurface: S.ink[900],
+  inverseOnSurface: S.ink[50],
+  inversePrimary: S.emerald[300],
 
   accent: S.gold[500],
   accentText: S.gold[700],
@@ -210,6 +217,9 @@ export const dark: Palette = {
   primaryPressed: S.emerald[200],
   primaryContainer: S.emerald[900],
   onPrimaryContainer: S.emerald[100],
+  inverseSurface: S.ink[100],
+  inverseOnSurface: S.ink[900],
+  inversePrimary: S.emerald[700],
 
   accent: S.gold[400],
   accentText: S.gold[300],

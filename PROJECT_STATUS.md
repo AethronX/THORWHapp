@@ -1,5 +1,10 @@
 # Project status
 
+## Update 2026-10-10 (UI/UX polish)
+Undo snackbar, back steps in onboarding, unified empty states and tokens (D-043); evidence-based scorecard:
+docs/UX_SCORECARD.md. Verified here: `tsc` 0 errors · **330 tests passing** · web-render screenshots. Not verified: real
+device; usability with real users.
+
 ## Update 2026-10-10 (full review)
 Full review of logic, design, text and organisation with fixes (D-042). Verified here: `tsc` 0 errors · **328 tests
 passing** · web-render visual pass of every screen. Not verified: a real device.

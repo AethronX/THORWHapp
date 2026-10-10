@@ -243,8 +243,8 @@ export function SpendCalendar({
   const level = (v: number) => (v <= 0 ? 0 : v / max > 0.75 ? 4 : v / max > 0.45 ? 3 : v / max > 0.2 ? 2 : 1);
   const fills = [0, 1, 2, 3, 4].map((lv) => heatFill(p, lv));
   return (
-    <View accessible accessibilityRole="image" accessibilityLabel={label} testID={testID} style={{ gap: 4 }}>
-      <View style={{ flexDirection: 'row', gap: 4 }}>
+    <View accessible accessibilityRole="image" accessibilityLabel={label} testID={testID} style={{ gap: Space.xs }}>
+      <View style={{ flexDirection: 'row', gap: Space.xs }}>
         {weekdayLabels.map((w, i) => (
           <View key={i} style={{ flex: 1, alignItems: 'center' }}>
             <T variant="small" muted center>
@@ -254,7 +254,7 @@ export function SpendCalendar({
         ))}
       </View>
       {Array.from({ length: cells.length / 7 }, (_, r) => (
-        <View key={r} style={{ flexDirection: 'row', gap: 4 }}>
+        <View key={r} style={{ flexDirection: 'row', gap: Space.xs }}>
           {cells.slice(r * 7, r * 7 + 7).map((d, i) => {
             if (d == null) return <View key={i} style={{ flex: 1, aspectRatio: 1 }} />;
             const future = todayDay != null && d > todayDay;

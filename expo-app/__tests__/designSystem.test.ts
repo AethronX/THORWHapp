@@ -135,3 +135,10 @@ test('spending-calendar day numbers keep 4.5:1 on every heat level (light and da
     }
   }
 });
+
+test('snackbar (toast) text and action keep 4.5:1 on the inverse surface', () => {
+  for (const p of [light, dark]) {
+    expect(contrast(p.inverseOnSurface, p.inverseSurface)).toBeGreaterThanOrEqual(AA_TEXT);
+    expect(contrast(p.inversePrimary, p.inverseSurface)).toBeGreaterThanOrEqual(AA_TEXT);
+  }
+});

@@ -14,6 +14,7 @@ export default function ProfileScreen() {
       <Stack.Screen options={{ title: s.yourPlan }} />
       <Quiz
         initial={st.profile}
+        skipLabel={s.cancel}
         onDone={async (p) => {
           if (p) await runGuarded(() => c.setProfile(p), s.errGeneric);
           router.back();

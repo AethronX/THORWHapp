@@ -162,7 +162,7 @@ function NavRow({ icon, label, onPress, testID }: { icon: IconName; label: strin
   return (
     <Pressable testID={testID} accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={{ minHeight: MIN_TAP, justifyContent: 'center' }}>
       <Row>
-        <Icon name={icon} color={p.onSurfaceMuted} />
+        <Icon name={icon} color={p.primary} />
         <View style={{ flex: 1 }}>
           <T>{label}</T>
         </View>
@@ -203,7 +203,7 @@ function ToggleRow({ icon, label, hint, value, onChange, testID }: { icon: IconN
   return (
     <Row style={{ alignItems: 'flex-start' }}>
       <Icon name={icon} color={p.primary} />
-      <View style={{ flex: 1, gap: 2 }}>
+      <View style={{ flex: 1, gap: Space.xxs }}>
         <T>{label}</T>
         <T variant="small" muted>
           {hint}

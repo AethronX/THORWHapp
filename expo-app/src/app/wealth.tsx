@@ -8,7 +8,7 @@ import type { Debt } from '../domain/models';
 import { payoffPlan, suggestedExtra } from '../domain/wealth';
 import { wealth } from '../state/selectors';
 import { useAppState, useController, useUi } from '../ui/AppContext';
-import { Toggle, AnimatedAmount, Button, Card, HeroPanel, Icon, IconButton, LabeledProgress, Row, runGuarded, Screen, T } from '../ui/components';
+import { Toggle, AnimatedAmount, Button, Card, EmptyState, HeroPanel, Icon, IconButton, LabeledProgress, Row, runGuarded, Screen, T } from '../ui/components';
 import { haptic } from '../ui/feedback';
 import { formatDate, formatMonth } from '../ui/format';
 import { AmountEditor } from '../ui/InlineEditor';
@@ -74,7 +74,7 @@ export default function Wealth() {
       {/* Assets */}
       <Card title={s.assetsTitle} action={<Button kind="text" icon="add" label={s.addAsset} onPress={() => router.push('/asset/new')} testID="wealth.addAsset" />}>
         {st.assets.length === 0 ? (
-          <T muted>{s.noAssets}</T>
+          <EmptyState compact icon="coins" title={s.noAssets} testID="wealth.noAssets" />
         ) : (
           st.assets.map((a) => (
             <Pressable
@@ -98,7 +98,7 @@ export default function Wealth() {
                     <T variant="small">{s.estimateTag}</T>
                   </View>
                 )}
-                <T variant="label">{money(a.valueMinor)}</T>
+                <T variant="amount">{money(a.valueMinor)}</T>
               </Row>
             </Pressable>
           ))
@@ -107,7 +107,7 @@ export default function Wealth() {
 
       {/* Obligations */}
       <Card title={s.debtsTitle} action={<Button kind="text" icon="add" label={s.addDebt} onPress={() => router.push('/debt/new')} testID="wealth.addDebt" />}>
-        {st.debts.length === 0 ? <T muted>{s.noDebts}</T> : st.debts.map((d) => <DebtItem key={d.id} debt={d} />)}
+        {st.debts.length === 0 ? <EmptyState compact icon="handCoins" title={s.noDebts} testID="wealth.noDebts" /> : st.debts.map((d) => <DebtItem key={d.id} debt={d} />)}
       </Card>
     </Screen>
   );

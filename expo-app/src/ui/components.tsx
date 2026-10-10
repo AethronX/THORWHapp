@@ -410,14 +410,16 @@ export function TotalRow({ label, value, testID }: { label: string; value: strin
   );
 }
 
-export function EmptyState({ icon, title, body, action }: { icon: IconName; title: string; body?: string; action?: ReactNode }) {
+/** Empty list/state: icon, what's missing, and (ideally) the action that fills it. `compact` inside cards. */
+export function EmptyState({ icon, title, body, action, compact = false, testID }: { icon: IconName; title: string; body?: string; action?: ReactNode; compact?: boolean; testID?: string }) {
   const { p } = useUi();
+  const size = compact ? 48 : 64;
   return (
-    <View style={{ alignItems: 'center', padding: Space.xxl, gap: Space.md }}>
-      <View importantForAccessibility="no-hide-descendants" style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: p.primaryContainer, alignItems: 'center', justifyContent: 'center' }}>
-        <Icon name={icon} size={32} color={p.onPrimaryContainer} />
+    <View testID={testID} style={{ alignItems: 'center', padding: compact ? Space.md : Space.xxl, gap: compact ? Space.sm : Space.md }}>
+      <View importantForAccessibility="no-hide-descendants" style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: p.primaryContainer, alignItems: 'center', justifyContent: 'center' }}>
+        <Icon name={icon} size={size / 2} color={p.onPrimaryContainer} />
       </View>
-      <T variant="subtitle" center>
+      <T variant={compact ? 'body' : 'subtitle'} center>
         {title}
       </T>
       {body ? (

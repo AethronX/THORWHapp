@@ -54,7 +54,7 @@ export default function Budgets() {
             style={{ minHeight: MIN_TAP, justifyContent: 'center', paddingVertical: Space.xs, borderBottomWidth: 1, borderBottomColor: p.outline }}
           >
             <Row>
-              <CategoryBadge category={cat} size={36} />
+              <CategoryBadge category={cat} />
               <View style={{ flex: 1 }}>
                 <T>{categoryLabel(cat, s)}</T>
                 {limit != null && (
@@ -63,7 +63,7 @@ export default function Budgets() {
                   </T>
                 )}
               </View>
-              <T muted={limit == null}>{limit == null ? s.noLimit : money(limit)}</T>
+              {limit == null ? <T muted>{s.noLimit}</T> : <T variant="amount">{money(limit)}</T>}
             </Row>
           </Pressable>
         );

@@ -759,3 +759,37 @@ test('review fixes: a double tap records a goal contribution once; current-month
   press('currentMonthOnly.go');
   expect(await screen.findByTestId('principles.score')).toBeTruthy();
 });
+
+test('undo instead of "are you sure?": quick add and delete both offer Undo that really reverts', async () => {
+  app();
+  await onboard('800');
+  press('dashboard.addExpense');
+  await screen.findByTestId('quickAdd');
+  for (const k of ['7']) press(`key.${k}`);
+  type('quick.note', 'بنزين');
+  press('quick.save');
+  await waitFor(() => expect(screen.queryByTestId('quickAdd')).toBeNull());
+  expect((await screen.findByTestId('toast.message')).props.children).toBe(ar.toastExpenseAdded('‎7.000‎ ر.ع.', ar.cat.transport));
+  await waitFor(() => expect(label('summary.expenses')).toContain('7.000'));
+  press('toast.action');
+  await waitFor(() => expect(label('summary.expenses')).toContain('0.000'));
+
+  // Add again, then delete from the full form: no dialog, an Undo toast instead.
+  press('dashboard.addExpense');
+  await screen.findByTestId('quickAdd');
+  press('key.9');
+  type('quick.note', 'بنزين');
+  press('quick.save');
+  await waitFor(() => expect(label('summary.expenses')).toContain('9.000'));
+  await nav((router) => router.push('/expenses'));
+  const row = await screen.findByTestId(/^expense\.row\./);
+  fireEvent.press(row);
+  await screen.findByTestId('expense.delete');
+  const alerts = alertSpy.mock.calls.length;
+  press('expense.delete');
+  await waitFor(() => expect(screen.getByTestId('toast.message').props.children).toBe(ar.toastExpenseDeleted));
+  expect(alertSpy.mock.calls.length).toBe(alerts);
+  await waitFor(() => expect(screen.queryByTestId(/^expense\.row\./)).toBeNull());
+  press('toast.action');
+  expect(await screen.findByTestId(/^expense\.row\./)).toBeTruthy();
+});
