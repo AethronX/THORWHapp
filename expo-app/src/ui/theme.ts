@@ -340,3 +340,15 @@ export function oklab(hex: string): [number, number, number] {
     0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s,
   ];
 }
+
+// -----------------------------------------------------------------------------
+// Spending-calendar heat levels (0 = none … 4 = most). Alphas chosen so day
+// numbers keep 4.5:1 on every level in both themes (tested).
+// -----------------------------------------------------------------------------
+const HEAT_ALPHA = (p: Palette) => ['00', '26', '55', p.dark ? 'AA' : '88', 'FF'];
+/** Fill for heat level 0..4 (primary at increasing opacity). */
+export const heatFill = (p: Palette, level: number) => (level <= 0 ? 'transparent' : level >= 4 ? p.primary : p.primary + HEAT_ALPHA(p)[level]);
+/** Opacity (0..1) of a heat level, for contrast checks. */
+export const heatOpacity = (p: Palette, level: number) => parseInt(HEAT_ALPHA(p)[Math.max(0, Math.min(4, level))], 16) / 255;
+/** Text colour for a day number drawn on a heat level. */
+export const heatText = (p: Palette, level: number) => (level >= 4 || (level === 3 && p.dark) ? p.onPrimary : p.onSurface);

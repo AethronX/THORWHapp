@@ -17,6 +17,9 @@
 اعرف خطوتك التالية
 • «خطوتك التالية»: اقتراح واحد واضح مبني على ما سجّلته، مع «لماذا؟» بأرقامك أنت، وزر لتنفيذه، و«ليس الآن».
 • صندوق طوارئ محسوب من مصروفاتك الأساسية الفعلية.
+• صندوق لرمضان والعيد قبل الموسم بأشهر، وتذكير «ادفع لنفسك أولًا» يوم الراتب.
+• «مبادئ الثراء»: أفكار أشهر كتب المال مطبّقة على أرقامك أنت.
+• «الاستثمار»: هل أنت جاهز؟ ما تملكه، ثمن الانتظار، ودليل مبسط للصكوك والصناديق والأسهم والذهب — تعليم فقط دون توصيات.
 
 سجّل بسرعة
 • إضافة سريعة: المبلغ أولًا، ويقترح التطبيق التصنيف من ملاحظتك (لولو، بنزين، عمانتل…) ويتعلّم من اختياراتك.
@@ -41,7 +44,9 @@
 flow; self-explaining analytics (health score, safe-to-spend per day until payday, month-end forecast, like-for-like
 comparison); a single "next step" with its reason and one-tap action; quick add with smart category suggestions;
 budgets, pausable goals, obligations with payoff plans and interest impact, net worth with estimates marked; growth
-calculator with stated assumptions. No account, no ads, no tracking, no bank login — all data on your device. App lock,
+calculator with stated assumptions; Ramadan/Eid season funds and pay-yourself-first on payday; "wealth principles" from
+popular money books checked against your data; an educational investing section (readiness, cost of waiting) — no
+product advice. No account, no ads, no tracking, no bank login — all data on your device. App lock,
 hide amounts, export, delete everything. Planning aid, not financial advice.
 
 ## Store forms (answers to give — verify wording in the console)
@@ -51,7 +56,7 @@ hide amounts, export, delete everything. Planning aid, not financial advice.
   deletion: yes — in-app "Delete all my data" + uninstall.
 - **App privacy (Apple):** "Data Not Collected".
 - **Financial features declaration (Play):** budgeting / personal finance management only — no loans, no payments,
-  no investing, no banking connection.
+  no trading or investment products (educational investing content only, no advice), no banking connection.
 - **Content rating:** general; no user-generated content shared, no gambling.
 - **Privacy policy URL:** host `docs/PRIVACY_POLICY_AR.md` after legal review (required by both stores).
 

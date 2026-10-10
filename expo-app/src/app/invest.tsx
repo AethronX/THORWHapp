@@ -3,13 +3,13 @@ import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { minorToEditable, parseAmount } from '../core/amountParser';
-import { allocation, costOfWaiting, ReadinessItem, ReadinessStatus } from '../domain/investing';
-import { readiness, safeToSpend } from '../state/selectors';
+import { allocation, costOfWaiting, ReadinessItem } from '../domain/investing';
+import { isViewingCurrentMonth, readiness, safeToSpend } from '../state/selectors';
 import { useAppState, useUi } from '../ui/AppContext';
-import { Button, Card, Field, Icon, IconName, LabeledProgress, Row, Screen, T } from '../ui/components';
+import { Button, Card, CurrentMonthOnly, Field, HeroPanel, Icon, LabeledProgress, Row, Screen, StatusChip, T } from '../ui/components';
 import { haptic } from '../ui/feedback';
 import { currencySymbol, formatPercent } from '../ui/format';
-import { Radii, Space } from '../ui/theme';
+import { MIN_TAP, Radii, Space } from '../ui/theme';
 
 /**
  * Investing (D-041): readiness from the user's own data, what they hold,
@@ -21,10 +21,16 @@ export default function Invest() {
   const { s, p } = useUi();
   const r = readiness(st);
   const good = r.items.filter((i) => i.status === 'good').length;
+  if (!isViewingCurrentMonth(st))
+    return (
+      <Screen testID="invest">
+        <CurrentMonthOnly />
+      </Screen>
+    );
 
   return (
     <Screen testID="invest">
-      <View style={{ backgroundColor: p.hero, borderRadius: Radii.lg, padding: Space.xl, gap: Space.sm }}>
+      <HeroPanel>
         <Row gap={Space.xs}>
           <Icon name="chartUp" size={20} color={p.heroAccent} />
           <T variant="label" color={p.heroAccent}>
@@ -37,7 +43,7 @@ export default function Invest() {
         <T variant="small" color={p.onHeroMuted}>
           {s.investIntro}
         </T>
-      </View>
+      </HeroPanel>
 
       <Card title={s.readinessTitle} testID="invest.readiness">
         {r.items.map((i) => (
@@ -67,18 +73,16 @@ export default function Invest() {
   );
 }
 
-const STATUS_ICON: Record<ReadinessStatus, IconName> = { good: 'success', opportunity: 'tip', needsData: 'info' };
 
 function ReadinessRow({ item }: { item: ReadinessItem }) {
   const { s, p, money } = useUi();
-  const color = item.status === 'good' ? p.positive : item.status === 'opportunity' ? p.warning : p.textSubtle;
-  const months = (m: number) => s.monthsApprox(String(Math.floor(m * 10) / 10));
+  const months = (m: number) => s.monthsApprox(Math.floor(m * 10) / 10);
   let text: string;
   let action: { label: string; go: () => void } | null = null;
   switch (item.key) {
     case 'emergency':
       text = item.months == null ? s.rEmergencyNoData : item.status === 'good' ? s.rEmergencyGood(months(item.months)) : s.rEmergencyGap(money(item.gapMinor), months(item.months));
-      if (item.status !== 'good') action = { label: s.pActGoals, go: () => router.push('/goals') };
+      if (item.status !== 'good') action = { label: s.pActGoals, go: () => router.navigate('/goals') };
       break;
     case 'interestDebt':
       text = item.debt ? s.rDebt(item.debt.name, String(item.debt.annualRatePercent)) : s.rDebtGood;
@@ -93,13 +97,10 @@ function ReadinessRow({ item }: { item: ReadinessItem }) {
   return (
     <View testID={`invest.r.${item.key}`} style={{ gap: Space.xs, paddingBottom: Space.sm, borderBottomWidth: 1, borderBottomColor: p.outline }}>
       <Row gap={Space.xs}>
-        <Icon name={STATUS_ICON[item.status]} size={18} color={color} />
         <View style={{ flex: 1 }}>
           <T variant="label">{s.rTitle[item.key]}</T>
         </View>
-        <T variant="small" color={color} testID={`invest.r.${item.key}.status`}>
-          {s.principleStatus[item.status]}
-        </T>
+        <StatusChip status={item.status} testID={`invest.r.${item.key}.status`} />
       </Row>
       <T variant="small" muted testID={`invest.r.${item.key}.text`}>
         {text}
@@ -218,7 +219,7 @@ function Learn() {
               accessibilityRole="button"
               accessibilityState={{ expanded }}
               onPress={() => setOpen(expanded ? null : x.key)}
-              style={{ minHeight: 44, justifyContent: 'center' }}
+              style={{ minHeight: MIN_TAP, justifyContent: 'center' }}
             >
               <Row style={{ justifyContent: 'space-between' }}>
                 <T variant="label">{x.title}</T>

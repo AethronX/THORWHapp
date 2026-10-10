@@ -30,12 +30,15 @@ test('pay yourself first: one tenth of income (Clason), on the month-end forecas
   expect(get(evaluatePrinciples({ ...base, incomeMinor: 1000000, expensesMinor: 950000 }), 'payYourselfFirst')).toMatchObject({ status: 'opportunity', rate: 0.05, action: { type: 'reviewBudgets' } });
 });
 
-test('room for error: liquid savings (goals + cash/bank, not gold or property) ÷ average essential month', () => {
+test('room for error: liquid savings counted once (larger of goals vs cash/bank; gold/property excluded) ÷ average essential month', () => {
   const history = [ex('housing', 300, 8), ex('food', 100, 8), ex('housing', 300, 9), ex('food', 100, 9), ex('shopping', 999, 9)];
-  // essentials = 400/month; liquid = goal 500 + bank 700 = 1200 → exactly 3 months.
+  // essentials = 400/month; goals 500 vs bank 1200 → 1200 (the goal money is likely in that bank) → exactly 3 months.
   const goals = [{ id: 1, name: 'g', targetMinor: 1, savedMinor: 500000, targetDate: { year: 2027, month: 1, day: 1 }, paused: false }];
-  const r = get(evaluatePrinciples({ ...base, history, goals, assets: [asset(1, 'bank', 700), asset(2, 'gold', 5000), asset(3, 'property', 90000)] }), 'roomForError');
+  const r = get(evaluatePrinciples({ ...base, history, goals, assets: [asset(1, 'bank', 1200), asset(2, 'gold', 5000), asset(3, 'property', 90000)] }), 'roomForError');
   expect(r).toMatchObject({ status: 'good', months: 3, liquidMinor: 1200000, monthlyEssentialMinor: 400000 });
+  // Same money as goal (1000) AND bank (1000) is NOT 2000.
+  const twice = get(evaluatePrinciples({ ...base, history, goals: [{ ...goals[0], savedMinor: 1000000 }], assets: [asset(1, 'bank', 1000)] }), 'roomForError');
+  expect(twice).toMatchObject({ status: 'opportunity', months: 2.5, liquidMinor: 1000000 });
   expect(get(evaluatePrinciples({ ...base, history, assets: [asset(1, 'cash', 400)] }), 'roomForError')).toMatchObject({ status: 'opportunity', months: 1 });
   // One month of data is not enough.
   expect(get(evaluatePrinciples({ ...base, history: [ex('housing', 300, 9)] }), 'roomForError').status).toBe('needsData');

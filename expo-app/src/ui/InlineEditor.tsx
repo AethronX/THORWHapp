@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { minorToEditable, parseAmount } from '../core/amountParser';
 import { useAppState, useUi } from './AppContext';
@@ -53,11 +53,21 @@ export function AmountEditor({
         ? amountErrorText(parsed.error, st.currency, s)
         : (validate?.(parsed.minor) ?? null);
 
+  // A ref, not only state: two taps in the same frame must not record money twice.
+  const busyRef = useRef(false);
+  const [busy, setBusy] = useState(false);
   async function save() {
+    if (busyRef.current) return;
     setSubmitted(true);
-    if (allowEmpty && empty) return onSave(null, text);
-    if (!parsed.ok || validate?.(parsed.minor)) return;
-    await onSave(parsed.minor, text);
+    if (!(allowEmpty && empty) && (!parsed.ok || validate?.(parsed.minor))) return;
+    busyRef.current = true;
+    setBusy(true);
+    try {
+      await (allowEmpty && empty ? onSave(null, text) : onSave(parsed.ok ? parsed.minor : 0, text));
+    } finally {
+      busyRef.current = false;
+      setBusy(false);
+    }
   }
 
   return (
@@ -75,7 +85,7 @@ export function AmountEditor({
       />
       {textLabel && <Field testID={`${testID}.text`} label={textLabel} hint={textHint} value={text} onChangeText={setText} maxLength={40} />}
       <Row style={{ flexWrap: 'wrap' }}>
-        <Button label={s.save} onPress={save} testID={`${testID}.save`} />
+        <Button label={s.save} onPress={save} disabled={busy} testID={`${testID}.save`} />
         <Button kind="text" label={s.cancel} onPress={onCancel} testID={`${testID}.cancel`} />
         {onDelete && <Button kind="danger" label={deleteLabel ?? s.delete} onPress={onDelete} testID={`${testID}.delete`} />}
       </Row>

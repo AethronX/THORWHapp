@@ -231,7 +231,7 @@ test('questionnaire builds a personal plan that the app then uses', async () => 
 
   // Plan: 20 % saving, emergency fund 1.5 × income, food limit 10 %.
   await screen.findByTestId('plan.review');
-  expect(screen.getByTestId('plan.saving').props.children).toBe(ar.planSaving('\u200E160.000\u200E\u00A0ر.ع.', '20%'));
+  expect(screen.getByTestId('plan.saving').props.children).toBe(ar.planSaving('\u200E160.000\u200E\u00A0ر.ع.', '\u200E20%\u200E'));
   expect(screen.getByText(ar.planGoalEmergency('\u200E1,200.000\u200E\u00A0ر.ع.'))).toBeTruthy();
   expect(screen.getByText(ar.planBudget(ar.cat.food, '\u200E80.000\u200E\u00A0ر.ع.'))).toBeTruthy();
   press('plan.start');
@@ -730,4 +730,32 @@ test('investing: readiness from own data, holdings, cost of waiting on the user�
   press('learn.sukuk');
   expect(screen.getByTestId('learn.sukuk.body')).toBeTruthy();
   expect(screen.getByTestId('invest.disclaimer').props.children).toBe(ar.investDisclaimer);
+});
+
+test('review fixes: a double tap records a goal contribution once; current-month tools explain past months', async () => {
+  const db = await mockDriver.current.open();
+  await migrate(db);
+  const repo = new FinanceRepository(db, () => new Date(2026, 9, 9, 10));
+  await repo.completeOnboarding({ currencyCode: 'OMR', month: { year: 2026, month: 10 }, incomeMinor: 1000000, incomeLabel: 'راتب' });
+  const gid = await repo.addGoal({ name: 'سفر', targetMinor: 1000000, targetDate: { year: 2027, month: 10, day: 1 }, today: { year: 2026, month: 10, day: 9 } });
+  await db.close();
+
+  app();
+  await screen.findByTestId('dashboard');
+  await nav((router) => router.push('/goals'));
+  press(`goal.add.${gid}`);
+  type('contribution.amount', '50');
+  press('contribution.save');
+  press('contribution.save');
+  await waitFor(() => expect(screen.queryByTestId('contribution')).toBeNull());
+  expect(screen.getByText(ar.goalSaved('‎50.000‎ ر.ع.', '‎1,000.000‎ ر.ع.'))).toBeTruthy();
+
+  // Principles while a past month is viewed: a clear note and a way back, not mixed months.
+  await nav((router) => router.push('/'));
+  press('month.prev');
+  await waitFor(() => expect(screen.getByTestId('month.label').props.children).toBe('سبتمبر 2026'));
+  await nav((router) => router.push('/principles'));
+  expect(await screen.findByTestId('currentMonthOnly')).toBeTruthy();
+  press('currentMonthOnly.go');
+  expect(await screen.findByTestId('principles.score')).toBeTruthy();
 });

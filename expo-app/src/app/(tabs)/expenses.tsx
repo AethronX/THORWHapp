@@ -54,10 +54,11 @@ export default function Expenses() {
                 accessibilityLabel={s.searchPlaceholder}
                 accessibilityHint={s.searchScope(formatMonth(st.month, st.locale))}
                 returnKeyType="search"
-                style={{ flex: 1, minHeight: MIN_TAP, fontFamily: Fonts.regular, fontSize: 15, color: p.onSurface, textAlign: rtl ? 'right' : 'left' }}
+                style={{ flex: 1, minHeight: MIN_TAP, fontFamily: Fonts.regular, fontSize: 16, color: p.onSurface, textAlign: rtl ? 'right' : 'left' }}
+                maxFontSizeMultiplier={2}
               />
               {query !== '' && (
-                <Pressable testID="expenses.search.clear" accessibilityRole="button" accessibilityLabel={s.clearSearch} onPress={() => setQuery('')} hitSlop={8}>
+                <Pressable testID="expenses.search.clear" accessibilityRole="button" accessibilityLabel={s.clearSearch} onPress={() => setQuery('')} hitSlop={14}>
                   <Icon name="clear" size={20} color={p.onSurfaceMuted} />
                 </Pressable>
               )}
@@ -74,6 +75,7 @@ export default function Expenses() {
                     accessibilityState={{ selected }}
                     accessibilityLabel={label}
                     onPress={() => setCategoryId(c?.id ?? null)}
+                    hitSlop={{ top: 4, bottom: 4 }}
                     style={{ minHeight: 40, flexDirection: 'row', alignItems: 'center', gap: Space.xs, paddingHorizontal: Space.md, borderRadius: Radii.pill, borderWidth: 1, borderColor: selected ? p.primary : p.outline, backgroundColor: selected ? p.primaryContainer : p.surface }}
                   >
                     {c && <Icon name={categoryIcon(c)} size={16} color={selected ? p.onPrimaryContainer : categoryTone(p, c.key, c.iconCode).fg} />}
@@ -107,7 +109,7 @@ export default function Expenses() {
                 key={e.id}
                 testID={`expense.row.${e.id}`}
                 accessibilityRole="button"
-                accessibilityLabel={`${name}، ${money(e.amountMinor)}، ${sub}`}
+                accessibilityLabel={`${name}${s.listSep}${money(e.amountMinor)}${s.listSep}${sub}`}
                 accessibilityHint={s.edit}
                 onPress={() => router.push(`/expense/${e.id}`)}
                 style={{ minHeight: MIN_TAP, borderBottomWidth: 1, borderBottomColor: p.outline, paddingVertical: Space.sm }}

@@ -57,6 +57,7 @@ export default function AssetForm() {
                   testID={`asset.kind.${k}`}
                   accessibilityRole="radio"
                   accessibilityState={{ selected }}
+                  hitSlop={{ top: 4, bottom: 4 }}
                   onPress={() => setKind(k)}
                   style={{ minHeight: 40, justifyContent: 'center', paddingHorizontal: Space.md, borderRadius: Radii.pill, borderWidth: 1, borderColor: selected ? p.primary : p.outline, backgroundColor: selected ? p.primaryContainer : p.surface }}
                 >

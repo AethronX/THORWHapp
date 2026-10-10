@@ -1,6 +1,6 @@
 /** @jest-environment node */
 import { AppController } from '../src/state/appController';
-import { CATEGORY_KEYS, contrast, dark, light, oklab, Palette, Scale } from '../src/ui/theme';
+import { CATEGORY_KEYS, contrast, dark, heatOpacity, heatText, light, oklab, Palette, Scale } from '../src/ui/theme';
 import { SqlJsDriver } from './helpers/sqlJsDriver';
 
 const AA_TEXT = 4.5;
@@ -122,4 +122,16 @@ test('light theme is the default for new and existing users', async () => {
   await app.init();
   expect(app.getState().themeMode).toBe('light');
   await app.dispose();
+});
+
+test('spending-calendar day numbers keep 4.5:1 on every heat level (light and dark)', () => {
+  const rgb = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+  const blend = (fg: string, bg: string, a: number) =>
+    '#' + rgb(fg).map((c, i) => Math.round(c * a + rgb(bg)[i] * (1 - a)).toString(16).padStart(2, '0')).join('');
+  for (const p of [light, dark]) {
+    for (const lv of [1, 2, 3, 4]) {
+      const cell = blend(p.primary, p.surface, heatOpacity(p, lv));
+      expect(contrast(heatText(p, lv), cell)).toBeGreaterThanOrEqual(AA_TEXT);
+    }
+  }
 });

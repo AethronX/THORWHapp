@@ -1,5 +1,9 @@
 # Project status
 
+## Update 2026-10-10 (full review)
+Full review of logic, design, text and organisation with fixes (D-042). Verified here: `tsc` 0 errors · **328 tests
+passing** · web-render visual pass of every screen. Not verified: a real device.
+
 ## Update 2026-10-10 (investing section)
 "Investing" screen (D-041; ANALYTICS.md §8): readiness from own data, holdings by type, cost of waiting on the user's
 own assumed return, neutral learning cards, safety tips; no product advice, no live prices. Text inputs no longer

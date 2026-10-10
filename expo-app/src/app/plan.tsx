@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { View } from 'react-native';
 
-import { normalizeDigits, parseAmount } from '../../core/amountParser';
-import { compareScenarios, FinanceInputError, FutureValueResult, realValue } from '../../domain/financeEngine';
-import { useAppState, useUi } from '../../ui/AppContext';
-import { Card, Field, Icon, Row, Screen, T } from '../../ui/components';
-import { amountErrorText, currencySymbol } from '../../ui/format';
-import { Fonts, Radii, Space } from '../../ui/theme';
+import { normalizeDigits, parseAmount } from '../core/amountParser';
+import { compareScenarios, FinanceInputError, FutureValueResult, realValue } from '../domain/financeEngine';
+import { useAppState, useUi } from '../ui/AppContext';
+import { Card, Field, Icon, Row, Screen, T } from '../ui/components';
+import { amountErrorText, currencySymbol } from '../ui/format';
+import { Fonts, Radii, Space } from '../ui/theme';
 
 const num = (s: string) => {
   const t = normalizeDigits(s.trim());

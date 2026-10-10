@@ -15,7 +15,8 @@ import type { Season, SeasonKey } from './seasons';
 import { seasonFundDate } from './seasons';
 import { FIXED_CATEGORY_KEYS } from './analytics';
 import { requiredMonthlySaving } from './financeEngine';
-import type { Category, CategorySpend, Expense, SavingsGoal } from './models';
+import type { Asset, Category, CategorySpend, Expense, SavingsGoal } from './models';
+import { liquidSavings } from './principles';
 import { isGoalReached } from './models';
 
 export type GuidanceAction =
@@ -107,6 +108,8 @@ export function buildGuidance(args: {
   currency: Currency;
   /** Name given to the emergency goal the app creates (to find it again). */
   emergencyGoalName: string;
+  /** Recorded assets (cash/bank count as savings for the emergency fund, see liquidSavings). */
+  assets?: readonly Asset[];
   /** Salary day (1..31) from the profile; null/absent when not fixed. */
   payday?: number | null;
   /** Monthly saving from the personal plan (0 = none). */
@@ -203,7 +206,8 @@ export function buildGuidance(args: {
   if (withData.length >= 2) {
     const monthly = Math.round(withData.reduce((a, b) => a + b, 0) / withData.length);
     const emergencyGoal = args.goals.find((g) => g.name.trim() === args.emergencyGoalName.trim());
-    const saved = emergencyGoal ? Math.max(0, emergencyGoal.savedMinor) : args.goals.reduce((t, g) => t + Math.max(0, g.savedMinor), 0);
+    // Same measure as "Wealth principles" and "Investing", so screens agree.
+    const saved = liquidSavings(args.goals, args.assets ?? []);
     if (monthly > 0 && saved < monthly * EMERGENCY_MONTHS) {
       const target3 = roundUpToUnit(monthly * 3, unit);
       out.push({

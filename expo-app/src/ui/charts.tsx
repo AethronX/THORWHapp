@@ -14,7 +14,7 @@ import { T } from './components';
 import { useCountUp, useDrawIn } from './motion';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
-import { Radii, Space } from './theme';
+import { heatFill, heatText, Radii, Space } from './theme';
 
 // -----------------------------------------------------------------------------
 // Donut
@@ -241,7 +241,7 @@ export function SpendCalendar({
   const cells: (number | null)[] = [...Array(firstWeekday).fill(null), ...totals.map((_, i) => i + 1)];
   while (cells.length % 7) cells.push(null);
   const level = (v: number) => (v <= 0 ? 0 : v / max > 0.75 ? 4 : v / max > 0.45 ? 3 : v / max > 0.2 ? 2 : 1);
-  const fills = ['transparent', p.primary + '26', p.primary + '55', p.primary + '99', p.primary];
+  const fills = [0, 1, 2, 3, 4].map((lv) => heatFill(p, lv));
   return (
     <View accessible accessibilityRole="image" accessibilityLabel={label} testID={testID} style={{ gap: 4 }}>
       <View style={{ flexDirection: 'row', gap: 4 }}>
@@ -273,7 +273,7 @@ export function SpendCalendar({
                   justifyContent: 'center',
                 }}
               >
-                <T variant="small" center color={lv >= 3 ? p.onPrimary : future ? p.textSubtle : p.onSurface}>
+                <T variant="small" center color={future ? p.textSubtle : heatText(p, lv)}>
                   {String(d)}
                 </T>
               </View>
@@ -293,8 +293,8 @@ export function HeatLegend({ less, more }: { less: string; more: string }) {
       <T variant="small" muted>
         {less}
       </T>
-      {['26', '55', '99', ''].map((a) => (
-        <View key={a} style={{ width: 12, height: 12, borderRadius: 3, backgroundColor: p.primary + a }} />
+      {[1, 2, 3, 4].map((lv) => (
+        <View key={lv} style={{ width: 12, height: 12, borderRadius: 3, backgroundColor: heatFill(p, lv) }} />
       ))}
       <T variant="small" muted>
         {more}

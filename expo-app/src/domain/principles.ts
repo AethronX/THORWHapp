@@ -58,9 +58,15 @@ export function essentialMonthTotals(history: readonly Expense[], categories: re
     .filter((t) => t > 0);
 }
 
-/** Money usable quickly: goal savings + cash/bank assets. */
+/**
+ * Money usable quickly, counted ONCE: goal savings usually sit in a bank
+ * account the user may also record as an asset (wealth.tsx says so), so we
+ * take the larger of the two rather than their sum.
+ */
 export function liquidSavings(goals: readonly SavingsGoal[], assets: readonly Asset[]): number {
-  return goals.reduce((t, g) => t + Math.max(0, g.savedMinor), 0) + assets.filter((a) => LIQUID_KINDS.has(a.kind)).reduce((t, a) => t + a.valueMinor, 0);
+  const inGoals = goals.reduce((t, g) => t + Math.max(0, g.savedMinor), 0);
+  const inCashBank = assets.filter((a) => LIQUID_KINDS.has(a.kind)).reduce((t, a) => t + a.valueMinor, 0);
+  return Math.max(inGoals, inCashBank);
 }
 
 export function evaluatePrinciples(args: {

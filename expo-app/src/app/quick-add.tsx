@@ -28,7 +28,7 @@ const group = (digits: string) => digits.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 export default function QuickAdd() {
   const st = useAppState();
   const c = useController();
-  const { s, p, money } = useUi();
+  const { s, p, money, rtl } = useUi();
   // `cat`: opened from a home shortcut with the category already chosen.
   const { cat } = useLocalSearchParams<{ cat?: string }>();
   const [amount, setAmount] = useState('');
@@ -116,6 +116,7 @@ export default function QuickAdd() {
                 haptic.tick();
                 setYesterday(y);
               }}
+              hitSlop={{ top: 6, bottom: 6 }}
               style={{ paddingHorizontal: Space.md, minHeight: 36, justifyContent: 'center', borderRadius: Radii.pill, backgroundColor: yesterday === y ? p.primaryContainer : 'transparent', borderWidth: 1, borderColor: yesterday === y ? p.primary : p.outline }}
             >
               <T variant="label" color={yesterday === y ? p.onPrimaryContainer : p.onSurfaceMuted}>
@@ -136,7 +137,8 @@ export default function QuickAdd() {
           placeholderTextColor={p.textSubtle}
           maxLength={120}
           accessibilityLabel={s.note}
-          style={{ minHeight: MIN_TAP, borderRadius: Radii.md, borderWidth: 1, borderColor: p.outline, backgroundColor: p.surface, paddingHorizontal: Space.md, fontFamily: Fonts.regular, fontSize: 15, color: p.onSurface, textAlign: 'right', writingDirection: 'auto' }}
+          style={{ minHeight: MIN_TAP, borderRadius: Radii.md, borderWidth: 1, borderColor: p.borderStrong, backgroundColor: p.surface, paddingHorizontal: Space.md, fontFamily: Fonts.regular, fontSize: 16, color: p.onSurface, textAlign: rtl ? 'right' : 'left', writingDirection: 'auto' }}
+          maxFontSizeMultiplier={2}
         />
         {suggestion && picked == null && (
           <Row gap={Space.xs} testID="quick.suggestion">

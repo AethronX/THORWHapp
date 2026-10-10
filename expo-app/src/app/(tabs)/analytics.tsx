@@ -96,7 +96,7 @@ export default function Analytics() {
       {/* 1. Financial health — transparent score with the next best step. */}
       <Card title={s.healthTitle} testID="analytics.health">
         <Row gap={Space.lg} style={{ alignItems: 'center' }}>
-          <ScoreRing score={h.score} color={gradeColor(h.grade, p)} label={`${s.healthTitle}: ${s.healthOutOf(h.score)}، ${gradeText(h.grade, s)}`} />
+          <ScoreRing score={h.score} color={gradeColor(h.grade, p)} label={`${s.healthTitle}: ${s.healthOutOf(h.score)}${s.listSep}${gradeText(h.grade, s)}`} />
           <View style={{ flex: 1, gap: Space.xs }}>
             <T variant="title" color={gradeColor(h.grade, p)} testID="analytics.grade">
               {gradeText(h.grade, s)}
@@ -136,7 +136,7 @@ export default function Analytics() {
                 {safe.perDayMinor > 0 ? (safe.untilPayday ? s.safeUntilPayday(safe.daysLeft) : s.safeUntilMonthEnd(safe.daysLeft)) : s.safeZero}
               </T>
               {/* Transparency builds trust: the formula with the user's own numbers. */}
-              <Pressable testID="analytics.safe.how" accessibilityRole="button" accessibilityState={{ expanded: showHow }} onPress={() => setShowHow(!showHow)} hitSlop={8}>
+              <Pressable testID="analytics.safe.how" accessibilityRole="button" accessibilityState={{ expanded: showHow }} onPress={() => setShowHow(!showHow)} hitSlop={{ top: 14, bottom: 14, left: 8, right: 8 }}>
                 <Row gap={Space.xs}>
                   <Icon name="info" size={16} color={p.primary} />
                   <T variant="label" color={p.primary}>
@@ -229,7 +229,7 @@ export default function Analytics() {
                 .slice(0, lastDay)
                 .map((v, i) => (v > 0 ? s.calendarDay(i + 1, money(v)) : null))
                 .filter(Boolean)
-                .join('، ')}
+                .join(s.listSep)}
             />
             <HeatLegend less={s.calendarLess} more={s.calendarMore} />
             <T variant="small" muted>
@@ -296,7 +296,7 @@ export default function Analytics() {
               slices={slices.map((x) => ({ value: x.amountMinor, color: sliceColor(x.categoryId) }))}
               centerTop={s.expenses}
               centerBottom={money(spent)}
-              label={slices.map((x) => `${sliceLabel(x.categoryId)} ${formatPercent(x.share)}`).join('، ')}
+              label={slices.map((x) => `${sliceLabel(x.categoryId)} ${formatPercent(x.share)}`).join(s.listSep)}
             />
           </View>
           {slices.map((x) => (
@@ -322,7 +322,7 @@ export default function Analytics() {
           }))}
           colorA={p.income}
           colorB={p.borderStrong}
-          label={st.trend.map((m) => `${SHORT_MONTHS[st.locale][m.month.month - 1]}: ${s.income} ${money(m.incomeMinor)}، ${s.expenses} ${money(m.expensesMinor)}`).join('؛ ')}
+          label={st.trend.map((m) => `${SHORT_MONTHS[st.locale][m.month.month - 1]}: ${s.income} ${money(m.incomeMinor)}${s.listSep}${s.expenses} ${money(m.expensesMinor)}`).join('؛ ')}
         />
         <Row style={{ justifyContent: 'center' }} gap={Space.lg}>
           <Row gap={Space.xs}>

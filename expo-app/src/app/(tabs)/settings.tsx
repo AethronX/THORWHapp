@@ -69,7 +69,7 @@ export default function Settings() {
             ['ar', 'العربية'],
             ['en', 'English'],
           ]}
-          onChange={(l) => c.setLocale(l)}
+          onChange={(l) => runGuarded(() => c.setLocale(l), s.errGeneric)}
         />
       </Card>
       {st.locale === 'ar' && (
@@ -94,18 +94,20 @@ export default function Settings() {
             ['dark', s.themeDark],
             ['system', s.themeSystem],
           ]}
-          onChange={(m) => c.setThemeMode(m)}
+          onChange={(m) => runGuarded(() => c.setThemeMode(m), s.errGeneric)}
         />
       </Card>
       <Card>
         <ToggleRow icon="sparkle" label={s.haptics} hint={s.hapticsHint} value={st.haptics} onChange={(v) => runGuarded(() => c.setHaptics(v), s.errGeneric)} testID="settings.haptics" />
       </Card>
-      <Card>
-        <NavRow icon="smart" label={s.yourPlan} onPress={() => router.push('/profile')} testID="settings.profile" />
+      <Card title={s.toolsTitle}>
         <NavRow icon="coins" label={s.wealthOpen} onPress={() => router.push('/wealth')} testID="settings.wealth" />
         <NavRow icon="book" label={s.principlesTitle} onPress={() => router.push('/principles')} testID="settings.principles" />
         <NavRow icon="chartUp" label={s.investTitle} onPress={() => router.push('/invest')} testID="settings.invest" />
         <NavRow icon="plan" label={s.openPlan} onPress={() => router.push('/plan')} testID="settings.plan" />
+      </Card>
+      <Card>
+        <NavRow icon="smart" label={s.yourPlan} onPress={() => router.push('/profile')} testID="settings.profile" />
         <NavRow icon="wallet" label={s.manageIncome} onPress={() => router.push('/income')} testID="settings.income" />
         <NavRow icon="analytics" label={s.budgetsScreenTitle} onPress={() => router.push('/budgets')} testID="settings.budgets" />
         <NavRow icon="catOther" label={s.categories} onPress={() => router.push('/categories')} testID="settings.categories" />

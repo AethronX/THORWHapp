@@ -1,11 +1,12 @@
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { monthsUntil, compareDays } from '../../core/dates';
 import { goalProgress } from '../../domain/financeEngine';
 import type { Insight } from '../../domain/insights';
 import { isGoalReached, spendUsage } from '../../domain/models';
-import { expenseTotal, guidance, principles, readiness, health, incomeTotal, insights, isViewingCurrentMonth, netCashFlow, recentSpending, safeToSpend, savingsRate, shortcutCategories, spends } from '../../state/selectors';
+import { expenseTotal, guidance, principles, readiness, wealth, health, incomeTotal, insights, isViewingCurrentMonth, netCashFlow, recentSpending, safeToSpend, savingsRate, shortcutCategories, spends } from '../../state/selectors';
 import { useAppState, useController, useUi } from '../../ui/AppContext';
 import { AnimatedAmount, Button, Card, Fab, Icon, IconName, LabeledProgress, MonthSwitcher, Row, runGuarded, Screen, T } from '../../ui/components';
 import { haptic } from '../../ui/feedback';
@@ -23,6 +24,7 @@ export default function Dashboard() {
   const net = netCashFlow(st);
   const rate = savingsRate(st);
   // Next step first; alerts below skip whatever the top step already says.
+  const [copying, setCopying] = useState(false);
   const steps = guidance(st, { emergency: s.emergencyGoalName, season: s.seasonGoalName });
   const top = steps[0];
   const sameAsTop = (i: Insight) =>
@@ -66,7 +68,7 @@ export default function Dashboard() {
           <View style={{ position: 'absolute', top: 0, start: Space.xl, end: Space.xl, height: 2, backgroundColor: p.brandGold, borderBottomLeftRadius: 2, borderBottomRightRadius: 2 }} />
           <Row style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
             {/* Net cash flow of the viewed month — NOT a bank balance (defined on screen). */}
-            <View accessible accessibilityLabel={`${s.net}، ${formatMonth(st.month, st.locale)}: ${money(net)}. ${s.netDefinition}`} testID="summary.net" style={{ flex: 1 }}>
+            <View accessible accessibilityLabel={`${s.net}${s.listSep}${formatMonth(st.month, st.locale)}: ${money(net)}. ${s.netDefinition}`} testID="summary.net" style={{ flex: 1 }}>
               <T variant="label" color={p.heroAccent}>
                 {`${s.net} · ${formatMonth(st.month, st.locale)}`}
               </T>
@@ -112,16 +114,25 @@ export default function Dashboard() {
 
         <NextStepCard items={steps} />
 
-        {isViewingCurrentMonth(st) && <PrinciplesEntry />}
-
         <SmartSummary />
 
-        {st.incomes.length === 0 && (
+        {/* The next step already says "add income" — keep this card only for its "copy last month" shortcut. */}
+        {st.incomes.length === 0 && (st.previousMonthHasIncome || top?.kind !== 'addIncome') && (
           <Card title={s.income}>
             <T>{s.noIncomeYet}</T>
             <Row style={{ flexWrap: 'wrap' }}>
               {st.previousMonthHasIncome && (
-                <Button kind="tonal" label={s.copyLastMonthIncome} onPress={() => runGuarded(c.copyIncomeFromPreviousMonth, s.errGeneric)} testID="dashboard.copyIncome" />
+                <Button
+                  kind="tonal"
+                  label={s.copyLastMonthIncome}
+                  disabled={copying}
+                  onPress={async () => {
+                    setCopying(true);
+                    await runGuarded(c.copyIncomeFromPreviousMonth, s.errGeneric);
+                    setCopying(false);
+                  }}
+                  testID="dashboard.copyIncome"
+                />
               )}
               <Button kind="outlined" label={s.addIncome} onPress={() => router.push('/income')} testID="dashboard.addIncome" />
             </Row>
@@ -181,6 +192,8 @@ export default function Dashboard() {
             ))
           )}
         </Card>
+
+        {isViewingCurrentMonth(st) && <ToolsCard />}
       </Screen>
       <Fab label={s.addExpense} onPress={() => router.push('/quick-add')} testID="dashboard.addExpense" />
     </View>
@@ -216,7 +229,7 @@ function SmartSummary() {
     <Pressable
       testID="dashboard.smart"
       accessibilityRole="button"
-      accessibilityLabel={`${s.healthTitle}: ${s.healthOutOf(h.score)}${safe ? `، ${s.safeTitle}: ${money(safe.perDayMinor)}` : ''}`}
+      accessibilityLabel={`${s.healthTitle}: ${s.healthOutOf(h.score)}${safe ? `${s.listSep}${s.safeTitle}: ${money(safe.perDayMinor)}` : ''}`}
       onPress={() => router.push('/analytics')}
       style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
     >
@@ -286,21 +299,24 @@ function QuickBar() {
   );
 }
 
-/** Entries to "Wealth principles" and "Investing", each with the user's current score. */
-function PrinciplesEntry() {
+/** "Your financial tools": principles, investing and net worth, each with a one-line status. */
+function ToolsCard() {
   const st = useAppState();
-  const { s } = useUi();
+  const { s, money } = useUi();
   const score = principleScore(principles(st));
   const ready = readiness(st).items.filter((i) => i.status === 'good').length;
+  const w = wealth(st);
+  const hasWealth = st.assets.length > 0 || st.debts.length > 0;
   return (
-    <>
-      <EntryCard testID="home.principles" icon="book" title={s.principlesTitle} text={s.principlesEntry(score.good, score.judged)} to="/principles" />
-      <EntryCard testID="home.invest" icon="chartUp" title={s.investTitle} text={s.investEntry(ready)} to="/invest" />
-    </>
+    <Card title={s.toolsTitle} testID="home.tools">
+      <ToolRow testID="home.principles" icon="book" title={s.principlesTitle} text={s.principlesEntry(score.good, score.judged)} to="/principles" />
+      <ToolRow testID="home.invest" icon="chartUp" title={s.investTitle} text={s.investEntry(ready)} to="/invest" />
+      <ToolRow testID="home.wealth" icon="coins" title={s.wealthOpen} text={hasWealth ? `${s.wealthTitle}: ${money(w.netMinor)}` : s.pMeasureNoData} to="/wealth" />
+    </Card>
   );
 }
 
-function EntryCard({ testID, icon, title, text, to }: { testID: string; icon: IconName; title: string; text: string; to: '/principles' | '/invest' }) {
+function ToolRow({ testID, icon, title, text, to }: { testID: string; icon: IconName; title: string; text: string; to: '/principles' | '/invest' | '/wealth' }) {
   const { p } = useUi();
   return (
     <PressScale
@@ -312,7 +328,7 @@ function EntryCard({ testID, icon, title, text, to }: { testID: string; icon: Ic
         router.push(to);
       }}
     >
-      <Row gap={Space.md} style={{ backgroundColor: p.surface, borderRadius: Radii.lg, borderWidth: 1, borderColor: p.outline, padding: Space.lg, minHeight: MIN_TAP }}>
+      <Row gap={Space.md} style={{ minHeight: MIN_TAP, paddingVertical: Space.xs }}>
         <View style={{ backgroundColor: p.primaryContainer, borderRadius: Radii.pill, padding: Space.sm }}>
           <Icon name={icon} size={20} color={p.primary} />
         </View>

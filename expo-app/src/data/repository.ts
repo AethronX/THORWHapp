@@ -42,7 +42,7 @@ export class ValidationError extends Error {
 }
 
 function positive(v: number) {
-  if (!Number.isInteger(v) || v <= 0) throw new ValidationError('Amount must be > 0');
+  if (!Number.isSafeInteger(v) || v <= 0) throw new ValidationError('Amount must be > 0');
 }
 
 function nonBlank(s: string, what: string): string {

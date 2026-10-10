@@ -1,5 +1,5 @@
 import { Pressable, View } from 'react-native';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { incomeTotal } from '../state/selectors';
 import { useAppState, useController, useUi } from '../ui/AppContext';
@@ -14,6 +14,9 @@ export default function Income() {
   const { s, p, money } = useUi();
   const [editing, setEditing] = useState<number | 'new' | null>(null);
   const current = typeof editing === 'number' ? st.incomes.find((i) => i.id === editing) : undefined;
+  // Switching month closes an open editor (the entry being edited belongs to the old month).
+  const monthKey = `${st.month.year}-${st.month.month}`;
+  useEffect(() => setEditing(null), [monthKey]);
 
   async function remove(id: number) {
     const yes = await confirm({ title: s.deleteIncomeConfirm, confirmLabel: s.delete, cancelLabel: s.cancel, destructive: true });
@@ -62,7 +65,7 @@ export default function Income() {
             key={i.id}
             testID={`income.row.${i.id}`}
             accessibilityRole="button"
-            accessibilityLabel={`${i.label || s.income}، ${money(i.amountMinor)}`}
+            accessibilityLabel={`${i.label || s.income}${s.listSep}${money(i.amountMinor)}`}
             accessibilityHint={s.edit}
             onPress={() => setEditing(i.id)}
             style={{ minHeight: MIN_TAP, justifyContent: 'center', borderBottomWidth: 1, borderBottomColor: p.outline }}

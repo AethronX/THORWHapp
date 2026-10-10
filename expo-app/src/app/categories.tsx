@@ -57,9 +57,10 @@ export default function Categories() {
   );
 }
 
-function NameEditor({ title, initial, onSave, onCancel }: { title: string; initial: string; onSave: (name: string) => void; onCancel: () => void }) {
+function NameEditor({ title, initial, onSave, onCancel }: { title: string; initial: string; onSave: (name: string) => Promise<void>; onCancel: () => void }) {
   const { s } = useUi();
   const [name, setName] = useState(initial);
+  const [busy, setBusy] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const error = submitted && name.trim() === '' ? s.errNameEmpty : null;
   return (
@@ -69,9 +70,13 @@ function NameEditor({ title, initial, onSave, onCancel }: { title: string; initi
         <Button
           label={s.save}
           testID="category.save"
-          onPress={() => {
+          disabled={busy}
+          onPress={async () => {
             setSubmitted(true);
-            if (name.trim() !== '') onSave(name);
+            if (name.trim() === '' || busy) return;
+            setBusy(true);
+            await onSave(name);
+            setBusy(false);
           }}
         />
         <Button kind="text" label={s.cancel} onPress={onCancel} />

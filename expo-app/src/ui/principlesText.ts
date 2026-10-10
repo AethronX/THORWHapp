@@ -8,7 +8,7 @@ export function principleText(r: PrincipleResult, s: Strings, money: (m: number)
     case 'payYourselfFirst':
       return r.rate == null ? s.pPayFirstNoData : s.pPayFirst(formatPercent(r.rate));
     case 'roomForError':
-      return r.months == null ? s.pRoomNoData : s.pRoom(s.monthsApprox(String(Math.floor(r.months * 10) / 10)), money(r.liquidMinor), money(r.monthlyEssentialMinor));
+      return r.months == null ? s.pRoomNoData : s.pRoom(s.monthsApprox(Math.floor(r.months * 10) / 10), money(r.liquidMinor), money(r.monthlyEssentialMinor));
     case 'measureWealth':
       return r.netMinor == null ? s.pMeasureNoData : s.pMeasure(money(r.netMinor));
     case 'assetsVsLiabilities':

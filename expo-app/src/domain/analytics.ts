@@ -73,6 +73,13 @@ export function projectMonthEndSpending(variableMinor: number, today: Day, fixed
  * Days until the next payday (1..31). If payday falls after the last day of a
  * short month, it is paid on that month's last day. Payday today => 0.
  */
+/** Days from today to next month's payday (used on payday itself). Always ≥ 1. */
+export function daysToNextPayday(today: Day, payday: number): number {
+  const pd = Math.min(Math.max(1, Math.round(payday)), 31);
+  const nm = today.month === 12 ? { year: today.year + 1, month: 1 } : { year: today.year, month: today.month + 1 };
+  return daysInMonth(today.year, today.month) - today.day + Math.min(pd, daysInMonth(nm.year, nm.month));
+}
+
 export function daysUntilPayday(today: Day, payday: number): number {
   const pd = Math.min(Math.max(1, Math.round(payday)), 31);
   const thisMonthPay = Math.min(pd, daysInMonth(today.year, today.month));

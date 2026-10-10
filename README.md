@@ -3,26 +3,28 @@
 > **Active app: [`expo-app/`](expo-app/README.md)** (Expo / React Native, runs in Expo Go, APK via EAS Build).
 > The Flutter implementation below is kept for reference — see DECISIONS D-019.
 
-Personal finance and savings-habit app, Arabic-first, starting in Oman (OMR) on Android.
-Know where your money goes, plan your salary, set goals with dates, and see what regular saving adds
-up to — with every assumption stated.
+Personal finance app, Arabic-first, starting in Oman (OMR, 3 decimals) — Android and iPhone.
 
-> Status: **v0.1 development slice** — the full P0 feature set runs and is tested on the host;
-> it has **not** yet been built into an APK or run on a phone. See [PROJECT_STATUS.md](PROJECT_STATUS.md).
+> Status: **release candidate 0.9.0 (Expo)** — tested on the host (`tsc`, Jest); **not yet tested on a real
+> device** and not published. See [PROJECT_STATUS.md](PROJECT_STATUS.md) and [docs/LAUNCH_CHECKLIST.md](docs/LAUNCH_CHECKLIST.md).
 
-## Features (v0.1)
-- Onboarding with currency choice (OMR default + 9 GCC/regional currencies)
-- Monthly income lines, one-tap "use last month's income"
-- Expenses: add / edit / delete, editable categories (custom, rename, archive)
-- Monthly summary: income, expenses, left over, savings rate
-- Per-category monthly budgets with labelled progress and warnings
-- Savings goals with target date, deposits/withdrawals, required monthly amount
-- Savings calculator: saving-only vs hypothetical return vs inflation-adjusted, with disclaimer
-- Rule-based heads-up (overspending, budget limits, unrealistic or overdue goals) — no AI
-- Arabic RTL and English LTR, light/dark, large-text safe
-- Local-only: no account, no network, no ads, no tracking; delete-all in Settings
+## Features (Expo app)
+- Income, expenses (quick add with keypad or free text such as «قهوة 500 بيسة»), categories, budgets, search and filters
+- Savings goals (pause), obligations with payoff plans, assets and net worth, savings calculator
+- "Your next step": ranked guidance with its reason, one action and "not now" — incl. Ramadan/Eid season funds and "pay yourself first" on payday
+- Analytics: health score, safe-to-spend per day, month-end forecast, spending calendar, recurring payments
+- Wealth principles from popular money books, checked against your own numbers
+- Investing: readiness, holdings by type, cost of waiting on your own assumption, learning and safety — no product advice
+- Arabic RTL and English, light/dark, Arabic or Western digits, app lock, hide amounts, export JSON/CSV, delete all
+- Local-only: no account, no server, no ads, no tracking
 
-## Develop
+Details: [expo-app/README.md](expo-app/README.md) · decisions: [DECISIONS.md](DECISIONS.md) · formulas: [docs/ANALYTICS.md](docs/ANALYTICS.md).
+
+---
+
+# Legacy Flutter app (reference only — D-019)
+
+## Develop (Flutter)
 Requires Flutter **3.47.x stable** (Dart 3.13). For Android builds: Android SDK + Java 17+.
 
 ```bash

@@ -42,7 +42,6 @@ export default function TabsLayout() {
       <Tabs.Screen name="analytics" options={tab(s.navAnalytics, 'analytics')} />
       <Tabs.Screen name="goals" options={tab(s.navGoals, 'goals')} />
       <Tabs.Screen name="settings" options={tab(s.navSettings, 'settings')} />
-      <Tabs.Screen name="plan" options={{ href: null, title: s.planTitle }} />
     </Tabs>
   );
 }

@@ -284,3 +284,21 @@ vs later, on a return the USER types (prefilled 4 % like the existing calculator
 Sharia-compliant forms mentioned where they exist; (5) safety tips (licence check, "guaranteed high return" = scam
 sign, don't invest the emergency fund, fees, never share OTP). Not done: product/fund/stock suggestions, live prices,
 portfolio returns, brokerage links.
+
+### D-042 Full review: one definition per concept, safer writes, clearer organisation — 2026-10-10
+Owner request: review the whole app (logic, design, formatting, organisation) and fix the gaps. Three parallel reviews
+(logic/data, UI/RTL/accessibility, text/navigation/docs) plus a visual pass of every screen. **Fixed:** (1) liquid
+savings counted once — the larger of goal savings and cash/bank assets — and used by guidance, principles, investing
+and the health score (screens contradicted each other and the same money could count twice); (2) principles/investing
+show a "current month only" note with a way back when a past month is viewed (they mixed months); (3) on payday,
+safe-to-spend divides by the days to the next payday (it showed the whole month's money per day); (4) a late month load
+can no longer overwrite a newer one; (5) repository amounts must be safe integers; (6) money editors and category names
+can't be submitted twice; (7) the savings calculator is a normal stack screen with a back button; stack screens
+navigate to tabs instead of stacking a second tab bar; iOS modals get a visible Cancel; (8) touch targets ≥ 48
+(hit slop), stronger input borders, note field follows the reading direction; (9) spending-calendar day numbers ≥ 4.5:1
+in both themes (tested); (10) failed language/theme/month/budget writes show an error; (11) one wording per concept
+(«تصنيف», «التزامات», «صندوق الطوارئ»), correct month plurals, no «ر.ع..», no hard-coded Arabic-Indic digits or «٪», LRM
+around percentages, localised list separators for screen readers, unused strings removed; (12) home: tools (principles,
+investing, net worth) grouped in one card at the end; Settings separates tools from app settings; shared HeroPanel and
+StatusChip. Docs (README, store listing, checklist) updated. **Not changed (noted):** react-native-web shows the Switch
+thumb outside its track in RTL (web preview only); deeper visual unification of list rows and badge sizes left for later.

@@ -8,6 +8,9 @@ recurring-payment detection, spending calendar, unusual-expense alert, hide-amou
 (Face ID / fingerprint), haptics and motion that respect Reduce Motion, Liquid Glass on iOS 26.
 Guidance: a ranked "next step" with its reason, one real action and "not now"; Arabic-tolerant search and
 category filters for expenses.
+Wealth: obligations with payoff plans, assets and net worth, export (JSON/CSV). Behaviour-informed guidance: Ramadan/Eid
+season funds and "pay yourself first" (docs/BEHAVIORAL_STUDY.md). "Wealth principles" from popular money books checked
+against the user's data, and an "Investing" section (readiness, holdings, cost of waiting, learning, safety — no product advice).
 Local-only (SQLite on the device), no account, no ads, no tracking.
 Competitor study: `../docs/COMPETITIVE_ANALYSIS.md` · design research 2026: `../docs/DESIGN_RESEARCH_2026.md` · audit 2030: `../docs/AUDIT_2030.md` · formulas: `../docs/ANALYTICS.md`.
 

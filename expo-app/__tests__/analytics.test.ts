@@ -6,6 +6,7 @@ import {
   change,
   daysLeftInMonth,
   daysUntilPayday,
+  daysToNextPayday,
   healthScore,
   projectMonthEndSpending,
   safeToSpendPerDay,
@@ -52,6 +53,9 @@ describe('pace & payday', () => {
   test('days until payday incl. short months and year end', () => {
     expect(daysUntilPayday(d(2026, 10, 9), 25)).toBe(16);
     expect(daysUntilPayday(d(2026, 10, 25), 25)).toBe(0);
+    // On payday the salary must last until next month's payday: Oct 25 → Nov 25 = 31 days; Jan 31 → Feb 28.
+    expect(daysToNextPayday(d(2026, 10, 25), 25)).toBe(31);
+    expect(daysToNextPayday(d(2027, 1, 31), 31)).toBe(28);
     expect(daysUntilPayday(d(2026, 10, 26), 25)).toBe(30);
     expect(daysUntilPayday(d(2026, 2, 10), 31)).toBe(18); // paid on Feb 28
     expect(daysUntilPayday(d(2026, 1, 31), 30)).toBe(28); // next: Feb 28

@@ -370,7 +370,7 @@ export function Field({
 
 /** Progress bar that always states its value in text (never colour alone). */
 export function LabeledProgress({ value, label, trailing, budget = false }: { value: number; label: string; trailing?: string; budget?: boolean }) {
-  const { p } = useUi();
+  const { p, s } = useUi();
   const over = budget && value > 1;
   const near = budget && !over && value >= 0.8;
   const color = over ? p.dangerBar : near ? p.cautionBar : p.progress;
@@ -382,7 +382,7 @@ export function LabeledProgress({ value, label, trailing, budget = false }: { va
     </T>
   ) : null;
   return (
-    <View accessible accessibilityLabel={[label, trailing].filter(Boolean).join('، ')} style={{ gap: Space.xs }}>
+    <View accessible accessibilityLabel={[label, trailing].filter(Boolean).join(s.listSep)} style={{ gap: Space.xs }}>
       <Row style={{ alignItems: 'flex-start' }}>
         {over && <Icon name="warning" size={18} color={p.negative} />}
         <View style={{ flex: 1 }}>
@@ -447,13 +447,13 @@ export function MonthSwitcher() {
   const isCurrent = st.month.year === st.today.year && st.month.month === st.today.month;
   return (
     <Row style={{ justifyContent: 'center' }}>
-      <IconButton testID="month.prev" icon="back" label={s.prevMonth} onPress={() => c.setMonth(addMonths(st.month, -1))} />
+      <IconButton testID="month.prev" icon="back" label={s.prevMonth} onPress={() => runGuarded(() => c.setMonth(addMonths(st.month, -1)), s.errLoad)} />
       <View style={{ flexShrink: 1 }}>
         <T variant="subtitle" center testID="month.label">
           {formatMonth(st.month, st.locale)}
         </T>
       </View>
-      <IconButton testID="month.next" icon="forward" label={s.nextMonth} disabled={isCurrent} onPress={() => c.setMonth(addMonths(st.month, 1))} />
+      <IconButton testID="month.next" icon="forward" label={s.nextMonth} disabled={isCurrent} onPress={() => runGuarded(() => c.setMonth(addMonths(st.month, 1)), s.errLoad)} />
     </Row>
   );
 }
@@ -515,5 +515,48 @@ export function Toggle({ value, onValueChange, testID, accessibilityLabel }: { v
       ios_backgroundColor={p.borderStrong}
       thumbColor={Platform.OS === 'android' ? '#FFFFFF' : undefined}
     />
+  );
+}
+
+// -- shared panels ----------------------------------------------------------------
+
+/** Brand hero panel (deep green, gold rule) — the same look on every screen that opens with a summary. */
+export function HeroPanel({ children, testID }: { children: ReactNode; testID?: string }) {
+  const { p } = useUi();
+  return (
+    <View testID={testID} style={{ backgroundColor: p.hero, borderRadius: Radii.lg, padding: Space.xl, gap: Space.sm, overflow: 'hidden', ...Elevation.raised }}>
+      <View style={{ position: 'absolute', top: 0, start: Space.xl, end: Space.xl, height: 2, backgroundColor: p.brandGold, borderBottomLeftRadius: 2, borderBottomRightRadius: 2 }} />
+      {children}
+    </View>
+  );
+}
+
+export type Status = 'good' | 'opportunity' | 'needsData';
+const STATUS_ICONS: Record<Status, IconName> = { good: 'success', opportunity: 'tip', needsData: 'info' };
+
+/** Status pill (icon + word, never colour alone) used by principles and investing readiness. */
+export function StatusChip({ status, testID }: { status: Status; testID?: string }) {
+  const { p, s } = useUi();
+  const color = status === 'good' ? p.positive : status === 'opportunity' ? p.warning : p.textSubtle;
+  return (
+    <Row gap={Space.xs} style={{ borderWidth: 1, borderColor: color, borderRadius: Radii.pill, paddingHorizontal: Space.sm, paddingVertical: Space.xxs }}>
+      <Icon name={STATUS_ICONS[status]} size={14} color={color} />
+      <T variant="small" color={color} testID={testID}>
+        {s.principleStatus[status]}
+      </T>
+    </Row>
+  );
+}
+
+/** Shown by current-month tools (principles, investing) while a past month is being viewed. */
+export function CurrentMonthOnly() {
+  const st = useAppState();
+  const c = useController();
+  const { s } = useUi();
+  return (
+    <Card testID="currentMonthOnly">
+      <T>{s.currentMonthOnly(formatMonth(st.month, st.locale))}</T>
+      <Button label={s.goToCurrentMonth} onPress={() => runGuarded(() => c.setMonth({ year: st.today.year, month: st.today.month }), s.errLoad)} testID="currentMonthOnly.go" />
+    </Card>
   );
 }

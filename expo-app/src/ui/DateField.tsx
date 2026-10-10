@@ -49,7 +49,7 @@ export function DateField({
         accessibilityRole="button"
         accessibilityLabel={`${label}: ${formatDate(value, st.locale)}`}
         onPress={open}
-        style={{ minHeight: MIN_TAP, flexDirection: 'row', alignItems: 'center', gap: Space.md, borderWidth: 1, borderColor: p.outline, borderRadius: Radii.md, paddingHorizontal: Space.md, backgroundColor: p.surface }}
+        style={{ minHeight: MIN_TAP, flexDirection: 'row', alignItems: 'center', gap: Space.md, borderWidth: 1, borderColor: p.borderStrong, borderRadius: Radii.md, paddingHorizontal: Space.md, backgroundColor: p.surface }}
       >
         <Icon name="calendar" color={p.onSurfaceMuted} />
         <View style={{ flex: 1 }}>

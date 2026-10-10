@@ -9,7 +9,7 @@ import { DEFAULT_PROFILE, Profile, suggestPlan } from '../domain/profile';
 import { useAppState, useController, useUi } from '../ui/AppContext';
 import { Toggle, Button, Card, Field, Icon, IconName, Row, runGuarded, Screen, T } from '../ui/components';
 import { Quiz } from '../ui/Quiz';
-import { amountErrorText, currencyName, currencySymbol, formatMoney } from '../ui/format';
+import { amountErrorText, currencyName, currencySymbol, formatMoney, formatPercent } from '../ui/format';
 import { MIN_TAP, Radii, Space } from '../ui/theme';
 
 /**
@@ -219,7 +219,7 @@ function PlanReview({ profile, currency, incomeMinor }: { profile: Profile | nul
               <Icon name="savings" color={p.primary} />
               <View style={{ flex: 1 }}>
                 <T variant="subtitle" testID="plan.saving">
-                  {s.planSaving(fmt(plan.monthlySavingMinor), `${Math.round(plan.savingsRate * 100)}%`)}
+                  {s.planSaving(fmt(plan.monthlySavingMinor), formatPercent(plan.savingsRate))}
                 </T>
               </View>
             </Row>

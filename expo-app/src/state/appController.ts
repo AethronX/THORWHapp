@@ -176,9 +176,22 @@ export class AppController {
     };
   }
 
+  /** Increments on every load; an older load that finishes late is dropped (month switch during a save). */
+  private loadSeq = 0;
+
+  private async loadLatest(month: YearMonth, extra?: Partial<AppState>) {
+    const seq = ++this.loadSeq;
+    const next = await this.load(month);
+    if (seq !== this.loadSeq) {
+      if (extra) this.set(extra);
+      return;
+    }
+    this.set({ ...extra, ...next });
+  }
+
   private async mutate<T>(op: (r: FinanceRepository) => Promise<T>, extra?: Partial<AppState>): Promise<T> {
     const result = await op(this.r);
-    this.set({ ...extra, ...(await this.load(this.state.month)) });
+    await this.loadLatest(this.state.month, extra);
     return result;
   }
 
@@ -277,7 +290,7 @@ export class AppController {
   }
 
   async setMonth(month: YearMonth) {
-    this.set(await this.load(month));
+    await this.loadLatest(month);
   }
 
   // -- mutations -------------------------------------------------------------

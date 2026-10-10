@@ -4,6 +4,7 @@ import {
   averageSpending,
   daysLeftInMonth,
   daysUntilPayday,
+  daysToNextPayday,
   healthScore,
   HealthScore,
   MonthTotals,
@@ -55,7 +56,6 @@ export function insights(s: AppState): Insight[] {
 
 // -- analytics ------------------------------------------------------------------
 
-export const totalSaved = (s: AppState) => fe.sumMinor(s.goals.map((g) => Math.max(0, g.savedMinor)));
 
 /** Previous month's totals from the trend (null if not loaded). */
 export function previousMonthTotals(s: AppState): MonthTotals | null {
@@ -69,7 +69,8 @@ export function health(s: AppState): HealthScore {
     expensesMinor: expenseTotal(s),
     budgetedCategories: sp.length,
     categoriesOverBudget: sp.filter((x) => x.spentMinor > (x.limitMinor ?? 0)).length,
-    totalSavedMinor: totalSaved(s),
+    // Counted like the emergency fund elsewhere (goals vs cash/bank, never both).
+    totalSavedMinor: liquidSavings(s.goals, s.assets),
     monthlySpendingMinor: averageSpending([...s.trend]) ?? expenseTotal(s),
   });
 }
@@ -91,7 +92,8 @@ export function safeToSpend(s: AppState): SafeToSpend | null {
   const income = incomeTotal(s);
   if (!isViewingCurrentMonth(s) || income === 0) return null;
   const payday = s.profile?.payday ?? null;
-  const daysLeft = payday != null ? daysUntilPayday(s.today, payday) : daysLeftInMonth(s.today);
+  // On payday itself the salary must last until the NEXT payday.
+  const daysLeft = payday != null ? daysUntilPayday(s.today, payday) || daysToNextPayday(s.today, payday) : daysLeftInMonth(s.today);
   const plannedSavingMinor = s.profile ? suggestPlan(s.profile, income, s.currency).monthlySavingMinor : 0;
   return {
     perDayMinor: safeToSpendPerDay({ incomeMinor: income, spentMinor: expenseTotal(s), plannedSavingMinor, daysLeft }),
@@ -151,6 +153,7 @@ export function guidance(s: AppState, names: { emergency: string; season: (key: 
     history: s.history,
     categories: [...s.categoriesById.values()],
     goals: s.goals,
+    assets: s.assets,
     currency: s.currency,
     emergencyGoalName: names.emergency,
     payday: s.profile?.payday ?? null,

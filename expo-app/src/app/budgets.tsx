@@ -35,7 +35,7 @@ export default function Budgets() {
               initialMinor={limit ?? (focus && Number(focus) === cat.id ? suggested : undefined)}
               allowEmpty
               onCancel={() => setEditing(null)}
-              onDelete={limit != null ? () => runGuarded(() => c.setBudget(cat.id, null), s.errGeneric).then(() => setEditing(null)) : undefined}
+              onDelete={limit != null ? () => runGuarded(() => c.setBudget(cat.id, null), s.errGeneric).then((ok) => ok && setEditing(null)) : undefined}
               deleteLabel={s.noLimit}
               onSave={async (minor) => {
                 if (await runGuarded(() => c.setBudget(cat.id, minor), s.errGeneric)) setEditing(null);
@@ -48,7 +48,7 @@ export default function Budgets() {
             key={cat.id}
             testID={`budget.row.${cat.id}`}
             accessibilityRole="button"
-            accessibilityLabel={`${categoryLabel(cat, s)}، ${limit == null ? s.noLimit : money(limit)}`}
+            accessibilityLabel={`${categoryLabel(cat, s)}${s.listSep}${limit == null ? s.noLimit : money(limit)}`}
             accessibilityHint={s.edit}
             onPress={() => setEditing(cat.id)}
             style={{ minHeight: MIN_TAP, justifyContent: 'center', paddingVertical: Space.xs, borderBottomWidth: 1, borderBottomColor: p.outline }}

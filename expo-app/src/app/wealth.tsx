@@ -8,7 +8,7 @@ import type { Debt } from '../domain/models';
 import { payoffPlan, suggestedExtra } from '../domain/wealth';
 import { wealth } from '../state/selectors';
 import { useAppState, useController, useUi } from '../ui/AppContext';
-import { Toggle, AnimatedAmount, Button, Card, Icon, IconButton, LabeledProgress, Row, runGuarded, Screen, T } from '../ui/components';
+import { Toggle, AnimatedAmount, Button, Card, HeroPanel, Icon, IconButton, LabeledProgress, Row, runGuarded, Screen, T } from '../ui/components';
 import { haptic } from '../ui/feedback';
 import { formatDate, formatMonth } from '../ui/format';
 import { AmountEditor } from '../ui/InlineEditor';
@@ -26,7 +26,7 @@ export default function Wealth() {
   return (
     <Screen testID="wealth">
       {/* Summary */}
-      <View style={{ backgroundColor: p.hero, borderRadius: Radii.lg, padding: Space.xl, gap: Space.sm }}>
+      <HeroPanel>
         <View accessible accessibilityLabel={`${s.wealthTitle}: ${money(w.netMinor)}. ${s.wealthDefinition}`} testID="wealth.net">
           <T variant="label" color={p.heroAccent}>
             {s.wealthTitle}
@@ -59,7 +59,7 @@ export default function Wealth() {
             {s.estimatedPart(money(w.estimatedMinor))}
           </T>
         )}
-      </View>
+      </HeroPanel>
       <Row style={{ alignItems: 'flex-start' }} gap={Space.xs}>
         <Icon name="info" size={16} color={p.textSubtle} />
         <View style={{ flex: 1 }}>
@@ -81,7 +81,7 @@ export default function Wealth() {
               key={a.id}
               testID={`asset.row.${a.id}`}
               accessibilityRole="button"
-              accessibilityLabel={`${a.name}، ${s.assetKind[a.kind]}، ${money(a.valueMinor)}${a.isEstimate ? `، ${s.estimateTag}` : ''}`}
+              accessibilityLabel={`${a.name}${s.listSep}${s.assetKind[a.kind]}${s.listSep}${money(a.valueMinor)}${a.isEstimate ? `${s.listSep}${s.estimateTag}` : ''}`}
               accessibilityHint={s.edit}
               onPress={() => router.push(`/asset/${a.id}`)}
               style={{ minHeight: MIN_TAP, paddingVertical: Space.xs, borderBottomWidth: 1, borderBottomColor: p.outline }}

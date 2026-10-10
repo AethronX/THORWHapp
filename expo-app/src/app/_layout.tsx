@@ -1,8 +1,8 @@
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
-import { AppState as RNAppState, View } from 'react-native';
+import { AppState as RNAppState, Platform, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { expoDbDriver } from '../data/expoDb';
@@ -72,6 +72,11 @@ function Root() {
     return () => sub.remove();
   }, []);
 
+  // iOS sheets have no back button: give every modal a visible "Cancel" (Android has the system back).
+  const modal = {
+    presentation: 'modal' as const,
+    ...(Platform.OS === 'ios' ? { headerLeft: () => <Button kind="text" label={s.cancel} onPress={() => router.back()} testID="modal.cancel" /> } : null),
+  };
   // Explicit layout direction: correct RTL/LTR without relying on the device
   // language or a native restart (works the same in Expo Go and in an APK).
   const content =
@@ -99,14 +104,15 @@ function Root() {
           <Stack.Screen name="budgets" options={{ title: s.budgetsScreenTitle }} />
           <Stack.Screen name="categories" options={{ title: s.categories }} />
           <Stack.Screen name="profile" options={{ title: s.yourPlan, headerShown: false }} />
-          <Stack.Screen name="expense/[id]" options={{ presentation: 'modal', title: s.addExpense }} />
+          <Stack.Screen name="expense/[id]" options={{ ...modal, title: s.addExpense }} />
           <Stack.Screen name="wealth" options={{ title: s.wealthOpen }} />
           <Stack.Screen name="principles" options={{ title: s.principlesTitle }} />
           <Stack.Screen name="invest" options={{ title: s.investTitle }} />
-          <Stack.Screen name="debt/[id]" options={{ presentation: 'modal', title: s.addDebt }} />
-          <Stack.Screen name="asset/[id]" options={{ presentation: 'modal', title: s.addAsset }} />
-          <Stack.Screen name="quick-add" options={{ presentation: 'modal', title: s.quickAdd }} />
-          <Stack.Screen name="goal/[id]" options={{ presentation: 'modal', title: s.addGoal }} />
+          <Stack.Screen name="plan" options={{ title: s.planTitle }} />
+          <Stack.Screen name="debt/[id]" options={{ ...modal, title: s.addDebt }} />
+          <Stack.Screen name="asset/[id]" options={{ ...modal, title: s.addAsset }} />
+          <Stack.Screen name="quick-add" options={{ ...modal, title: s.quickAdd }} />
+          <Stack.Screen name="goal/[id]" options={{ ...modal, title: s.addGoal }} />
         </Stack.Protected>
         <Stack.Protected guard={!st.onboarded}>
           <Stack.Screen name="onboarding" options={{ headerShown: false }} />

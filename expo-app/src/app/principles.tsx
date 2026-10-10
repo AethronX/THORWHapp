@@ -1,10 +1,10 @@
 import { router } from 'expo-router';
 import { View } from 'react-native';
 
-import { principleScore, PrincipleResult, PrincipleStatus } from '../domain/principles';
-import { principles } from '../state/selectors';
+import { principleScore, PrincipleResult } from '../domain/principles';
+import { isViewingCurrentMonth, principles } from '../state/selectors';
 import { useAppState, useUi } from '../ui/AppContext';
-import { Button, Card, Icon, IconName, Row, Screen, T } from '../ui/components';
+import { Button, Card, CurrentMonthOnly, HeroPanel, Icon, Row, Screen, StatusChip, T } from '../ui/components';
 import { haptic } from '../ui/feedback';
 import { categoryLabel } from '../ui/format';
 import { principleText } from '../ui/principlesText';
@@ -20,10 +20,16 @@ export default function Principles() {
   const { s, p } = useUi();
   const results = principles(st);
   const score = principleScore(results);
+  if (!isViewingCurrentMonth(st))
+    return (
+      <Screen testID="principles">
+        <CurrentMonthOnly />
+      </Screen>
+    );
 
   return (
     <Screen testID="principles">
-      <View style={{ backgroundColor: p.hero, borderRadius: Radii.lg, padding: Space.xl, gap: Space.sm }}>
+      <HeroPanel>
         <Row gap={Space.xs}>
           <Icon name="book" size={20} color={p.heroAccent} />
           <T variant="label" color={p.heroAccent}>
@@ -36,7 +42,7 @@ export default function Principles() {
         <T variant="small" color={p.onHeroMuted}>
           {s.principlesIntro}
         </T>
-      </View>
+      </HeroPanel>
       {results.map((r) => (
         <PrincipleCard key={r.key} r={r} />
       ))}
@@ -47,12 +53,10 @@ export default function Principles() {
   );
 }
 
-const STATUS_ICON: Record<PrincipleStatus, IconName> = { good: 'success', opportunity: 'tip', needsData: 'info' };
 
 function PrincipleCard({ r }: { r: PrincipleResult }) {
   const st = useAppState();
   const { s, p, money } = useUi();
-  const color = r.status === 'good' ? p.positive : r.status === 'opportunity' ? p.warning : p.textSubtle;
   const catName = (id: number) => {
     const c = st.categoriesById.get(id);
     return c ? categoryLabel(c, s) : s.otherSlice;
@@ -64,7 +68,7 @@ function PrincipleCard({ r }: { r: PrincipleResult }) {
     const a = r.action;
     switch (a.type) {
       case 'openGoals':
-        return router.push('/goals');
+        return router.navigate('/goals');
       case 'openWealth':
         return router.push('/wealth');
       case 'addIncome':
@@ -91,12 +95,7 @@ function PrincipleCard({ r }: { r: PrincipleResult }) {
             </View>
           </Row>
         </View>
-        <Row gap={4} style={{ borderWidth: 1, borderColor: color, borderRadius: Radii.pill, paddingHorizontal: Space.sm, paddingVertical: 2 }}>
-          <Icon name={STATUS_ICON[r.status]} size={14} color={color} />
-          <T variant="small" color={color} testID={`principle.${r.key}.status`}>
-            {s.principleStatus[r.status]}
-          </T>
-        </Row>
+        <StatusChip status={r.status} testID={`principle.${r.key}.status`} />
       </Row>
       <View style={{ backgroundColor: p.surfaceMuted, borderRadius: Radii.md, padding: Space.md }}>
         <T variant="small" testID={`principle.${r.key}.text`}>
