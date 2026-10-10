@@ -27,6 +27,8 @@ export const SettingKeys = {
   hideAmounts: 'hide_amounts',
   /** '0' = haptic feedback off. */
   haptics: 'haptics',
+  /** JSON { guidanceId: "YYYY-MM" } — steps the user said "not now" to, per month. */
+  dismissedGuidance: 'dismissed_guidance',
 } as const;
 
 export class ValidationError extends Error {

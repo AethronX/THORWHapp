@@ -110,7 +110,10 @@ test('full MVP journey in Arabic, persisting across restart', async () => {
   press('budget.editor.save');
   await waitFor(() => expect(screen.queryByTestId('budget.editor')).toBeNull());
   await nav((router) => router.back());
-  expect(await screen.findByTestId('insight.overBudget')).toBeTruthy();
+  // Over budget is now the top "next step" (with its reason and an action), not repeated as an alert.
+  expect(await screen.findByTestId('guidance.overBudget:2')).toBeTruthy();
+  expect(screen.getByTestId('guidance.overBudget:2.title').props.children).toBe(ar.gOverBudgetTitle(ar.cat.food, '\u200E2.500\u200E ر.ع.'));
+  expect(screen.queryByTestId('insight.overBudget')).toBeNull();
 
   // 6. Goal 1200 with 200 saved -> 1000/12 = 83.334 per month (rounded up).
   await nav((router) => router.push('/goal/new'));
@@ -404,4 +407,52 @@ test('home: net cash flow is named, dated and defined — never presented as a b
   expect(label('summary.net')).toContain(`${ar.net}، أكتوبر 2026`);
   expect(screen.getByTestId('summary.definition').props.children).toBe(ar.netDefinition);
   expect(screen.getByTestId('summary.dataNote').props.children).toBe(ar.dataNote);
+});
+
+test('guidance: rising category → set a limit (prefilled), emergency fund → goal, "not now"', async () => {
+  const db = await mockDriver.current.open();
+  await migrate(db);
+  const repo = new FinanceRepository(db, () => new Date(2026, 9, 9, 10));
+  await repo.completeOnboarding({ currencyCode: 'OMR', month: { year: 2026, month: 10 }, incomeMinor: 1000000, incomeLabel: 'راتب' });
+  const cat = new Map((await repo.categories()).map((c) => [c.key, c.id]));
+  const add = (key: string, amountMinor: number, month: number, day: number) =>
+    repo.addExpense({ amountMinor, categoryId: cat.get(key as never)!, date: { year: 2026, month, day }, note: '' });
+  for (const m of [7, 8, 9]) await add('housing', 300000, m, 1); // essentials: 300 a month
+  await add('entertainment', 20000, 9, 5); // Sep 1–9: 20
+  await add('entertainment', 27400, 9, 25); // Sep total: 47.4
+  await add('entertainment', 35000, 10, 3);
+  await add('entertainment', 25000, 10, 8); // Oct 1–9: 60 → +200 %
+  await db.close();
+  const ent = cat.get('entertainment')!;
+
+  app();
+  await screen.findByTestId('dashboard');
+  const rising = `guidance.categoryRising:${ent}`;
+  expect((await screen.findByTestId(`${rising}.title`)).props.children).toBe(ar.gRisingTitle(ar.cat.entertainment, '200%'));
+  // Why: the user's own numbers, same days compared, suggested limit = last month's total rounded up.
+  press(`${rising}.why`);
+  expect(screen.getByTestId(`${rising}.reason`).props.children).toBe(
+    ar.gRisingWhy(9, '‎60.000‎ ر.ع.', '‎20.000‎ ر.ع.', '‎60.000‎ ر.ع.'),
+  );
+  // Act: budgets opens with the editor on that category, prefilled with max(47.4, 60) = 60.
+  press(`${rising}.act`);
+  expect((await screen.findByTestId('budget.editor.amount')).props.value).toBe('60');
+  press('budget.editor.save');
+  await waitFor(() => expect(screen.queryByTestId('budget.editor')).toBeNull());
+  await nav((router) => router.back());
+  // With a limit set, the rising step is gone; the emergency fund (3 × 300) is next.
+  await screen.findByTestId('guidance.emergencyFund');
+  expect(screen.queryByTestId(rising)).toBeNull();
+  expect(screen.getByTestId('guidance.emergencyFund.title').props.children).toBe(ar.gEmergencyTitle('‎900.000‎ ر.ع.'));
+  press('guidance.emergencyFund.act');
+  expect((await screen.findByTestId('goal.name')).props.value).toBe(ar.emergencyGoalName);
+  expect(screen.getByTestId('goal.target').props.value).toBe('900');
+  press('goal.save');
+  await waitFor(() => expect(screen.queryByTestId('goal.name')).toBeNull());
+  await nav((router) => router.push('/'));
+  // Goal exists but is empty → the step now opens goals instead of creating another; "Not now" hides it.
+  await screen.findByTestId('guidance.emergencyFund');
+  expect(screen.getByTestId('guidance.emergencyFund.act').props.accessibilityLabel).toBe(ar.gOpenGoals);
+  press('guidance.emergencyFund.dismiss');
+  await waitFor(() => expect(screen.queryByTestId('nextStep')).toBeNull());
 });

@@ -11,6 +11,7 @@ import {
   projectMonthEndSpending,
   safeToSpendPerDay,
 } from '../domain/analytics';
+import { buildGuidance, Guidance, withoutDismissed } from '../domain/guidance';
 import { buildInsights, Insight } from '../domain/insights';
 import { dailyTotals, detectRecurring, RecurringPayment, unusualExpense, UnusualExpense, weekdayPattern, WeekdayPattern } from '../domain/smart';
 import { suggestPlan } from '../domain/profile';
@@ -129,4 +130,23 @@ export const unusual = (s: AppState): UnusualExpense | null => unusualExpense(s.
 export function calendar(s: AppState): number[] {
   const fixed = fixedCategoryIds(s);
   return dailyTotals(s.expenses.filter((e) => !fixed.has(e.categoryId)), s.month);
+}
+
+// -- guidance (src/domain/guidance.ts) -------------------------------------------
+
+/** Ranked next steps for the CURRENT month, minus those dismissed this month. */
+export function guidance(s: AppState, emergencyGoalName: string): Guidance[] {
+  if (!isViewingCurrentMonth(s)) return [];
+  const items = buildGuidance({
+    today: s.today,
+    incomeMinor: incomeTotal(s),
+    expensesMinor: expenseTotal(s),
+    spends: spends(s),
+    history: s.history,
+    categories: [...s.categoriesById.values()],
+    goals: s.goals,
+    currency: s.currency,
+    emergencyGoalName,
+  });
+  return withoutDismissed(items, s.dismissedGuidance, s.month);
 }

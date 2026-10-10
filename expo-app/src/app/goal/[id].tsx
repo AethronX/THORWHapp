@@ -10,14 +10,15 @@ import { amountErrorText, currencySymbol } from '../../ui/format';
 
 /** Create (`/goal/new`) or edit (`/goal/<id>`) a savings goal. */
 export default function GoalForm() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  // `name` / `target`: prefilled when created from a guidance step (e.g. emergency fund).
+  const { id, name: nameParam, target: targetParam } = useLocalSearchParams<{ id: string; name?: string; target?: string }>();
   const st = useAppState();
   const c = useController();
   const { s } = useUi();
   const existing = id === 'new' ? undefined : st.goals.find((g) => String(g.id) === id);
 
-  const [name, setName] = useState(existing?.name ?? '');
-  const [target, setTarget] = useState(existing ? minorToEditable(existing.targetMinor, st.currency) : '');
+  const [name, setName] = useState(existing?.name ?? nameParam ?? '');
+  const [target, setTarget] = useState(existing ? minorToEditable(existing.targetMinor, st.currency) : (targetParam ?? ''));
   const [saved, setSaved] = useState('');
   const [date, setDate] = useState<Day>(existing?.targetDate ?? { year: st.today.year + 1, month: st.today.month, day: 1 });
   const [submitted, setSubmitted] = useState(false);

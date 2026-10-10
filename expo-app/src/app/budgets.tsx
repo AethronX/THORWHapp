@@ -1,3 +1,4 @@
+import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
@@ -13,7 +14,10 @@ export default function Budgets() {
   const st = useAppState();
   const c = useController();
   const { s, p, money } = useUi();
-  const [editing, setEditing] = useState<number | null>(null);
+  // `focus` + `suggest`: opened from a guidance step to set or change one limit.
+  const { focus, suggest } = useLocalSearchParams<{ focus?: string; suggest?: string }>();
+  const [editing, setEditing] = useState<number | null>(focus ? Number(focus) : null);
+  const suggested = suggest && /^\d+$/.test(suggest) ? Number(suggest) : undefined;
   const spentBy = new Map(spends(st).map((x) => [x.category.id, x.spentMinor]));
 
   return (
@@ -28,7 +32,7 @@ export default function Budgets() {
               key={cat.id}
               testID="budget.editor"
               title={categoryLabel(cat, s)}
-              initialMinor={limit}
+              initialMinor={limit ?? (focus && Number(focus) === cat.id ? suggested : undefined)}
               allowEmpty
               onCancel={() => setEditing(null)}
               onDelete={limit != null ? () => runGuarded(() => c.setBudget(cat.id, null), s.errGeneric).then(() => setEditing(null)) : undefined}

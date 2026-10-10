@@ -20,6 +20,8 @@ export interface AppState {
   readonly appLock: boolean;
   readonly hideAmounts: boolean;
   readonly haptics: boolean;
+  /** Guidance the user dismissed: id → month key "YYYY-MM". */
+  readonly dismissedGuidance: Readonly<Record<string, string>>;
   readonly onboarded: boolean;
   /** The month being viewed. */
   readonly month: YearMonth;
@@ -70,6 +72,7 @@ export class AppController {
       appLock: false,
       hideAmounts: false,
       haptics: true,
+      dismissedGuidance: {},
       onboarded: false,
       month: monthOf(today),
       today,
@@ -131,6 +134,7 @@ export class AppController {
         appLock: s[SettingKeys.appLock] === '1',
         hideAmounts: s[SettingKeys.hideAmounts] === '1',
         haptics: s[SettingKeys.haptics] !== '0',
+        dismissedGuidance: parseDismissed(s[SettingKeys.dismissedGuidance]),
       };
       this.set({ ...patch, ...(await this.load(this.state.month)), status: 'ready' });
     } catch {
@@ -242,6 +246,17 @@ export class AppController {
     this.set({ hideAmounts });
   }
 
+  /** "Not now" on a guidance step: hidden for the rest of the current month. */
+  async dismissGuidance(id: string) {
+    const now = monthOf(dayFromDate(this.clock()));
+    const key = `${now.year}-${String(now.month).padStart(2, '0')}`;
+    // Keep only this month's entries so the setting never grows.
+    const kept = Object.fromEntries(Object.entries(this.state.dismissedGuidance).filter(([, v]) => v === key));
+    const dismissedGuidance = { ...kept, [id]: key };
+    await this.r.setSetting(SettingKeys.dismissedGuidance, JSON.stringify(dismissedGuidance));
+    this.set({ dismissedGuidance });
+  }
+
   async setHaptics(haptics: boolean) {
     await this.r.setSetting(SettingKeys.haptics, haptics ? '1' : '0');
     this.set({ haptics });
@@ -291,5 +306,17 @@ export class AppController {
       // Always reopen, so a failure never leaves a half-closed app.
       await this.init();
     }
+  }
+}
+
+/** Defensive parse of the dismissed-guidance setting (string → string map only). */
+function parseDismissed(json: string | undefined): Record<string, string> {
+  if (!json) return {};
+  try {
+    const v = JSON.parse(json) as unknown;
+    if (!v || typeof v !== 'object' || Array.isArray(v)) return {};
+    return Object.fromEntries(Object.entries(v as Record<string, unknown>).filter((e): e is [string, string] => typeof e[1] === 'string'));
+  } catch {
+    return {};
   }
 }

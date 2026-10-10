@@ -183,3 +183,13 @@ The home hero called (income − spending this month) «المتبقي», which 
 records and are not the bank balance. Cash balance and net worth are different measures and are not
 shown until the app records them (see docs/AUDIT_2030.md).
 
+### D-032 Guidance engine v1: one next step, with reason, action and "not now" — 2026-10-10
+Alerts told users what was wrong but not what to do. **Decision:** a rule-based engine
+(src/domain/guidance.ts, rules in docs/ANALYTICS.md §6) ranks concrete steps for the current month; the
+home screen shows the top one under the hero with "Why this step?" (the user's own numbers + "based only on
+what you recorded; not financial advice"), one action the app really performs (prefilled budget editor or
+goal form, income, goals) and "Not now" (hidden for the rest of the month, stored locally). Rules stay
+silent without enough data (e.g. emergency fund needs 2+ months of essential spending). Alerts no longer
+repeat the step shown. Found by a UI test: suggesting last month's total as a limit could be below what was
+already spent — the suggestion is now max(last month, spent so far).
+

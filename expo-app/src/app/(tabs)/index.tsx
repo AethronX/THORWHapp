@@ -5,10 +5,11 @@ import { monthsUntil, compareDays } from '../../core/dates';
 import { goalProgress } from '../../domain/financeEngine';
 import type { Insight } from '../../domain/insights';
 import { isGoalReached, spendUsage } from '../../domain/models';
-import { expenseTotal, health, incomeTotal, insights, netCashFlow, safeToSpend, savingsRate, spends } from '../../state/selectors';
+import { expenseTotal, guidance, health, incomeTotal, insights, netCashFlow, safeToSpend, savingsRate, spends } from '../../state/selectors';
 import { useAppState, useController, useUi } from '../../ui/AppContext';
 import { AnimatedAmount, Button, Card, Fab, Icon, IconName, LabeledProgress, MonthSwitcher, Row, runGuarded, Screen, T } from '../../ui/components';
 import { haptic } from '../../ui/feedback';
+import { NextStepCard } from '../../ui/Guidance';
 import { categoryLabel, formatMonth, formatPercent } from '../../ui/format';
 import { ScoreRing } from '../../ui/charts';
 import { Elevation, MIN_TAP, Radii, Space } from '../../ui/theme';
@@ -19,7 +20,16 @@ export default function Dashboard() {
   const { s, p, money } = useUi();
   const net = netCashFlow(st);
   const rate = savingsRate(st);
-  const list = insights(st);
+  // Next step first; alerts below skip whatever the top step already says.
+  const steps = guidance(st, s.emergencyGoalName);
+  const top = steps[0];
+  const sameAsTop = (i: Insight) =>
+    !!top &&
+    ((top.kind === 'addIncome' && i.kind === 'noIncome') ||
+      (top.kind === 'overspending' && i.kind === 'negativeCashFlow') ||
+      (top.kind === 'overBudget' && i.kind === 'overBudget' && i.categoryId === top.categoryId) ||
+      (top.kind === 'goalAtRisk' && i.kind === 'goalAtRisk' && i.goal?.id === top.goal.id));
+  const list = insights(st).filter((i) => !sameAsTop(i));
   const budgeted = spends(st).filter((x) => x.limitMinor != null);
 
   const insightText = (i: Insight): string => {
@@ -95,6 +105,8 @@ export default function Dashboard() {
             </View>
           </Row>
         </View>
+
+        <NextStepCard items={steps} />
 
         <SmartSummary />
 
