@@ -164,7 +164,7 @@ export default function Settings() {
       <Card title={s.about}>
         <T>{s.aboutBody}</T>
         <T variant="small" muted>
-          {s.version(Constants.expoConfig?.version ?? '0.1.0')}
+          {`${s.version(Constants.expoConfig?.version ?? '0.1.0')} · build 11`}
         </T>
       </Card>
     </Screen>
