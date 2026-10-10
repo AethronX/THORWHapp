@@ -316,6 +316,9 @@ export class AppController {
     this.mutate((r) => r.updateAsset({ ...a, today: dayFromDate(this.clock()) }));
   deleteAsset = (id: number) => this.mutate((r) => r.deleteAsset(id));
 
+  /** Raw tables for a manual export (read-only). */
+  exportTables = () => this.r.exportTables();
+
   /** Permanently deletes the database and returns to first run. */
   async deleteAllData() {
     try {

@@ -21,6 +21,27 @@ jest.mock('../src/data/expoDb', () => ({
     destroy: () => mockDriver.current.destroy(),
   },
 }));
+const mockFiles: { uri: string; content: string }[] = [];
+const mockShared: { uri: string; opts: { mimeType?: string } }[] = [];
+jest.mock('expo-file-system', () => ({
+  Paths: { cache: 'file:///cache' },
+  File: class {
+    uri: string;
+    constructor(...parts: string[]) {
+      this.uri = parts.join('/');
+    }
+    create() {}
+    write(content: string) {
+      mockFiles.push({ uri: this.uri, content });
+    }
+  },
+}));
+jest.mock('expo-sharing', () => ({
+  isAvailableAsync: async () => true,
+  shareAsync: async (uri: string, opts: { mimeType?: string }) => {
+    mockShared.push({ uri, opts });
+  },
+}));
 const mockAuth = { success: true, calls: 0 };
 jest.mock('expo-local-authentication', () => ({
   SecurityLevel: { NONE: 0, SECRET: 1, BIOMETRIC_WEAK: 2, BIOMETRIC_STRONG: 3 },
@@ -570,4 +591,34 @@ test('net worth: assets, an obligation with payoff plan, a payment logged as exp
   press(`goal.pause.${gid}`);
   await screen.findByTestId(`goal.paused.${gid}`);
   expect(screen.queryByTestId(`goal.required.${gid}`)).toBeNull();
+});
+
+test('export: full JSON backup and an Excel-ready CSV, via the share sheet', async () => {
+  mockFiles.length = 0;
+  mockShared.length = 0;
+  app();
+  await onboard('800');
+  await openFullExpenseForm();
+  type('expense.amount', '12.5');
+  press('expense.cat.2');
+  type('expense.note', 'لولو, "عروض"');
+  press('expense.save');
+  await waitFor(() => expect(screen.queryByTestId('expenseForm')).toBeNull());
+  await nav((router) => router.push('/settings'));
+  await screen.findByTestId('settings.export');
+
+  press('settings.exportJson');
+  await waitFor(() => expect(mockShared).toHaveLength(1));
+  expect(mockShared[0].uri).toBe('file:///cache/tharwati-backup-2026-10-09.json');
+  expect(mockShared[0].opts.mimeType).toBe('application/json');
+  const backup = JSON.parse(mockFiles[0].content);
+  expect(backup).toMatchObject({ app: 'tharwati', format: 1, schemaVersion: 2 });
+  expect(backup.tables.expenses).toHaveLength(1);
+  expect(backup.tables.expenses[0]).toMatchObject({ amount_minor: 12500, note: 'لولو, "عروض"' });
+  expect(backup.tables.incomes[0]).toMatchObject({ amount_minor: 800000 });
+
+  press('settings.exportCsv');
+  await waitFor(() => expect(mockShared).toHaveLength(2));
+  expect(mockShared[1].uri).toBe('file:///cache/tharwati-expenses-2026-10-09.csv');
+  expect(mockFiles[1].content).toBe(`﻿${ar.csvHeader.join(',')}\r\n2026-10-09,${ar.cat.food},12.500,OMR,"لولو, ""عروض"""\r\n`);
 });

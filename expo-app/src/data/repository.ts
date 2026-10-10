@@ -479,6 +479,13 @@ export class FinanceRepository {
     });
   }
 
+  /** Every table, as stored, for a manual backup file. */
+  async exportTables(): Promise<Record<string, Record<string, unknown>[]>> {
+    const out: Record<string, Record<string, unknown>[]> = {};
+    for (const t of EXPORT_TABLES) out[t] = await this.db.all<Record<string, unknown>>(`SELECT * FROM ${t} ORDER BY rowid`);
+    return out;
+  }
+
   // -- assets (v2) ---------------------------------------------------------------
 
   async assets(): Promise<Asset[]> {
@@ -601,3 +608,6 @@ function validDebt(d: { name: string; remainingMinor: number; annualRatePercent:
   if (d.dueDay != null && (!Number.isInteger(d.dueDay) || d.dueDay < 1 || d.dueDay > 31)) throw new ValidationError('Due day must be 1–31');
   return { name, rateBp };
 }
+
+/** Tables included in a backup (fixed list — never interpolate user input into SQL). */
+const EXPORT_TABLES = ['settings', 'categories', 'expenses', 'incomes', 'budgets', 'goals', 'goal_contributions', 'debts', 'debt_payments', 'assets'] as const;

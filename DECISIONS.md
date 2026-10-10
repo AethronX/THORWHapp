@@ -210,3 +210,11 @@ be listed as an asset — adding both would count money twice); the screen says 
 tested `debtPayoff` engine with a "pay 10 % more" scenario, and state the assumptions (fixed rate, no fees,
 no new borrowing). Goals can be paused (kept, excluded from guidance and "at risk").
 
+### D-035 Manual export (backup) through the share sheet; no restore yet — 2026-10-10
+No server, no sync (D-001 privacy stance), so users need a way to keep their data. **Decision:** Settings →
+"Export your data": a full JSON backup (every table as stored, with format and schema versions, so a future
+restore can read it) and an Excel-ready CSV of expenses (UTF-8 BOM for Arabic, RFC 4180 quoting, formula-
+injection guard, plain decimal amounts). Files are written to the app cache and handed to the system share
+sheet — the user chooses the destination; Tharwati uploads nothing. The screen states that restore is not
+available yet. Uses expo-file-system and expo-sharing (both in Expo Go).
+

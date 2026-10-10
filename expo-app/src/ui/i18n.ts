@@ -394,6 +394,15 @@ const en = {
   assetType: 'Type',
   assetIsEstimate: 'This value is an estimate',
   deleteAssetConfirm: 'Delete this asset?',
+  // Export
+  exportTitle: 'Export your data',
+  exportBody: 'The file is created on this phone and you choose where to send it (Files, email, Drive…). Nothing is uploaded by Tharwati.',
+  exportJson: 'Full backup (JSON)',
+  exportCsv: 'Expenses for Excel (CSV)',
+  exportRestoreNote: 'Restoring from a backup is not available yet — keep the file somewhere safe.',
+  exportUnavailable: 'Sharing is not available on this device.',
+  exportDone: 'File ready to share.',
+  csvHeader: ['Date', 'Category', 'Amount', 'Currency', 'Note'],
 };
 
 export type Strings = typeof en;
@@ -772,6 +781,14 @@ const ar: Strings = {
   assetType: 'النوع',
   assetIsEstimate: 'هذه القيمة تقديرية',
   deleteAssetConfirm: 'حذف هذا الأصل؟',
+  exportTitle: 'تصدير بياناتك',
+  exportBody: 'يُنشأ الملف على هاتفك وتختار أنت أين ترسله (الملفات، البريد، Drive…). ثروتي لا يرفع أي شيء.',
+  exportJson: 'نسخة احتياطية كاملة (JSON)',
+  exportCsv: 'المصروفات لـ Excel (CSV)',
+  exportRestoreNote: 'الاستعادة من نسخة احتياطية غير متاحة بعد — احفظ الملف في مكان آمن.',
+  exportUnavailable: 'المشاركة غير متاحة على هذا الجهاز.',
+  exportDone: 'الملف جاهز للمشاركة.',
+  csvHeader: ['التاريخ', 'التصنيف', 'المبلغ', 'العملة', 'ملاحظة'],
 };
 
 export const STRINGS: Record<Locale, Strings> = { ar, en };

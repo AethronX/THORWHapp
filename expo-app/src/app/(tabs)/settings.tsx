@@ -5,7 +5,9 @@ import { Alert, Pressable, Switch, View } from 'react-native';
 import type { Locale, ThemeMode } from '../../state/appController';
 import { useAppState, useController, useUi } from '../../ui/AppContext';
 import { Button, Card, confirm, Icon, IconName, Row, runGuarded, Screen, T } from '../../ui/components';
+import { shareExpensesCsv, shareJsonBackup } from '../../ui/exportData';
 import { haptic } from '../../ui/feedback';
+import { categoryLabel } from '../../ui/format';
 import { authenticate, canUseLock } from '../../ui/lock';
 import { MIN_TAP, Radii, Space } from '../../ui/theme';
 
@@ -23,6 +25,27 @@ export default function Settings() {
     if (!(await authenticate(s.unlockPrompt, s.cancel))) return;
     haptic.success();
     await runGuarded(() => c.setAppLock(on), s.errGeneric);
+  }
+
+  async function doExport(kind: 'json' | 'csv') {
+    await runGuarded(async () => {
+      const tables = await c.exportTables();
+      const ok =
+        kind === 'json'
+          ? await shareJsonBackup(tables, new Date(), s.exportTitle)
+          : await shareExpensesCsv({
+              tables,
+              currency: st.currency,
+              header: s.csvHeader,
+              categoryName: (id) => {
+                const cat = st.categoriesById.get(id);
+                return cat ? categoryLabel(cat, s) : '';
+              },
+              now: new Date(),
+              title: s.exportTitle,
+            });
+      if (!ok) Alert.alert(s.exportTitle, s.exportUnavailable);
+    }, s.errGeneric);
   }
 
   async function deleteAll() {
@@ -92,6 +115,19 @@ export default function Settings() {
           testID="settings.hideAmounts"
         />
         <T>{s.privacyBody}</T>
+        <View style={{ gap: Space.sm }} testID="settings.export">
+          <T variant="subtitle">{s.exportTitle}</T>
+          <T variant="small" muted>
+            {s.exportBody}
+          </T>
+          <Row style={{ flexWrap: 'wrap' }} gap={Space.sm}>
+            <Button kind="tonal" label={s.exportJson} onPress={() => doExport('json')} testID="settings.exportJson" />
+            <Button kind="tonal" label={s.exportCsv} onPress={() => doExport('csv')} testID="settings.exportCsv" />
+          </Row>
+          <T variant="small" muted>
+            {s.exportRestoreNote}
+          </T>
+        </View>
         <Button kind="danger" icon="delete" label={s.deleteAllData} onPress={deleteAll} testID="settings.deleteAll" />
       </Card>
       <Card title={s.about}>
