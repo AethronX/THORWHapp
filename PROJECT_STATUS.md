@@ -1,5 +1,16 @@
 # Project status
 
+## Update 2026-10-10: Tharwati 2030 — audit + first three batches
+Audit with evidence and ordered plan: docs/AUDIT_2030.md (rollback point before changes: 6336e54).
+1. Brand palette anchors with AA-safe text shades (D-030); home metric renamed «صافي التدفق · month», defined,
+   with an honest data note (D-031); amounts never wrap away from their currency.
+2. Guidance engine v1 — "your next step" with reason, real action, "not now" (D-032; rules in ANALYTICS.md §6).
+3. Expense search (Arabic-tolerant) and category filters (D-033).
+Verified here: `tsc` 0 errors · **285 tests passing** · the exact `eas update` export (`--platform=all`) builds
+iOS + Android. Not verified: a real device. Next per the audit: liabilities/debts (DB migration v2), net worth,
+goal pause + "what if I save X more", recurring transactions, weekly summary; subscriptions only after the paid
+value is clear (no fake payments).
+
 ## Update 2026-10-09 (newest): design research + smart, modern features
 Study with 64 sources: docs/DESIGN_RESEARCH_2026.md. Built (all run in Expo Go): quick add with keypad and
 smart category (D-026); recurring payments, spending calendar, weekday habit, unusual expense, formula

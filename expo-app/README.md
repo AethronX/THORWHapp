@@ -6,8 +6,10 @@ calculator, plus a five-question onboarding that builds a personal plan and an a
 Smart and modern, all on the device: quick add with a keypad and automatic category suggestion,
 recurring-payment detection, spending calendar, unusual-expense alert, hide-amounts mode, app lock
 (Face ID / fingerprint), haptics and motion that respect Reduce Motion, Liquid Glass on iOS 26.
+Guidance: a ranked "next step" with its reason, one real action and "not now"; Arabic-tolerant search and
+category filters for expenses.
 Local-only (SQLite on the device), no account, no ads, no tracking.
-Competitor study: `../docs/COMPETITIVE_ANALYSIS.md` · design research 2026: `../docs/DESIGN_RESEARCH_2026.md` · formulas: `../docs/ANALYTICS.md`.
+Competitor study: `../docs/COMPETITIVE_ANALYSIS.md` · design research 2026: `../docs/DESIGN_RESEARCH_2026.md` · audit 2030: `../docs/AUDIT_2030.md` · formulas: `../docs/ANALYTICS.md`.
 
 Screenshots (web render of the real screens with sample data, iPhone size): `../docs/screenshots/`.
 

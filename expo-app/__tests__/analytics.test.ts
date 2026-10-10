@@ -155,7 +155,7 @@ describe('questionnaire plan', () => {
 
 test('Arabic insights do not double the full stop after «ر.ع.»', () => {
   const { STRINGS } = require('../src/ui/i18n');
-  const amount = '‎10.000‎ ر.ع.';
+  const amount = '‎10.000‎ ر.ع.';
   expect(STRINGS.ar.insightNearBudget('السكن', amount)).toMatch(/ر\.ع\.$/);
   expect(STRINGS.ar.insightOverBudget('السكن', amount)).not.toMatch(/\.\.$/);
   expect(STRINGS.ar.insightNearBudget('السكن', '‎10‎ د.إ')).toMatch(/د\.إ\.$/);

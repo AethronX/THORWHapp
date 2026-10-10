@@ -56,7 +56,7 @@ export default function QuickAdd() {
   const [whole, frac] = (amount || '0').split('.');
   const typed = group(whole) + (frac !== undefined ? `.${frac}` : '');
   const symbol = currencySymbol(st.currency, st.locale);
-  const display = st.locale === 'ar' ? `${LRM}${typed}${LRM} ${symbol}` : `${symbol} ${typed}`;
+  const display = st.locale === 'ar' ? `${LRM}${typed}${LRM}\u00A0${symbol}` : `${symbol}\u00A0${typed}`;
 
   const press = (k: KeypadKey) => {
     Keyboard.dismiss();

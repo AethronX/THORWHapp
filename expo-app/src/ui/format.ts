@@ -44,6 +44,8 @@ function group(n: number): string {
 }
 
 const LRM = '‎';
+/** No-break space: an amount and its currency never wrap onto different lines. */
+const NBSP = '\u00A0';
 
 /**
  * Minor units for display: 12500 OMR -> "12.500 ر.ع." (ar) / "OMR 12.500" (en).
@@ -59,7 +61,7 @@ export function formatMoney(minor: number, c: Currency, l: Locale, signed = fals
       ? group(abs)
       : `${group(Math.floor(abs / per))}.${String(abs % per).padStart(c.exponent, '0')}`;
   const sign = neg ? '-' : signed && minor > 0 ? '+' : '';
-  return l === 'ar' ? `${LRM}${sign}${body}${LRM} ${currencySymbol(c, l)}` : `${c.code} ${sign}${body}`;
+  return l === 'ar' ? `${LRM}${sign}${body}${LRM}${NBSP}${currencySymbol(c, l)}` : `${c.code}${NBSP}${sign}${body}`;
 }
 
 /** Whole percent, toward zero, so an unfinished goal never reads "100%". */

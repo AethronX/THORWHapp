@@ -46,8 +46,8 @@ export function useUi(): UiKit {
       money: (minor: number, signed = false) =>
         st.hideAmounts
           ? st.locale === 'ar'
-            ? `•••• ${currencySymbol(st.currency, st.locale)}`
-            : `${st.currency.code} ••••`
+            ? `••••\u00A0${currencySymbol(st.currency, st.locale)}`
+            : `${st.currency.code}\u00A0••••`
           : formatMoney(minor, st.currency, st.locale, signed),
       hidden: st.hideAmounts,
     }),

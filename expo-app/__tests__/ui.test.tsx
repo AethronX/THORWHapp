@@ -112,7 +112,7 @@ test('full MVP journey in Arabic, persisting across restart', async () => {
   await nav((router) => router.back());
   // Over budget is now the top "next step" (with its reason and an action), not repeated as an alert.
   expect(await screen.findByTestId('guidance.overBudget:2')).toBeTruthy();
-  expect(screen.getByTestId('guidance.overBudget:2.title').props.children).toBe(ar.gOverBudgetTitle(ar.cat.food, '\u200E2.500\u200E ر.ع.'));
+  expect(screen.getByTestId('guidance.overBudget:2.title').props.children).toBe(ar.gOverBudgetTitle(ar.cat.food, '\u200E2.500\u200E\u00A0ر.ع.'));
   expect(screen.queryByTestId('insight.overBudget')).toBeNull();
 
   // 6. Goal 1200 with 200 saved -> 1000/12 = 83.334 per month (rounded up).
@@ -210,9 +210,9 @@ test('questionnaire builds a personal plan that the app then uses', async () => 
 
   // Plan: 20 % saving, emergency fund 1.5 × income, food limit 10 %.
   await screen.findByTestId('plan.review');
-  expect(screen.getByTestId('plan.saving').props.children).toBe(ar.planSaving('\u200E160.000\u200E ر.ع.', '20%'));
-  expect(screen.getByText(ar.planGoalEmergency('\u200E1,200.000\u200E ر.ع.'))).toBeTruthy();
-  expect(screen.getByText(ar.planBudget(ar.cat.food, '\u200E80.000\u200E ر.ع.'))).toBeTruthy();
+  expect(screen.getByTestId('plan.saving').props.children).toBe(ar.planSaving('\u200E160.000\u200E\u00A0ر.ع.', '20%'));
+  expect(screen.getByText(ar.planGoalEmergency('\u200E1,200.000\u200E\u00A0ر.ع.'))).toBeTruthy();
+  expect(screen.getByText(ar.planBudget(ar.cat.food, '\u200E80.000\u200E\u00A0ر.ع.'))).toBeTruthy();
   press('plan.start');
 
   // Applied: goal + budget exist; insights use the payday (Oct 9 → Oct 25 = 16 days).
@@ -222,7 +222,7 @@ test('questionnaire builds a personal plan that the app then uses', async () => 
   await nav((router) => router.push('/analytics'));
   await screen.findByTestId('analytics.health');
   // (800 − 0 − 160) / 16 days = 40.000 per day.
-  expect(screen.getByTestId('analytics.safe.amount').props.children).toBe('\u200E40.000\u200E ر.ع.');
+  expect(screen.getByTestId('analytics.safe.amount').props.children).toBe('\u200E40.000\u200E\u00A0ر.ع.');
   expect(screen.getByText(ar.safeUntilPayday(16))).toBeTruthy();
 });
 
@@ -273,9 +273,9 @@ test('Quick add: keypad, smart category from the note, three taps to save', asyn
   // Save is disabled until there is an amount and a category.
   expect(screen.getByTestId('quick.save').props.accessibilityState.disabled).toBe(true);
   for (const k of ['1', '2', 'dec', '5', '0', '0', '0']) press(`key.${k}`);
-  expect(screen.getByTestId('quick.amount').props.children).toBe('\u200E12.500\u200E ر.ع.'); // 4th decimal ignored (OMR has 3)
+  expect(screen.getByTestId('quick.amount').props.children).toBe('\u200E12.500\u200E\u00A0ر.ع.'); // 4th decimal ignored (OMR has 3)
   press('key.back');
-  expect(screen.getByTestId('quick.amount').props.children).toBe('\u200E12.50\u200E ر.ع.');
+  expect(screen.getByTestId('quick.amount').props.children).toBe('\u200E12.50\u200E\u00A0ر.ع.');
   press('key.0');
   // Note «بنزين المها» → transport suggested from the keyword list.
   type('quick.note', 'بنزين المها');
@@ -379,13 +379,13 @@ test('smart analytics: recurring payments, unusual expense, calendar and the for
   await screen.findByTestId('analytics.health');
 
   // Recurring: rent (no note, same amount) + Omantel + Netflix = 319.500 a month.
-  expect(screen.getByTestId('analytics.recurring.total').props.children).toBe(ar.recurringTotal('\u200E319.500\u200E ر.ع.'));
+  expect(screen.getByTestId('analytics.recurring.total').props.children).toBe(ar.recurringTotal('\u200E319.500\u200E\u00A0ر.ع.'));
   expect(screen.getByText('Omantel')).toBeTruthy();
   expect(screen.getAllByText(ar.recurringPaid).length).toBe(2); // rent + Omantel paid in October
   expect(screen.getByText(ar.recurringDue(12))).toBeTruthy(); // Netflix, usually on the 12th
 
   // Unusual: 40.000 on food vs a typical 9.500.
-  expect(screen.getByText(ar.unusualBody('\u200E40.000\u200E ر.ع.', ar.cat.food, '\u200E9.500\u200E ر.ع.'))).toBeTruthy();
+  expect(screen.getByText(ar.unusualBody('\u200E40.000\u200E\u00A0ر.ع.', ar.cat.food, '\u200E9.500\u200E\u00A0ر.ع.'))).toBeTruthy();
 
   // Calendar shows everyday spending (rent on the 1st and Omantel on the 5th are bills):
   // Oct 1–9 with everyday spending only on the 8th → 8 no-spend days.
@@ -396,7 +396,7 @@ test('smart analytics: recurring payments, unusual expense, calendar and the for
   // Safe-to-spend explains itself with the user's own numbers.
   press('analytics.safe.how');
   expect(screen.getByTestId('analytics.safe.explain').props.children).toBe(
-    ar.safeExplain('\u200E1,000.000\u200E ر.ع.', '\u200E355.000\u200E ر.ع.', '\u200E0.000\u200E ر.ع.', '23'),
+    ar.safeExplain('\u200E1,000.000\u200E\u00A0ر.ع.', '\u200E355.000\u200E\u00A0ر.ع.', '\u200E0.000\u200E\u00A0ر.ع.', '23'),
   );
 });
 
@@ -432,7 +432,7 @@ test('guidance: rising category → set a limit (prefilled), emergency fund → 
   // Why: the user's own numbers, same days compared, suggested limit = last month's total rounded up.
   press(`${rising}.why`);
   expect(screen.getByTestId(`${rising}.reason`).props.children).toBe(
-    ar.gRisingWhy(9, '‎60.000‎ ر.ع.', '‎20.000‎ ر.ع.', '‎60.000‎ ر.ع.'),
+    ar.gRisingWhy(9, '‎60.000‎ ر.ع.', '‎20.000‎ ر.ع.', '‎60.000‎ ر.ع.'),
   );
   // Act: budgets opens with the editor on that category, prefilled with max(47.4, 60) = 60.
   press(`${rising}.act`);
@@ -443,7 +443,7 @@ test('guidance: rising category → set a limit (prefilled), emergency fund → 
   // With a limit set, the rising step is gone; the emergency fund (3 × 300) is next.
   await screen.findByTestId('guidance.emergencyFund');
   expect(screen.queryByTestId(rising)).toBeNull();
-  expect(screen.getByTestId('guidance.emergencyFund.title').props.children).toBe(ar.gEmergencyTitle('‎900.000‎ ر.ع.'));
+  expect(screen.getByTestId('guidance.emergencyFund.title').props.children).toBe(ar.gEmergencyTitle('‎900.000‎ ر.ع.'));
   press('guidance.emergencyFund.act');
   expect((await screen.findByTestId('goal.name')).props.value).toBe(ar.emergencyGoalName);
   expect(screen.getByTestId('goal.target').props.value).toBe('900');
@@ -479,7 +479,7 @@ test('expenses: Arabic-tolerant search, category filter, no-results state', asyn
   // «مستشفي» (ى written as ي) still finds «مستشفى».
   type('expenses.search', 'مستشفي');
   await waitFor(() => expect(rows()).toEqual([hosp]));
-  expect(screen.getByTestId('expenses.results').props.children).toBe(ar.resultsSummary(1, 3, '‎20.000‎ ر.ع.'));
+  expect(screen.getByTestId('expenses.results').props.children).toBe(ar.resultsSummary(1, 3, '‎20.000‎ ر.ع.'));
   press('expenses.search.clear');
   await waitFor(() => expect(rows()).toHaveLength(3));
   expect(screen.getByTestId('expenses.total')).toBeTruthy();
@@ -487,7 +487,7 @@ test('expenses: Arabic-tolerant search, category filter, no-results state', asyn
   // Category chip.
   press(`expenses.filter.${cat.get('food')}`);
   await waitFor(() => expect(rows()).toEqual([lulu, rest]));
-  expect(screen.getByTestId('expenses.results').props.children).toBe(ar.resultsSummary(2, 3, '‎20.000‎ ر.ع.'));
+  expect(screen.getByTestId('expenses.results').props.children).toBe(ar.resultsSummary(2, 3, '‎20.000‎ ر.ع.'));
 
   // Nothing matches → clear state that offers a way out.
   type('expenses.search', 'كارفور');
