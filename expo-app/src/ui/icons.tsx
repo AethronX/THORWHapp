@@ -10,7 +10,7 @@
  * Screens use SEMANTIC names (`edit`, `warning`, `catFood`…), never library
  * names. Directional icons mirror automatically in right-to-left layouts.
  */
-import Svg, { G, Path } from 'react-native-svg';
+import Svg, { Circle, G, Path } from 'react-native-svg';
 
 import { ICON_PATHS } from './iconPaths';
 
@@ -53,6 +53,19 @@ export function PhIcon({
   fillOpacity?: number;
 }) {
   const icon = ICON_PATHS[name];
+  // + and −: a soft round badge in the same colour with a centred sign (the duotone square fill read as a grey box).
+  if (name === 'add' || name === 'remove') {
+    return (
+      <Svg width={size} height={size} viewBox="0 0 256 256" accessibilityElementsHidden importantForAccessibility="no">
+        <Circle cx={128} cy={128} r={128} fill={color} opacity={0.16} />
+        <G fill={color} transform="translate(38.4 38.4) scale(0.7)">
+          {icon.r.map((d, i) => (
+            <Path key={i} d={d} stroke={color} strokeWidth={10} />
+          ))}
+        </G>
+      </Svg>
+    );
+  }
   const mirrored = rtl && DIRECTIONAL.has(name);
   return (
     <Svg
