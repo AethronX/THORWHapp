@@ -56,7 +56,7 @@ export default function Expenses() {
                 accessibilityLabel={s.searchPlaceholder}
                 accessibilityHint={s.searchScope(formatMonth(st.month, st.locale))}
                 returnKeyType="search"
-                style={{ flex: 1, minHeight: MIN_TAP, fontFamily: Fonts.regular, fontSize: 16, color: p.onSurface, textAlign: rtl ? 'right' : 'left' }}
+                style={{ flex: 1, minWidth: 0, minHeight: MIN_TAP, fontFamily: Fonts.regular, fontSize: 16, color: p.onSurface, textAlign: rtl ? 'right' : 'left' }}
                 maxFontSizeMultiplier={2}
               />
               {query !== '' && (
