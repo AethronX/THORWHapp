@@ -64,6 +64,10 @@ export interface Palette {
   onHeroMuted: string;
   /** Gold detail on the hero (hairline, small labels). */
   heroAccent: string;
+  /** Brand gold #D4AF57 — decoration only: on the deep-green hero or as large marks, never body text. */
+  brandGold: string;
+  /** Progress bars and rings (non-text, >= 3:1). */
+  progress: string;
 
   // Text
   onSurface: string;
@@ -115,43 +119,45 @@ const S = Scale;
 
 export const light: Palette = {
   dark: false,
-  background: '#FCF9F3',
+  background: '#F7F5EF', // brand ivory
   surface: '#FFFFFF',
-  surfaceMuted: '#F5F2EB',
-  hero: S.emerald[800],
+  surfaceMuted: '#EFEBE2',
+  hero: '#0F513F', // brand deep green
   onHero: '#FFFFFF',
   onHeroMuted: S.emerald[100],
-  heroAccent: S.gold[300],
+  heroAccent: '#D6B35F', // brand gold, a hair lighter for 4.6:1 text on the hero
+  brandGold: '#D4AF57',
+  progress: '#2E7D68', // brand mid green
 
   onSurface: S.ink[900],
   onSurfaceMuted: S.ink[700],
-  textSubtle: S.ink[600],
+  textSubtle: '#626976', // brand grey #6B7280 darkened for 4.5:1 on ivory
 
   outline: S.sand[200],
   borderStrong: S.sand[500],
   focus: S.sea[500],
 
-  primary: S.emerald[700],
+  primary: '#0F513F', // brand deep green
   onPrimary: '#FFFFFF',
-  primaryPressed: S.emerald[800],
-  primaryContainer: S.emerald[50],
-  onPrimaryContainer: S.emerald[900],
+  primaryPressed: '#0B3D2F',
+  primaryContainer: '#E4EFEA',
+  onPrimaryContainer: '#0B3D2F',
 
   accent: S.gold[500],
   accentText: S.gold[700],
   accentContainer: S.gold[50],
 
-  positive: S.leaf[700],
+  positive: '#2B7461', // brand mid green #2E7D68, a hair darker for 4.5:1 text on every surface
   positiveContainer: S.leaf[50],
   warning: S.amber[700],
   warningContainer: S.amber[50],
-  negative: S.ruby[600],
+  negative: '#B14646', // brand red #C94F4F darkened for 4.5:1 text
   negativeContainer: S.ruby[50],
   onNegative: '#FFFFFF',
   info: S.sea[700],
   infoContainer: S.sea[50],
 
-  income: S.leaf[700],
+  income: '#2B7461',
   expense: S.ink[900],
 
   categories: {
@@ -175,10 +181,12 @@ export const dark: Palette = {
   background: '#0D1210',
   surface: '#161B18',
   surfaceMuted: '#1F2422',
-  hero: '#013728',
+  hero: '#0F513F',
   onHero: '#FFFFFF',
   onHeroMuted: S.emerald[100],
   heroAccent: S.gold[300],
+  brandGold: '#D4AF57',
+  progress: S.emerald[300],
 
   onSurface: S.ink[50],
   onSurfaceMuted: S.ink[300],

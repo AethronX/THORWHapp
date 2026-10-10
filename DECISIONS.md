@@ -168,3 +168,18 @@ content — never on cards or amounts; solid fallback elsewhere.
 cold start and after > 60 s in the background; turning it on or off requires authentication; the lock
 screen is shown before any data renders.
 
+### D-030 Owner's brand palette as anchors, with AA-safe text shades — 2026-10-10
+Owner direction (Tharwati 2030): deep green #0F513F, ivory #F7F5EF, gold #D4AF57, mid green #2E7D68,
+grey #6B7280, red #C94F4F. Measured on ivory: gold 1.91:1, grey 4.43:1, red 4.09:1 — below WCAG 4.5:1
+for text. **Decision:** the six colours are the identity anchors (primary, background, hero, brand gold,
+progress); where a colour carries text, a minimally darker shade is used — grey #626976 (5.1:1), red
+#B14646 (5.0:1), mid green #2B7461 (5.1:1), gold on the hero #D6B35F (4.6:1). Brand gold is decoration
+only (hero hairline, marks), enforced by a test. Mid green #2E7D68 colours progress bars. App icon and
+splash moved to the same deep green. Dark mode keeps its own tested palette.
+
+### D-031 "Net cash flow", dated and defined — not "left over" — 2026-10-10
+The home hero called (income − spending this month) «المتبقي», which reads like a balance. **Decision:**
+«صافي التدفق · <month>», a one-line definition, and a note that figures come only from what the user
+records and are not the bank balance. Cash balance and net worth are different measures and are not
+shown until the app records them (see docs/AUDIT_2030.md).
+

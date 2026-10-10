@@ -9,7 +9,7 @@ import { expenseTotal, health, incomeTotal, insights, netCashFlow, safeToSpend, 
 import { useAppState, useController, useUi } from '../../ui/AppContext';
 import { AnimatedAmount, Button, Card, Fab, Icon, IconName, LabeledProgress, MonthSwitcher, Row, runGuarded, Screen, T } from '../../ui/components';
 import { haptic } from '../../ui/feedback';
-import { categoryLabel, formatPercent } from '../../ui/format';
+import { categoryLabel, formatMonth, formatPercent } from '../../ui/format';
 import { ScoreRing } from '../../ui/charts';
 import { Elevation, MIN_TAP, Radii, Space } from '../../ui/theme';
 
@@ -51,13 +51,17 @@ export default function Dashboard() {
 
         <View style={{ backgroundColor: p.hero, borderRadius: Radii.lg, padding: Space.xl, gap: Space.lg, overflow: 'hidden', ...Elevation.raised }}>
           {/* Signature detail: a fine gold rule along the top edge. */}
-          <View style={{ position: 'absolute', top: 0, start: Space.xl, end: Space.xl, height: 2, backgroundColor: p.heroAccent, borderBottomLeftRadius: 2, borderBottomRightRadius: 2 }} />
+          <View style={{ position: 'absolute', top: 0, start: Space.xl, end: Space.xl, height: 2, backgroundColor: p.brandGold, borderBottomLeftRadius: 2, borderBottomRightRadius: 2 }} />
           <Row style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <View accessible accessibilityLabel={`${s.net}: ${money(net)}`} testID="summary.net" style={{ flex: 1 }}>
+            {/* Net cash flow of the viewed month — NOT a bank balance (defined on screen). */}
+            <View accessible accessibilityLabel={`${s.net}، ${formatMonth(st.month, st.locale)}: ${money(net)}. ${s.netDefinition}`} testID="summary.net" style={{ flex: 1 }}>
               <T variant="label" color={p.heroAccent}>
-                {s.net}
+                {`${s.net} · ${formatMonth(st.month, st.locale)}`}
               </T>
               <AnimatedAmount minor={net} color={p.onHero} />
+              <T variant="small" color={p.onHeroMuted} testID="summary.definition">
+                {s.netDefinition}
+              </T>
             </View>
             {/* Privacy in public: mask every amount with one tap. */}
             <Pressable
@@ -80,6 +84,15 @@ export default function Dashboard() {
             <Metric label={s.income} value={money(incomeTotal(st))} icon="income" testID="summary.income" />
             <Metric label={s.expenses} value={money(expenseTotal(st))} icon="expense" testID="summary.expenses" />
             <Metric label={s.savingsRate} value={rate == null ? s.notAvailable : formatPercent(rate)} icon="savings" testID="summary.rate" />
+          </Row>
+          {/* Honest about the data: only what the user recorded. */}
+          <Row gap={Space.xs} style={{ alignItems: 'flex-start' }}>
+            <Icon name="info" size={14} color={p.onHeroMuted} />
+            <View style={{ flex: 1 }}>
+              <T variant="small" color={p.onHeroMuted} testID="summary.dataNote">
+                {s.dataNote}
+              </T>
+            </View>
           </Row>
         </View>
 

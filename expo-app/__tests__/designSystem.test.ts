@@ -73,6 +73,9 @@ for (const [name, p] of [
       ['focus ring on surface', p.focus, p.surface],
       ['filled button on background', p.primary, p.background],
       ['gold accent on surface', p.accent, p.surface],
+      ['brand gold on the deep-green hero', p.brandGold, p.hero],
+      ['progress bar on its track', p.progress, p.surfaceMuted],
+      ['progress bar on surface', p.progress, p.surface],
     ])(`UI boundary: %s >= 3:1`, (_label, fg, bg) => {
       expect(contrast(fg, bg)).toBeGreaterThanOrEqual(AA_UI);
     });

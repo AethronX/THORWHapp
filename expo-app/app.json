@@ -27,7 +27,7 @@
       "versionCode": 1,
       "allowBackup": false,
       "adaptiveIcon": {
-        "backgroundColor": "#034A37",
+        "backgroundColor": "#0F513F",
         "foregroundImage": "./assets/brand/adaptive-fg.png",
         "backgroundImage": "./assets/brand/adaptive-bg.png",
         "monochromeImage": "./assets/brand/monochrome.png"
@@ -48,7 +48,7 @@
           "image": "./assets/brand/splash.png",
           "imageWidth": 180,
           "resizeMode": "contain",
-          "backgroundColor": "#034A37"
+          "backgroundColor": "#0F513F"
         }
       ],
       [

@@ -343,7 +343,7 @@ export function LabeledProgress({ value, label, trailing, budget = false }: { va
   const { p } = useUi();
   const over = budget && value > 1;
   const near = budget && !over && value >= 0.8;
-  const color = over ? p.negative : near ? p.warning : p.primary;
+  const color = over ? p.negative : near ? p.warning : p.progress;
   return (
     <View accessible accessibilityLabel={[label, trailing].filter(Boolean).join('، ')} style={{ gap: Space.xs }}>
       <Row style={{ alignItems: 'flex-start' }}>

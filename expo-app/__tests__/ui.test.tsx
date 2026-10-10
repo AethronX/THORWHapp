@@ -396,3 +396,12 @@ test('smart analytics: recurring payments, unusual expense, calendar and the for
     ar.safeExplain('\u200E1,000.000\u200E ر.ع.', '\u200E355.000\u200E ر.ع.', '\u200E0.000\u200E ر.ع.', '23'),
   );
 });
+
+test('home: net cash flow is named, dated and defined — never presented as a bank balance', async () => {
+  app();
+  await onboard('800');
+  await waitFor(() => expect(label('summary.net')).toContain('800.000'));
+  expect(label('summary.net')).toContain(`${ar.net}، أكتوبر 2026`);
+  expect(screen.getByTestId('summary.definition').props.children).toBe(ar.netDefinition);
+  expect(screen.getByTestId('summary.dataNote').props.children).toBe(ar.dataNote);
+});

@@ -20,8 +20,8 @@ CHROME = sys.argv[1] if len(sys.argv) > 1 else '/opt/pw-browsers/chromium_headle
 IVORY = '#FBF5E9'
 DEFS = '''<defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#056249"/>
-      <stop offset="1" stop-color="#012A1E"/>
+      <stop offset="0" stop-color="#146650"/>
+      <stop offset="1" stop-color="#0A3A2D"/>
     </linearGradient>
     <radialGradient id="glow" cx="0.5" cy="0.38" r="0.6">
       <stop offset="0" stop-color="#219976" stop-opacity="0.35"/>
