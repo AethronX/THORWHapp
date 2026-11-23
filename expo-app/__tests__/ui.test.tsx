@@ -81,8 +81,7 @@ afterEach(() => {
 const app = () => renderRouter('./src/app', { initialUrl: '/' });
 const press = (id: string) => fireEvent.press(screen.getByTestId(id));
 const type = (id: string, text: string) => fireEvent.changeText(screen.getByTestId(id), text);
-const nav = (fn: (router: typeof import('expo-router').router) => void) =>
-  act(async () => fn(require('expo-router').router));
+const nav = (fn: (router: typeof import('expo-router').router) => void) => act(async () => fn(require('expo-router').router));
 const label = (id: string) => screen.getByTestId(id).props.accessibilityLabel as string;
 
 /** FAB → Quick add → "More details" → the full expense form. */
@@ -287,7 +286,6 @@ test('Settings → retake the questionnaire updates the saved answers', async ()
   expect(screen.getByText(ar.safeUntilMonthEnd(23))).toBeTruthy();
 });
 
-
 test('Quick add: keypad, smart category from the note, three taps to save', async () => {
   app();
   await onboard('800');
@@ -336,7 +334,6 @@ test('Quick add → More details carries the amount, note and category', async (
   expect(screen.getByTestId('expense.cat.5').props.accessibilityState.selected).toBe(true); // telecom
 });
 
-
 test('hide amounts: one tap masks every amount, and it is remembered', async () => {
   app();
   await onboard('800');
@@ -375,7 +372,6 @@ test('app lock: enabling needs authentication; reopening shows the lock screen',
   await screen.findByTestId('dashboard');
 });
 
-
 test('smart analytics: recurring payments, unusual expense, calendar and the formula', async () => {
   // Seed 3 months of history directly into the database the app will open.
   const db = await mockDriver.current.open();
@@ -383,13 +379,18 @@ test('smart analytics: recurring payments, unusual expense, calendar and the for
   const repo = new FinanceRepository(db, () => new Date(2026, 9, 9, 10));
   await repo.completeOnboarding({ currencyCode: 'OMR', month: { year: 2026, month: 10 }, incomeMinor: 1000000, incomeLabel: 'راتب' });
   const cat = new Map((await repo.categories()).map((c) => [c.key, c.id]));
-  const add = (key: string, amountMinor: number, month: number, day: number, note = '') =>
-    repo.addExpense({ amountMinor, categoryId: cat.get(key as never)!, date: { year: 2026, month, day }, note });
+  const add = (key: string, amountMinor: number, month: number, day: number, note = '') => repo.addExpense({ amountMinor, categoryId: cat.get(key as never)!, date: { year: 2026, month, day }, note });
   for (const m of [7, 8, 9]) {
     await add('housing', 300000, m, 1);
     await add('telecom', 15000, m, 5, 'Omantel');
     await add('entertainment', 4500, m, 12, 'نتفليكس');
-    for (const [d, a] of [[3, 8000], [10, 10000], [17, 12000], [24, 9000]]) await add('food', a, m, d, 'لولو');
+    for (const [d, a] of [
+      [3, 8000],
+      [10, 10000],
+      [17, 12000],
+      [24, 9000],
+    ])
+      await add('food', a, m, d, 'لولو');
   }
   await add('housing', 300000, 10, 1);
   await add('telecom', 15000, 10, 5, 'Omantel');
@@ -418,9 +419,7 @@ test('smart analytics: recurring payments, unusual expense, calendar and the for
 
   // Safe-to-spend explains itself with the user's own numbers.
   press('analytics.safe.how');
-  expect(screen.getByTestId('analytics.safe.explain').props.children).toBe(
-    ar.safeExplain('\u200E1,000.000\u200E\u00A0ر.ع.', '\u200E355.000\u200E\u00A0ر.ع.', '\u200E0.000\u200E\u00A0ر.ع.', '23'),
-  );
+  expect(screen.getByTestId('analytics.safe.explain').props.children).toBe(ar.safeExplain('\u200E1,000.000\u200E\u00A0ر.ع.', '\u200E355.000\u200E\u00A0ر.ع.', '\u200E0.000\u200E\u00A0ر.ع.', '23'));
 });
 
 test('home: net cash flow is named, dated and defined — never presented as a bank balance', async () => {
@@ -438,8 +437,7 @@ test('guidance: rising category → set a limit (prefilled), emergency fund → 
   const repo = new FinanceRepository(db, () => new Date(2026, 9, 9, 10));
   await repo.completeOnboarding({ currencyCode: 'OMR', month: { year: 2026, month: 10 }, incomeMinor: 1000000, incomeLabel: 'راتب' });
   const cat = new Map((await repo.categories()).map((c) => [c.key, c.id]));
-  const add = (key: string, amountMinor: number, month: number, day: number) =>
-    repo.addExpense({ amountMinor, categoryId: cat.get(key as never)!, date: { year: 2026, month, day }, note: '' });
+  const add = (key: string, amountMinor: number, month: number, day: number) => repo.addExpense({ amountMinor, categoryId: cat.get(key as never)!, date: { year: 2026, month, day }, note: '' });
   for (const m of [7, 8, 9]) await add('housing', 300000, m, 1); // essentials: 300 a month
   await add('entertainment', 20000, 9, 5); // Sep 1–9: 20
   await add('entertainment', 27400, 9, 25); // Sep total: 47.4
@@ -454,9 +452,7 @@ test('guidance: rising category → set a limit (prefilled), emergency fund → 
   expect((await screen.findByTestId(`${rising}.title`)).props.children).toBe(ar.gRisingTitle(ar.cat.entertainment, '\u200E200%\u200E'));
   // Why: the user's own numbers, same days compared, suggested limit = last month's total rounded up.
   press(`${rising}.why`);
-  expect(screen.getByTestId(`${rising}.reason`).props.children).toBe(
-    ar.gRisingWhy(9, '‎60.000‎ ر.ع.', '‎20.000‎ ر.ع.', '‎60.000‎ ر.ع.'),
-  );
+  expect(screen.getByTestId(`${rising}.reason`).props.children).toBe(ar.gRisingWhy(9, '‎60.000‎ ر.ع.', '‎20.000‎ ر.ع.', '‎60.000‎ ر.ع.'));
   // Act: budgets opens with the editor on that category, prefilled with max(47.4, 60) = 60.
   press(`${rising}.act`);
   expect((await screen.findByTestId('budget.editor.amount')).props.value).toBe('60');
@@ -494,8 +490,7 @@ test('expenses: Arabic-tolerant search, category filter, no-results state', asyn
   const repo = new FinanceRepository(db, () => new Date(2026, 9, 9, 10));
   await repo.completeOnboarding({ currencyCode: 'OMR', month: { year: 2026, month: 10 }, incomeMinor: 800000, incomeLabel: 'راتب' });
   const cat = new Map((await repo.categories()).map((c) => [c.key, c.id]));
-  const add = (key: string, amountMinor: number, day: number, note: string) =>
-    repo.addExpense({ amountMinor, categoryId: cat.get(key as never)!, date: { year: 2026, month: 10, day }, note });
+  const add = (key: string, amountMinor: number, day: number, note: string) => repo.addExpense({ amountMinor, categoryId: cat.get(key as never)!, date: { year: 2026, month: 10, day }, note });
   const lulu = await add('food', 12000, 2, 'لولو');
   const rest = await add('food', 8000, 3, 'مطعم');
   const hosp = await add('health', 20000, 4, 'مستشفى الجامعة');
@@ -539,7 +534,10 @@ test('net worth: assets, an obligation with payoff plan, a payment logged as exp
   expect(screen.getByText(ar.noAssets)).toBeTruthy();
 
   // Two assets, one an estimate.
-  for (const [name, kind, value, est] of [['حساب التوفير', 'bank', '2500', false], ['ذهب', 'gold', '800', true]] as const) {
+  for (const [name, kind, value, est] of [
+    ['حساب التوفير', 'bank', '2500', false],
+    ['ذهب', 'gold', '800', true],
+  ] as const) {
     press('wealth.addAsset');
     await screen.findByTestId('assetForm');
     type('asset.name', name);
@@ -576,9 +574,7 @@ test('net worth: assets, an obligation with payoff plan, a payment logged as exp
   expect(screen.getByTestId(`debt.plan.${debtId}`).props.children).toBe(
     ar.payoffBase(ar.monthsCount(base.months), formatMonth(addMonths({ year: 2026, month: 10 }, base.months), 'ar'), m(base.totalInterestMinor)),
   );
-  expect(screen.getByTestId(`debt.extra.${debtId}`).props.children).toBe(
-    ar.payoffExtra(m(15000), ar.monthsCount(base.months - extra.months), m(base.totalInterestMinor - extra.totalInterestMinor)),
-  );
+  expect(screen.getByTestId(`debt.extra.${debtId}`).props.children).toBe(ar.payoffExtra(m(15000), ar.monthsCount(base.months - extra.months), m(base.totalInterestMinor - extra.totalInterestMinor)));
 
   // Record this month's payment (prefilled 150), also logged as an expense.
   press(`debt.pay.${debtId}`);
@@ -724,7 +720,12 @@ test('investing: readiness from own data, holdings, cost of waiting on the user�
   expect(screen.getByTestId('invest.r.interestDebt.text').props.children).toBe(ar.rDebt('بطاقة', '18'));
   expect(screen.getByTestId('invest.holdings.total').props.children).toBe(omr('3,000.000'));
   expect(screen.getByTestId('invest.slice.bank')).toBeTruthy();
-  // Cost of waiting: 100 a month, 0 % assumed, 20 years, wait 5 → 24,000 vs 18,000.
+  // Legal guardrails (D-050): the disclaimer is read before anything else, and
+  // the app never fills in a return rate — that number is the user's assumption.
+  expect(screen.getByTestId('invest.notice')).toBeTruthy();
+  expect(screen.getByTestId('wait.rate').props.value).toBe('');
+  expect(screen.getByTestId('wait.invalid')).toBeTruthy();
+  // Time and an amount: 100 a month, 0 % assumed, 20 years, delay 5 → 24,000 vs 18,000.
   type('wait.monthly', '100');
   type('wait.rate', '0');
   expect(screen.getByTestId('wait.diff').props.children).toBe(ar.waitDiff(omr('6,000.000')));

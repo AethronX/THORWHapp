@@ -45,6 +45,17 @@ export default function Invest() {
         </T>
       </HeroPanel>
 
+      <Card testID="invest.notice">
+        <Row gap={Space.sm} style={{ alignItems: 'flex-start' }}>
+          <Icon name="info" size={18} color={p.textSubtle} />
+          <View style={{ flex: 1 }}>
+            <T variant="small" muted testID="invest.disclaimer">
+              {s.investDisclaimer}
+            </T>
+          </View>
+        </Row>
+      </Card>
+
       <Card title={s.readinessTitle} testID="invest.readiness">
         {r.items.map((i) => (
           <ReadinessRow key={i.key} item={i} />
@@ -65,14 +76,9 @@ export default function Invest() {
           </Row>
         ))}
       </Card>
-
-      <T variant="small" muted testID="invest.disclaimer">
-        {s.investDisclaimer}
-      </T>
     </Screen>
   );
 }
-
 
 function ReadinessRow({ item }: { item: ReadinessItem }) {
   const { s, p, money } = useUi();
@@ -153,7 +159,8 @@ function CostOfWaiting() {
   const { s, p, money } = useUi();
   const planned = safeToSpend(st)?.plannedSavingMinor ?? 0;
   const [monthly, setMonthly] = useState(planned > 0 ? minorToEditable(planned, st.currency) : '');
-  const [rate, setRate] = useState('4');
+  // Deliberately empty: a pre-filled rate would read as a number we expect (D-050).
+  const [rate, setRate] = useState('');
   const [years, setYears] = useState('20');
   const [delay, setDelay] = useState('5');
   const num = (t: string) => {
