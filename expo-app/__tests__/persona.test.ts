@@ -1,6 +1,6 @@
 import { FIXED_CATEGORY_KEYS } from '../src/domain/analytics';
 import type { Category, CategoryKey, Expense } from '../src/domain/models';
-import { daysSincePayday, MIN_EXPENSES, readPersona, weekendDays } from '../src/domain/persona';
+import { daysSincePayday, MIN_EXPENSES, readPersona, recordingStreak, weekendDays } from '../src/domain/persona';
 
 const KEYS: CategoryKey[] = ['housing', 'food', 'transport', 'utilities', 'telecom', 'health', 'education', 'family', 'shopping', 'entertainment', 'debt', 'other'];
 const cats: Category[] = KEYS.map((key, i) => ({ id: i + 1, key, name: '', iconCode: i, isEssential: false, archived: false }));
@@ -61,4 +61,18 @@ test('one dominant category makes a "focused" persona; an even spread is "steady
   expect(focused.status === 'ready' && focused.key).toBe('focused');
   const steady = readPersona({ ...base, payday: null, history: [...spread('shopping', 2), ...spread('food', 2), ...spread('other', 2)] });
   expect(steady.status === 'ready' && steady.key).toBe('steady');
+});
+
+test('recording streak counts back from today, and today being empty does not break it', () => {
+  const day = (d: number) => ex('food', 1, 11, d);
+  const today = { year: 2026, month: 11, day: 23 };
+  expect(recordingStreak([], today)).toBe(0);
+  expect(recordingStreak([day(23)], today)).toBe(1);
+  expect(recordingStreak([day(21), day(22), day(23)], today)).toBe(3);
+  // Nothing today yet: the streak still stands, counted from yesterday.
+  expect(recordingStreak([day(20), day(21), day(22)], today)).toBe(3);
+  // A two-day gap ends it.
+  expect(recordingStreak([day(19), day(20)], today)).toBe(0);
+  // Several expenses on one day count as one day.
+  expect(recordingStreak([day(23), day(23), day(23)], today)).toBe(1);
 });

@@ -95,3 +95,23 @@ export function readPersona(args: { history: readonly Expense[]; categories: rea
   const map: Record<TraitKey, PersonaKey> = { paydayRush: 'paydaySprinter', weekend: 'weekender', focus: 'focused' };
   return { status: 'ready', key: candidates.length ? map[candidates[0].key] : 'steady', traits, everydayMinor: total, expenses: items.length };
 }
+
+/**
+ * Consecutive days, counting back from today, on which something was
+ * recorded (D-051). A habit signal, not a score: it is shown only while it
+ * is running, never as a failure, and today not being recorded yet does not
+ * break it — the streak then counts back from yesterday.
+ */
+export function recordingStreak(history: readonly Expense[], today: Day): number {
+  const days = new Set(history.map((e) => `${e.date.year}-${e.date.month}-${e.date.day}`));
+  const t = dayToDate(today).getTime();
+  const has = (offset: number) => {
+    const d = new Date(t - offset * 86400000);
+    return days.has(`${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`);
+  };
+  let start = has(0) ? 0 : has(1) ? 1 : -1;
+  if (start < 0) return 0;
+  let n = 0;
+  while (has(start + n)) n += 1;
+  return n;
+}

@@ -162,7 +162,7 @@ test('full MVP journey in Arabic, persisting across restart', async () => {
   app();
   await screen.findByTestId('dashboard');
   await waitFor(() => expect(label('summary.net')).toContain('787.500'));
-  expect(label('summary.income')).toContain('800.000');
+  expect(label('summary.net')).toContain('800.000');
 
   // 10. Edit then delete the expense.
   await nav((router) => router.push('/expenses'));
@@ -197,7 +197,7 @@ test('switching to English changes the language', async () => {
 test('ambiguous amounts are rejected in the form, not guessed', async () => {
   app();
   await onboard('1,5');
-  await waitFor(() => expect(label('summary.income')).toContain('1.500'));
+  await waitFor(() => expect(label('summary.net')).toContain('1.500'));
   await openFullExpenseForm();
   type('expense.amount', '12,500');
   press('expense.cat.2');
@@ -426,8 +426,12 @@ test('home: net cash flow is named, dated and defined — never presented as a b
   app();
   await onboard('800');
   await waitFor(() => expect(label('summary.net')).toContain('800.000'));
-  expect(label('summary.net')).toContain(`${ar.net}، أكتوبر 2026`);
-  expect(screen.getByTestId('summary.definition').props.children).toBe(ar.netDefinition);
+  // D-051: the headline is today's figure; the month's net flow keeps its name,
+  // its month and its definition one step down — still never a bank balance.
+  expect(label('summary.net')).toContain(`${ar.monthLeft}، أكتوبر 2026`);
+  expect(label('summary.net')).toContain(ar.netDefinition);
+  expect(screen.getByTestId('summary.definition').props.children).toBe(ar.todayBasis);
+  expect(screen.getByTestId('summary.todayNote')).toBeTruthy();
   expect(screen.getByTestId('summary.dataNote').props.children).toBe(ar.dataNote);
 });
 
@@ -669,7 +673,8 @@ test('Saudi riyal: the new sign is drawn with its bundled font (never an empty b
   press('settings.sign.new');
   await nav((router) => router.push('/'));
   await waitFor(() => expect(JSON.stringify(screen.toJSON())).toContain('\u20C1'));
-  const today = await screen.findByTestId('quickBar.today');
+  // Small text with an amount in it: the recorded income under "left this month".
+  const today = await screen.findByTestId('summary.net.sub');
   const parts = [today.props.children].flat(3) as unknown[];
   const sign = parts.find((x) => typeof x === 'object' && x && (x as { props?: { children?: unknown } }).props?.children === '⃁') as { props: { style: { fontFamily: string } } };
   expect(sign.props.style.fontFamily).toBe('CurrencySAR-Regular'); // small text → regular-weight glyph

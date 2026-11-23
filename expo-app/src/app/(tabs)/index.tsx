@@ -30,6 +30,7 @@ import { AnimatedAmount, Button, Card, EmptyState, Fab, Icon, IconName, LabeledP
 import { haptic } from '../../ui/feedback';
 import { NextStepCard } from '../../ui/Guidance';
 import { principleScore } from '../../domain/principles';
+import { recordingStreak } from '../../domain/persona';
 import { categoryIcon, categoryLabel, formatMonth, formatPercent } from '../../ui/format';
 import { ScoreRing, WeekBars } from '../../ui/charts';
 import { categoryTone, Elevation, MIN_TAP, Radii, Space } from '../../ui/theme';
@@ -41,6 +42,7 @@ export default function Dashboard() {
   const { s, p, money, say } = useUi();
   const net = netCashFlow(st);
   const rate = savingsRate(st);
+  const safe = safeToSpend(st);
   // Next step first; alerts below skip whatever the top step already says.
   const [copying, setCopying] = useState(false);
   const steps = guidance(st, { emergency: s.emergencyGoalName, season: s.seasonGoalName });
@@ -95,16 +97,41 @@ export default function Dashboard() {
           {/* Signature detail: a fine gold rule along the top edge. */}
           <View style={{ position: 'absolute', top: 0, start: Space.xl, end: Space.xl, height: 2, backgroundColor: p.brandGold, borderBottomLeftRadius: 2, borderBottomRightRadius: 2 }} />
           <Row style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            {/* Net cash flow of the viewed month — NOT a bank balance (defined on screen). */}
-            <View accessible accessibilityLabel={say(`${s.net}${s.listSep}${formatMonth(st.month, st.locale)}: ${money(net)}. ${s.netDefinition}`)} testID="summary.net" style={{ flex: 1 }}>
-              <T variant="label" color={p.heroAccent}>
-                {`${s.net} · ${formatMonth(st.month, st.locale)}`}
-              </T>
-              <AnimatedAmount minor={net} color={p.onHero} />
-              <T variant="small" color={p.onHeroMuted} testID="summary.definition">
-                {s.netDefinition}
-              </T>
-            </View>
+            {/*
+             * The headline answers the question people actually open the app
+             * with — "how much can I spend today?" — rather than a monthly
+             * accounting figure (D-051). People act on today, so the day-level
+             * number is the one that changes a decision; the month's net flow
+             * stays, one step down, with its definition.
+             * Past months and a month with no income keep the net flow as the
+             * headline, since a daily figure would be meaningless there.
+             */}
+            {safe ? (
+              <View
+                accessible
+                accessibilityLabel={say(`${s.todayAvailable}: ${money(safe.perDayMinor)}${s.listSep}${safe.untilPayday ? s.safeUntilPayday(safe.daysLeft) : s.safeUntilMonthEnd(safe.daysLeft)}`)}
+                testID="summary.today"
+                style={{ flex: 1 }}
+              >
+                <T variant="label" color={p.heroAccent}>
+                  {s.todayAvailable}
+                </T>
+                <AnimatedAmount minor={safe.perDayMinor} color={p.onHero} />
+                <T variant="small" color={p.onHeroMuted} testID="summary.todayNote">
+                  {safe.perDayMinor > 0 ? (safe.untilPayday ? s.safeUntilPayday(safe.daysLeft) : s.safeUntilMonthEnd(safe.daysLeft)) : s.safeZero}
+                </T>
+              </View>
+            ) : (
+              <View accessible accessibilityLabel={say(`${s.net}${s.listSep}${formatMonth(st.month, st.locale)}: ${money(net)}. ${s.netDefinition}`)} testID="summary.net" style={{ flex: 1 }}>
+                <T variant="label" color={p.heroAccent}>
+                  {`${s.net} · ${formatMonth(st.month, st.locale)}`}
+                </T>
+                <AnimatedAmount minor={net} color={p.onHero} />
+                <T variant="small" color={p.onHeroMuted} testID="summary.definition">
+                  {s.netDefinition}
+                </T>
+              </View>
+            )}
             {/* Privacy in public: mask every amount with one tap. */}
             <Pressable
               testID="dashboard.hideAmounts"
@@ -121,10 +148,33 @@ export default function Dashboard() {
               <Icon name={st.hideAmounts ? 'eyeOff' : 'eye'} color={p.heroAccent} />
             </Pressable>
           </Row>
+          {/*
+           * What is LEFT comes before what is gone: a remaining amount is read
+           * as something to protect, a spent total as something already lost
+           * and therefore ignorable. Income is no longer a tile of its own —
+           * it is not a decision, and it was the number most easily mistaken
+           * for a bank balance.
+           */}
           <Row gap={Space.sm}>
-            <Metric label={s.income} value={money(incomeTotal(st))} icon="income" testID="summary.income" />
-            <Metric label={s.expenses} value={money(expenseTotal(st))} icon="expense" testID="summary.expenses" />
+            {safe ? (
+              <Metric
+                label={s.monthLeft}
+                value={money(net)}
+                sub={`${s.income}: ${money(incomeTotal(st))}`}
+                icon="wallet"
+                testID="summary.net"
+                accessibilityLabel={say(`${s.monthLeft}${s.listSep}${formatMonth(st.month, st.locale)}: ${money(net)}. ${s.netDefinition} ${s.income}: ${money(incomeTotal(st))}`)}
+              />
+            ) : (
+              <Metric label={s.income} value={money(incomeTotal(st))} icon="income" testID="summary.income" />
+            )}
+            <Metric label={s.monthSpent} value={money(expenseTotal(st))} icon="expense" testID="summary.expenses" />
           </Row>
+          {safe && (
+            <T variant="small" color={p.onHeroMuted} testID="summary.definition">
+              {s.todayBasis}
+            </T>
+          )}
           <SavingsBar rate={rate} />
           {/* Honest about the data: only what the user recorded. */}
           <Row gap={Space.xs} style={{ alignItems: 'flex-start' }}>
@@ -137,9 +187,10 @@ export default function Dashboard() {
           </Row>
         </View>
 
-        {isViewingCurrentMonth(st) && <QuickBar />}
-
+        {/* One decision before any list: the step comes first, the tools after (D-051). */}
         <NextStepCard items={steps} />
+
+        {isViewingCurrentMonth(st) && <QuickBar />}
 
         <SmartSummary />
 
@@ -237,10 +288,15 @@ export default function Dashboard() {
 }
 
 /** Income / expenses tile on the hero: icon chip, label, amount. */
-function Metric({ label, value, icon, testID }: { label: string; value: string; icon: IconName; testID?: string }) {
+function Metric({ label, value, icon, testID, accessibilityLabel, sub }: { label: string; value: string; icon: IconName; testID?: string; accessibilityLabel?: string; sub?: string }) {
   const { p, say } = useUi();
   return (
-    <View accessible accessibilityLabel={say(`${label}: ${value}`)} testID={testID} style={{ flex: 1, borderRadius: Radii.md, padding: Space.md, gap: Space.xs, overflow: 'hidden' }}>
+    <View
+      accessible
+      accessibilityLabel={accessibilityLabel ?? say(`${label}: ${value}`)}
+      testID={testID}
+      style={{ flex: 1, borderRadius: Radii.md, padding: Space.md, gap: Space.xs, overflow: 'hidden' }}
+    >
       <View pointerEvents="none" style={{ position: 'absolute', top: 0, bottom: 0, start: 0, end: 0, backgroundColor: p.onHero, opacity: 0.08 }} />
       <Row gap={Space.xs}>
         <View style={{ width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: p.heroAccent }}>
@@ -253,6 +309,11 @@ function Metric({ label, value, icon, testID }: { label: string; value: string; 
       <T variant="amount" color={p.onHero}>
         {value}
       </T>
+      {sub ? (
+        <T variant="small" color={p.onHeroMuted} testID={testID ? `${testID}.sub` : undefined}>
+          {sub}
+        </T>
+      ) : null}
     </View>
   );
 }
@@ -289,13 +350,12 @@ function SmartSummary() {
   const { s, p, money, say } = useUi();
   if (incomeTotal(st) === 0 && expenseTotal(st) === 0) return null;
   const h = health(st);
-  const safe = safeToSpend(st);
   const color = h.grade === 'excellent' || h.grade === 'good' ? p.positive : h.grade === 'fair' ? p.warning : p.negative;
   return (
     <Pressable
       testID="dashboard.smart"
       accessibilityRole="button"
-      accessibilityLabel={say(`${s.healthTitle}: ${s.healthOutOf(h.score)}${safe ? `${s.listSep}${s.safeTitle}: ${money(safe.perDayMinor)}` : ''}`)}
+      accessibilityLabel={say(`${s.healthTitle}: ${s.healthOutOf(h.score)}${s.listSep}${{ excellent: s.gradeExcellent, good: s.gradeGood, fair: s.gradeFair, needsWork: s.gradeNeedsWork }[h.grade]}`)}
       onPress={() => router.push('/analytics')}
       style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
     >
@@ -306,18 +366,13 @@ function SmartSummary() {
             <T variant="label" muted>
               {s.healthTitle}
             </T>
-            {safe ? (
-              <>
-                <T variant="amount" color={safe.perDayMinor > 0 ? p.primary : p.negative}>
-                  {money(safe.perDayMinor)}
-                </T>
-                <T variant="small" muted>
-                  {s.safeTitle}
-                </T>
-              </>
-            ) : (
-              <T variant="subtitle">{s.analyticsTitle}</T>
-            )}
+            {/* The daily figure is the hero's headline now; repeating it here
+                would spend the user's attention twice on one number (D-051).
+                This card carries the health score and what it is made of. */}
+            <T variant="subtitle">{{ excellent: s.gradeExcellent, good: s.gradeGood, fair: s.gradeFair, needsWork: s.gradeNeedsWork }[h.grade]}</T>
+            <T variant="small" muted>
+              {s.healthOutOf(h.score)}
+            </T>
           </View>
           <Icon name="forward" weight="regular" size={18} color={p.textSubtle} />
         </Row>
@@ -331,14 +386,36 @@ function QuickBar() {
   const st = useAppState();
   const { s, p, money } = useUi();
   const r = recentSpending(st);
+  const streak = recordingStreak(st.history, st.today);
   const cats = shortcutCategories(st);
   return (
     <Card testID="quickBar">
       <Row style={{ justifyContent: 'space-between' }}>
         <T variant="label">{s.quickBarTitle}</T>
+        {/*
+         * A running streak reads as something worth keeping; two zeros read as
+         * failure. So while a streak is running it takes the place of today's
+         * total, and an empty day says so in words instead of showing 0.000
+         * (D-051). Today's and the week's totals are still here once there is
+         * something to show, and the full picture stays in Analytics.
+         */}
         <Row gap={Space.md}>
-          <T variant="small" muted testID="quickBar.today">{`${s.todayLabel} ${money(r.todayMinor)}`}</T>
-          <T variant="small" muted testID="quickBar.week">{`${s.last7Label} ${money(r.weekMinor)}`}</T>
+          {streak >= 2 ? (
+            <Row gap={Space.xs}>
+              <Icon name="sparkle" size={14} color={p.primary} />
+              <T variant="small" color={p.primary} testID="quickBar.streak">
+                {s.streakDays(streak)}
+              </T>
+            </Row>
+          ) : null}
+          {r.todayMinor > 0 ? (
+            <T variant="small" muted testID="quickBar.today">{`${s.todayLabel} ${money(r.todayMinor)}`}</T>
+          ) : (
+            <T variant="small" muted testID="quickBar.today">
+              {s.nothingToday}
+            </T>
+          )}
+          {r.weekMinor > 0 && <T variant="small" muted testID="quickBar.week">{`${s.last7Label} ${money(r.weekMinor)}`}</T>}
         </Row>
       </Row>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: Space.sm }}>
