@@ -157,9 +157,21 @@ export class AppController {
   private async load(month: YearMonth): Promise<Partial<AppState>> {
     const r = this.r;
     const today = dayFromDate(this.clock());
-    const all = await r.categories(true);
-    const incomes = await r.incomesFor(month);
-    const history = await r.expensesBetween(addMonths(month, -3), month);
+    const isCurrentMonth = sameMonth(month, monthOf(today));
+    // Independent reads run together: SQLite still serialises them, but the
+    // awaits no longer queue one after another (performance review #16).
+    const [all, incomes, history, budgets, goals, debts, assets, prevIncomes, trend, prevSamePeriod] = await Promise.all([
+      r.categories(true),
+      r.incomesFor(month),
+      r.expensesBetween(addMonths(month, -3), month),
+      r.budgets(),
+      r.goals(),
+      r.debts(),
+      r.assets(),
+      r.incomesFor(addMonths(month, -1)),
+      r.monthlyTotals(month, 6),
+      isCurrentMonth ? r.expensesUntil(addMonths(month, -1), today.day) : Promise.resolve(null),
+    ]);
     return {
       month,
       categories: all.filter((c) => !c.archived),
@@ -167,16 +179,13 @@ export class AppController {
       expenses: history.filter((e) => sameMonth(monthOf(e.date), month)),
       history,
       incomes,
-      budgets: new Map((await r.budgets()).map((b) => [b.categoryId, b.limitMinor])),
-      goals: await r.goals(),
-      debts: await r.debts(),
-      assets: await r.assets(),
-      previousMonthHasIncome:
-        incomes.length === 0 && (await r.incomesFor(addMonths(month, -1))).length > 0,
-      trend: await r.monthlyTotals(month, 6),
-      previousSamePeriodExpensesMinor: sameMonth(month, monthOf(today))
-        ? await r.expensesUntil(addMonths(month, -1), today.day)
-        : null,
+      budgets: new Map(budgets.map((b) => [b.categoryId, b.limitMinor])),
+      goals,
+      debts,
+      assets,
+      previousMonthHasIncome: incomes.length === 0 && prevIncomes.length > 0,
+      trend,
+      previousSamePeriodExpensesMinor: prevSamePeriod,
     };
   }
 

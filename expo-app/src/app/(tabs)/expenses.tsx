@@ -1,11 +1,11 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, TextInput, View } from 'react-native';
+import { FlatList, Pressable, ScrollView, TextInput, View } from 'react-native';
 
 import { filterExpenses, isFiltering } from '../../domain/search';
 import { expenseTotal } from '../../state/selectors';
 import { useAppState, useUi } from '../../ui/AppContext';
-import { Button, CategoryBadge, EmptyState, Fab, Icon, MonthSwitcher, Row, Screen, T, TotalRow } from '../../ui/components';
+import { Button, CategoryBadge, EmptyState, Fab, Icon, MonthSwitcher, Row, T, TotalRow } from '../../ui/components';
 import { categoryIcon, categoryLabel, formatDate, formatMonth } from '../../ui/format';
 import { categoryTone, Fonts, MIN_TAP, Radii, Space } from '../../ui/theme';
 
@@ -34,105 +34,133 @@ export default function Expenses() {
     setCategoryId(null);
   };
 
+  /**
+   * The rows are virtualised (performance review #23): a month with hundreds
+   * of expenses used to mount every row at once. Everything above them is the
+   * list header, so the layout and spacing are unchanged — `Screen`'s padding
+   * and its gap between blocks are reproduced here.
+   */
   return (
     <View style={{ flex: 1 }}>
-      <Screen testID="expenses">
-        <MonthSwitcher />
-        {st.expenses.length > 0 && (
-          <View style={{ gap: Space.sm }}>
-            <Row
-              gap={Space.xs}
-              style={{ minHeight: MIN_TAP, borderRadius: Radii.md, borderWidth: 1, borderColor: p.borderStrong, backgroundColor: p.surface, paddingHorizontal: Space.md }}
-            >
-              <Icon name="search" size={20} color={p.onSurfaceMuted} />
-              <TextInput
-                keyboardAppearance={p.dark ? 'dark' : 'light'}
-                selectionColor={p.primary}
-                testID="expenses.search"
-                value={query}
-                onChangeText={setQuery}
-                placeholder={s.searchPlaceholder}
-                placeholderTextColor={p.textSubtle}
-                accessibilityLabel={s.searchPlaceholder}
-                accessibilityHint={s.searchScope(formatMonth(st.month, st.locale))}
-                returnKeyType="search"
-                style={{ flex: 1, minWidth: 0, minHeight: MIN_TAP, fontFamily: Fonts.regular, fontSize: 16, color: p.onSurface, textAlign: rtl ? 'right' : 'left' }}
-                maxFontSizeMultiplier={2}
-              />
-              {query !== '' && (
-                <Pressable testID="expenses.search.clear" accessibilityRole="button" accessibilityLabel={s.clearSearch} onPress={() => setQuery('')} hitSlop={14}>
-                  <Icon name="clear" size={20} color={p.onSurfaceMuted} />
-                </Pressable>
-              )}
-            </Row>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: Space.xs }} accessibilityRole="radiogroup">
-              {[null, ...used].map((c) => {
-                const selected = (c?.id ?? null) === categoryId;
-                const label = c ? categoryLabel(c, s) : s.filterAll;
-                return (
-                  <Pressable
-                    key={c?.id ?? 'all'}
-                    testID={`expenses.filter.${c?.id ?? 'all'}`}
-                    accessibilityRole="radio"
-                    accessibilityState={{ selected }}
-                    accessibilityLabel={label}
-                    onPress={() => setCategoryId(c?.id ?? null)}
-                    hitSlop={{ top: 4, bottom: 4 }}
-                    style={{ minHeight: 40, flexDirection: 'row', alignItems: 'center', gap: Space.xs, paddingHorizontal: Space.md, borderRadius: Radii.pill, borderWidth: 1, borderColor: selected ? p.primary : p.outline, backgroundColor: selected ? p.primaryContainer : p.surface }}
-                  >
-                    {c && <Icon name={categoryIcon(c)} size={16} color={selected ? p.onPrimaryContainer : categoryTone(p, c.key, c.iconCode).fg} />}
-                    <T variant="label" color={selected ? p.onPrimaryContainer : p.onSurface}>
-                      {label}
-                    </T>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-          </View>
-        )}
-        {filtering ? (
-          <T variant="small" muted testID="expenses.results">
-            {s.resultsSummary(shown.length, st.expenses.length, money(shownTotal))}
-          </T>
-        ) : (
-          <TotalRow label={s.expenses} value={money(expenseTotal(st))} testID="expenses.total" />
-        )}
-        {st.expenses.length === 0 ? (
-          <EmptyState icon="expenses" title={s.noExpenses} body={s.noExpensesBody} />
-        ) : shown.length === 0 ? (
-          <EmptyState icon="search" title={s.noResults} body={s.noResultsBody} action={<Button kind="outlined" label={s.clearFilters} onPress={clear} testID="expenses.clearFilters" />} />
-        ) : (
-          shown.map((e) => {
-            const cat = st.categoriesById.get(e.categoryId);
-            const name = cat ? categoryLabel(cat, s) : '';
-            const sub = [formatDate(e.date, st.locale), e.note].filter(Boolean).join(' · ');
-            return (
-              <Pressable
-                key={e.id}
-                testID={`expense.row.${e.id}`}
-                accessibilityRole="button"
-                accessibilityLabel={say(`${name}${s.listSep}${money(e.amountMinor)}${s.listSep}${sub}`)}
-                accessibilityHint={s.edit}
-                onPress={() => router.push(`/expense/${e.id}`)}
-                style={{ minHeight: MIN_TAP, borderBottomWidth: 1, borderBottomColor: p.outline, paddingVertical: Space.sm }}
-              >
-                <Row>
-                  <CategoryBadge category={cat} />
-                  <View style={{ flex: 1 }}>
-                    <T>{name}</T>
-                    <T variant="small" muted>
-                      {sub}
-                    </T>
-                  </View>
-                  <T variant="amount" color={p.expense}>
-                    {money(e.amountMinor)}
-                  </T>
+      <FlatList
+        testID="expenses"
+        style={{ backgroundColor: p.background }}
+        contentContainerStyle={{ padding: Space.gutter, paddingBottom: 120 }}
+        keyboardShouldPersistTaps="handled"
+        data={shown}
+        keyExtractor={(e) => String(e.id)}
+        ItemSeparatorComponent={() => <View style={{ height: Space.lg }} />}
+        initialNumToRender={12}
+        windowSize={7}
+        removeClippedSubviews
+        ListHeaderComponent={
+          <View style={{ gap: Space.lg, paddingBottom: shown.length > 0 ? Space.lg : 0 }}>
+            <MonthSwitcher />
+            {st.expenses.length > 0 && (
+              <View style={{ gap: Space.sm }}>
+                <Row gap={Space.xs} style={{ minHeight: MIN_TAP, borderRadius: Radii.md, borderWidth: 1, borderColor: p.borderStrong, backgroundColor: p.surface, paddingHorizontal: Space.md }}>
+                  <Icon name="search" size={20} color={p.onSurfaceMuted} />
+                  <TextInput
+                    keyboardAppearance={p.dark ? 'dark' : 'light'}
+                    selectionColor={p.primary}
+                    testID="expenses.search"
+                    value={query}
+                    onChangeText={setQuery}
+                    placeholder={s.searchPlaceholder}
+                    placeholderTextColor={p.textSubtle}
+                    accessibilityLabel={s.searchPlaceholder}
+                    accessibilityHint={s.searchScope(formatMonth(st.month, st.locale))}
+                    returnKeyType="search"
+                    style={{ flex: 1, minWidth: 0, minHeight: MIN_TAP, fontFamily: Fonts.regular, fontSize: 16, color: p.onSurface, textAlign: rtl ? 'right' : 'left' }}
+                    maxFontSizeMultiplier={2}
+                  />
+                  {query !== '' && (
+                    <Pressable testID="expenses.search.clear" accessibilityRole="button" accessibilityLabel={s.clearSearch} onPress={() => setQuery('')} hitSlop={14}>
+                      <Icon name="clear" size={20} color={p.onSurfaceMuted} />
+                    </Pressable>
+                  )}
                 </Row>
-              </Pressable>
-            );
-          })
-        )}
-      </Screen>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: Space.xs }} accessibilityRole="radiogroup">
+                  {[null, ...used].map((c) => {
+                    const selected = (c?.id ?? null) === categoryId;
+                    const label = c ? categoryLabel(c, s) : s.filterAll;
+                    return (
+                      <Pressable
+                        key={c?.id ?? 'all'}
+                        testID={`expenses.filter.${c?.id ?? 'all'}`}
+                        accessibilityRole="radio"
+                        accessibilityState={{ selected }}
+                        accessibilityLabel={label}
+                        onPress={() => setCategoryId(c?.id ?? null)}
+                        hitSlop={{ top: 4, bottom: 4 }}
+                        style={{
+                          minHeight: 40,
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          gap: Space.xs,
+                          paddingHorizontal: Space.md,
+                          borderRadius: Radii.pill,
+                          borderWidth: 1,
+                          borderColor: selected ? p.primary : p.outline,
+                          backgroundColor: selected ? p.primaryContainer : p.surface,
+                        }}
+                      >
+                        {c && <Icon name={categoryIcon(c)} size={16} color={selected ? p.onPrimaryContainer : categoryTone(p, c.key, c.iconCode).fg} />}
+                        <T variant="label" color={selected ? p.onPrimaryContainer : p.onSurface}>
+                          {label}
+                        </T>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+            )}
+            {filtering ? (
+              <T variant="small" muted testID="expenses.results">
+                {s.resultsSummary(shown.length, st.expenses.length, money(shownTotal))}
+              </T>
+            ) : (
+              <TotalRow label={s.expenses} value={money(expenseTotal(st))} testID="expenses.total" />
+            )}
+          </View>
+        }
+        ListEmptyComponent={
+          st.expenses.length === 0 ? (
+            <EmptyState icon="expenses" title={s.noExpenses} body={s.noExpensesBody} />
+          ) : (
+            <EmptyState icon="search" title={s.noResults} body={s.noResultsBody} action={<Button kind="outlined" label={s.clearFilters} onPress={clear} testID="expenses.clearFilters" />} />
+          )
+        }
+        renderItem={({ item: e }) => {
+          const cat = st.categoriesById.get(e.categoryId);
+          const name = cat ? categoryLabel(cat, s) : '';
+          const sub = [formatDate(e.date, st.locale), e.note].filter(Boolean).join(' · ');
+          return (
+            <Pressable
+              key={e.id}
+              testID={`expense.row.${e.id}`}
+              accessibilityRole="button"
+              accessibilityLabel={say(`${name}${s.listSep}${money(e.amountMinor)}${s.listSep}${sub}`)}
+              accessibilityHint={s.edit}
+              onPress={() => router.push(`/expense/${e.id}`)}
+              style={{ minHeight: MIN_TAP, borderBottomWidth: 1, borderBottomColor: p.outline, paddingVertical: Space.sm }}
+            >
+              <Row>
+                <CategoryBadge category={cat} />
+                <View style={{ flex: 1 }}>
+                  <T>{name}</T>
+                  <T variant="small" muted>
+                    {sub}
+                  </T>
+                </View>
+                <T variant="amount" color={p.expense}>
+                  {money(e.amountMinor)}
+                </T>
+              </Row>
+            </Pressable>
+          );
+        }}
+      />
       <Fab label={s.addExpense} onPress={() => router.push('/quick-add')} testID="expenses.add" />
     </View>
   );
