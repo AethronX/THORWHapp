@@ -463,7 +463,7 @@ function ToolsCard() {
   const hasWealth = st.assets.length > 0 || st.debts.length > 0;
   return (
     <Card title={s.toolsTitle} testID="home.tools">
-      <ToolRow testID="home.persona" icon="sparkle" title={s.personaTitle} text={per.status === 'ready' ? s.personaEntry(s.personaName[per.key]) : s.personaEntryNoData} to="/persona" />
+      <ToolRow testID="home.persona" icon="sparkle" title={s.personaTitle} text={per.status === 'needsData' ? s.personaEntryNoData : s.personaEntry(s.personaName[per.key])} to="/persona" />
       <ToolRow testID="home.principles" icon="book" title={s.principlesTitle} text={s.principlesEntry(score.good, score.judged)} to="/principles" />
       <ToolRow testID="home.invest" icon="chartUp" title={s.investTitle} text={s.investEntry(ready)} to="/invest" />
       <ToolRow testID="home.wealth" icon="coins" title={s.wealthOpen} text={hasWealth ? `${s.wealthTitle}: ${money(w.netMinor)}` : s.pMeasureNoData} to="/wealth" />

@@ -76,3 +76,19 @@ test('recording streak counts back from today, and today being empty does not br
   // Several expenses on one day count as one day.
   expect(recordingStreak([day(23), day(23), day(23)], today)).toBe(1);
 });
+
+test('two gates: a provisional reading first, a settled one after three weeks', () => {
+  // 8 everyday expenses over 10 days: a shape, labelled provisional.
+  // 8 entries spread over 10 days (days 1..10).
+  const early = [1, 2, 3, 5, 6, 7, 9, 10].map((d, i) => ex('food', 1 + i, 9, d));
+  const r1 = readPersona({ ...base, payday: null, history: early });
+  expect(r1.status).toBe('provisional');
+  if (r1.status !== 'needsData') expect(r1.days).toBe(10);
+
+  // Below either gate: still nothing, and the progress is reported.
+  expect(readPersona({ ...base, history: early.slice(0, 5) }).status).toBe('needsData');
+
+  // Three weeks and fifteen entries: settled.
+  const full = Array.from({ length: 16 }, (_, i) => ex('food', 1 + i, 9, 1 + i * 2));
+  expect(readPersona({ ...base, payday: null, history: full }).status).toBe('ready');
+});

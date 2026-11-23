@@ -11,9 +11,25 @@ import { formatDate, formatPercent } from '../../ui/format';
 import { AmountEditor } from '../../ui/InlineEditor';
 import { Radii, Space } from '../../ui/theme';
 
+/**
+ * "Closest to done" is only said about a goal that really is near the end: the
+ * goal-gradient effect is about the finish line being in sight, and the badge
+ * on a goal at 0 % would be true but useless.
+ */
+const NEAR_DONE = 0.5;
+
 export default function Goals() {
   const st = useAppState();
   const { s } = useUi();
+  /*
+   * Closest to done first (D-052). People push hardest near the finish line
+   * (the goal-gradient effect), so the goal with the least left to put in is
+   * the one worth seeing first; reached and paused goals sink to the bottom
+   * because neither asks anything of the user today.
+   */
+  const rank = (g: SavingsGoal) => (isGoalReached(g) ? 2 : g.paused ? 1 : 0);
+  const left = (g: SavingsGoal) => Math.max(0, g.targetMinor - g.savedMinor);
+  const ordered = [...st.goals].sort((a, b) => rank(a) - rank(b) || left(a) - left(b) || a.id - b.id);
   return (
     <View style={{ flex: 1 }}>
       <Screen testID="goals">
@@ -24,7 +40,7 @@ export default function Goals() {
         {st.goals.length === 0 ? (
           <EmptyState icon="goals" title={s.goalsEmpty} body={s.goalsEmptyBody} />
         ) : (
-          st.goals.map((g) => <GoalCard key={g.id} goal={g} />)
+          ordered.map((g, i) => <GoalCard key={g.id} goal={g} nearest={i === 0 && ordered.length > 1 && !isGoalReached(g) && !g.paused && goalProgress(g.savedMinor, g.targetMinor) >= NEAR_DONE} />)
         )}
       </Screen>
       <Fab label={s.addGoal} onPress={() => router.push('/goal/new')} testID="goals.add" />
@@ -32,7 +48,7 @@ export default function Goals() {
   );
 }
 
-function GoalCard({ goal }: { goal: SavingsGoal }) {
+function GoalCard({ goal, nearest = false }: { goal: SavingsGoal; nearest?: boolean }) {
   const st = useAppState();
   const c = useController();
   const { s, p, money } = useUi();
@@ -45,11 +61,18 @@ function GoalCard({ goal }: { goal: SavingsGoal }) {
   const status = reached ? s.goalReached : overdue ? s.goalOverdue : s.monthsLeft(months);
 
   return (
-    <Card
-      testID={`goal.card.${goal.id}`}
-      title={goal.name}
-      action={<IconButton icon="edit" label={s.edit} onPress={() => router.push(`/goal/${goal.id}`)} testID={`goal.edit.${goal.id}`} />}
-    >
+    <Card testID={`goal.card.${goal.id}`} title={goal.name} action={<IconButton icon="edit" label={s.edit} onPress={() => router.push(`/goal/${goal.id}`)} testID={`goal.edit.${goal.id}`} />}>
+      {nearest && (
+        <Row
+          testID={`goal.nearest.${goal.id}`}
+          style={{ alignSelf: 'flex-start', backgroundColor: p.primaryContainer, borderRadius: Radii.pill, paddingHorizontal: Space.md, paddingVertical: Space.xs }}
+        >
+          <Icon name="target" size={16} color={p.onPrimaryContainer} />
+          <T variant="label" color={p.onPrimaryContainer}>
+            {s.goalNearest}
+          </T>
+        </Row>
+      )}
       {reached && (
         <Row style={{ alignSelf: 'flex-start', backgroundColor: p.accentContainer, borderRadius: Radii.pill, paddingHorizontal: Space.md, paddingVertical: Space.xs }}>
           <Icon name="trophy" size={18} color={p.accentText} />
@@ -58,7 +81,13 @@ function GoalCard({ goal }: { goal: SavingsGoal }) {
           </T>
         </Row>
       )}
+      {/* The bar says how far you came; the line under it says what is left to put in. */}
       <LabeledProgress value={progress} label={s.goalSaved(money(goal.savedMinor), money(goal.targetMinor))} trailing={formatPercent(progress)} />
+      {!reached && (
+        <T variant="label" color={p.primary} testID={`goal.remaining.${goal.id}`}>
+          {s.goalRemaining(money(goal.targetMinor - goal.savedMinor))}
+        </T>
+      )}
       <Row>
         <Icon name={reached ? 'success' : overdue ? 'warning' : 'calendar'} size={18} color={reached ? p.positive : overdue ? p.warning : p.onSurfaceMuted} />
         <View style={{ flex: 1 }}>

@@ -29,10 +29,23 @@ export interface Trait {
   categoryId: number | null;
 }
 
-export type Persona = { status: 'needsData'; expenses: number; days: number } | { status: 'ready'; key: PersonaKey; traits: Trait[]; everydayMinor: number; expenses: number };
+export type Persona =
+  | { status: 'needsData'; expenses: number; days: number }
+  /** Enough to show a shape, not enough to call it settled: traits are labelled provisional. */
+  | { status: 'provisional'; key: PersonaKey; traits: Trait[]; everydayMinor: number; expenses: number; days: number }
+  | { status: 'ready'; key: PersonaKey; traits: Trait[]; everydayMinor: number; expenses: number; days: number };
 
+/**
+ * Two gates instead of one wall (D-052). A reading needs enough days to see a
+ * weekly rhythm and a pay cycle, and enough entries for shares to mean
+ * anything — but a user recording a few things a day should see a shape within
+ * two weeks, not stare at "record a little more" for a month.
+ */
 export const MIN_EXPENSES = 15;
 export const MIN_SPAN_DAYS = 21;
+/** Provisional reading: the same traits, shown as "early days" rather than settled. */
+export const EARLY_EXPENSES = 8;
+export const EARLY_SPAN_DAYS = 10;
 export const STRONG_LIFT = 1.5;
 /** "Right after payday" = the payday and the 6 days after it. */
 export const RUSH_DAYS = 7;
@@ -59,7 +72,8 @@ export function readPersona(args: { history: readonly Expense[]; categories: rea
   const items = args.history.filter((e) => e.amountMinor > 0 && !fixed.has(e.categoryId));
   const times = items.map((e) => dayToDate(e.date).getTime());
   const days = times.length ? Math.round((Math.max(...times) - Math.min(...times)) / 86400000) + 1 : 0;
-  if (items.length < MIN_EXPENSES || days < MIN_SPAN_DAYS) return { status: 'needsData', expenses: items.length, days };
+  if (items.length < EARLY_EXPENSES || days < EARLY_SPAN_DAYS) return { status: 'needsData', expenses: items.length, days };
+  const settled = items.length >= MIN_EXPENSES && days >= MIN_SPAN_DAYS;
 
   const total = items.reduce((t, e) => t + e.amountMinor, 0);
   const share = (pred: (e: Expense) => boolean) => items.filter(pred).reduce((t, e) => t + e.amountMinor, 0) / total;
@@ -93,7 +107,7 @@ export function readPersona(args: { history: readonly Expense[]; categories: rea
   // Persona = the strongest trait by lift over its baseline.
   const candidates = traits.filter((t) => t.strong && (t.key !== 'focus' || t.share >= FOCUS_MIN_SHARE)).sort((a, b) => b.share / b.baseline - a.share / a.baseline);
   const map: Record<TraitKey, PersonaKey> = { paydayRush: 'paydaySprinter', weekend: 'weekender', focus: 'focused' };
-  return { status: 'ready', key: candidates.length ? map[candidates[0].key] : 'steady', traits, everydayMinor: total, expenses: items.length };
+  return { status: settled ? 'ready' : 'provisional', key: candidates.length ? map[candidates[0].key] : 'steady', traits, everydayMinor: total, expenses: items.length, days };
 }
 
 /**

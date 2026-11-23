@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { View } from 'react-native';
 
-import { MIN_EXPENSES, Trait } from '../domain/persona';
+import { EARLY_EXPENSES, EARLY_SPAN_DAYS, MIN_SPAN_DAYS, Trait } from '../domain/persona';
 import { persona } from '../state/selectors';
 import { useAppState, useUi } from '../ui/AppContext';
 import { Button, Card, EmptyState, HeroPanel, Icon, LabeledProgress, Row, Screen, T } from '../ui/components';
@@ -29,13 +29,26 @@ export default function Persona() {
   if (r.status === 'needsData')
     return (
       <Screen testID="persona">
-        <EmptyState
-          icon="sparkle"
-          title={s.personaTitle}
-          body={s.personaNeedsData(r.expenses, MIN_EXPENSES)}
-          testID="persona.empty"
-          action={<Button label={s.quickAdd} icon="add" onPress={() => router.push('/quick-add')} testID="persona.add" />}
-        />
+        {/*
+         * Not a locked door: the two gates are shown as progress, so the user
+         * can see how close the first reading is (D-052). Counting up beats a
+         * flat "not enough data", and it is still honest — no verdict is given.
+         */}
+        <EmptyState icon="sparkle" title={s.personaTitle} body={s.personaNeedsData(r.expenses, EARLY_EXPENSES)} testID="persona.empty" />
+        <Card testID="persona.progress">
+          <LabeledProgress value={Math.min(1, r.expenses / EARLY_EXPENSES)} label={s.personaProgressExpenses(r.expenses, EARLY_EXPENSES)} trailing={`${r.expenses}/${EARLY_EXPENSES}`} />
+          <LabeledProgress value={Math.min(1, r.days / EARLY_SPAN_DAYS)} label={s.personaProgressDays(r.days, EARLY_SPAN_DAYS)} trailing={`${r.days}/${EARLY_SPAN_DAYS}`} />
+          <Button
+            label={s.quickAdd}
+            icon="add"
+            onPress={() => {
+              haptic.tap();
+              router.push('/quick-add');
+            }}
+            testID="persona.add"
+            style={{ alignSelf: 'flex-start' }}
+          />
+        </Card>
       </Screen>
     );
 
@@ -54,6 +67,16 @@ export default function Persona() {
         <T variant="small" color={p.onHeroMuted} testID="persona.line">
           {s.personaLine[r.key]}
         </T>
+        {r.status === 'provisional' && (
+          <Row gap={Space.xs} testID="persona.provisional">
+            <Icon name="hourglass" size={14} color={p.heroAccent} />
+            <View style={{ flex: 1 }}>
+              <T variant="small" color={p.heroAccent}>
+                {`${s.personaProvisional} · ${s.personaProvisionalNote(r.days, MIN_SPAN_DAYS)}`}
+              </T>
+            </View>
+          </Row>
+        )}
       </HeroPanel>
 
       <Card testID="persona.tip">
