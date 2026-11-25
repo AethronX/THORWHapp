@@ -251,7 +251,8 @@ export function IconButton({ icon, label, onPress, disabled, testID }: { icon: I
   );
 }
 
-function liquidGlass(): boolean {
+/** True only on an iOS version that can actually draw the material (D-057). */
+export function liquidGlass(): boolean {
   try {
     return Platform.OS === 'ios' && isLiquidGlassAvailable();
   } catch {

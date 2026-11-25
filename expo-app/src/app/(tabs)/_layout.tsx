@@ -1,7 +1,10 @@
+import { GlassView } from 'expo-glass-effect';
 import { Tabs } from 'expo-router';
 import type { ColorValue } from 'react-native';
+import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { liquidGlass } from '../../ui/components';
 import { useUi } from '../../ui/AppContext';
 import { PhIcon, type IconName } from '../../ui/icons';
 import { Fonts } from '../../ui/theme';
@@ -21,6 +24,13 @@ export default function TabsLayout() {
       <PhIcon name={icon} size={size} color={String(color)} weight={focused ? 'duotone' : 'regular'} fillOpacity={0.28} rtl={rtl} />
     ),
   });
+  /*
+   * Apple's material on the navigation layer only (D-057): the tab bar floats
+   * over content, which is exactly what it is designed for. Content stays
+   * opaque — glass behind text is where it starts hurting readability. On
+   * anything that cannot draw it, the bar is simply solid.
+   */
+  const glass = liquidGlass();
   return (
     <Tabs
       screenOptions={{
@@ -32,7 +42,20 @@ export default function TabsLayout() {
         tabBarInactiveTintColor: p.textSubtle,
         // IBM Plex Sans Arabic has tall line metrics: the library's 49 pt bar
         // clips the labels, so the bar is taller and the line height explicit.
-        tabBarStyle: { backgroundColor: p.surface, borderTopColor: p.outline, height: 64 + insets.bottom, paddingTop: 6 },
+        tabBarStyle: {
+          backgroundColor: glass ? 'transparent' : p.surface,
+          borderTopColor: glass ? 'transparent' : p.outline,
+          height: 64 + insets.bottom,
+          paddingTop: 6,
+          position: glass ? 'absolute' : 'relative',
+        },
+        tabBarBackground: glass
+          ? () => (
+              <GlassView glassEffectStyle="regular" style={{ flex: 1 }}>
+                <View style={{ flex: 1 }} />
+              </GlassView>
+            )
+          : undefined,
         tabBarLabelStyle: { fontFamily: Fonts.medium, fontSize: 12, lineHeight: 18 },
         sceneStyle: { backgroundColor: p.background },
       }}
