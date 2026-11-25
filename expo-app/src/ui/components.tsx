@@ -1,21 +1,6 @@
 import { ReactNode } from 'react';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
-import {
-  ActivityIndicator,
-  Alert,
-  Platform,
-  Pressable,
-  ScrollView,
-  Switch,
-  StyleProp,
-  StyleSheet,
-  Text,
-  TextInput,
-  TextInputProps,
-  TextStyle,
-  View,
-  ViewStyle,
-} from 'react-native';
+import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, Switch, StyleProp, StyleSheet, Text, TextInput, TextInputProps, TextStyle, View, ViewStyle } from 'react-native';
 
 import { addMonths } from '../core/dates';
 import { toArabicDigits } from '../core/digits';
@@ -119,34 +104,38 @@ export function Icon({ name, size = 22, color, weight }: { name: IconName; size?
 export function Screen({ children, testID }: { children: ReactNode; testID?: string }) {
   const { p } = useUi();
   return (
-    <ScrollView
-      testID={testID}
-      style={{ backgroundColor: p.background }}
-      contentContainerStyle={{ padding: Space.gutter, paddingBottom: 120, gap: Space.lg }}
-      keyboardShouldPersistTaps="handled"
-    >
+    <ScrollView testID={testID} style={{ backgroundColor: p.background }} contentContainerStyle={{ padding: Space.gutter, paddingBottom: 120, gap: Space.lg }} keyboardShouldPersistTaps="handled">
       {children}
     </ScrollView>
   );
 }
 
 export function Row({ children, style, gap = Space.sm, testID }: { children: ReactNode; style?: StyleProp<ViewStyle>; gap?: number; testID?: string }) {
-  return <View testID={testID} style={[{ flexDirection: 'row', alignItems: 'center', gap }, style]}>{children}</View>;
+  return (
+    <View testID={testID} style={[{ flexDirection: 'row', alignItems: 'center', gap }, style]}>
+      {children}
+    </View>
+  );
 }
 
-export function Card({
-  title,
-  action,
-  children,
-  style,
-  testID,
-}: {
-  title?: string;
-  action?: ReactNode;
-  children: ReactNode;
-  style?: StyleProp<ViewStyle>;
-  testID?: string;
-}) {
+/**
+ * A heading that splits a long screen into a few labelled groups.
+ * Ten unlabelled cards are read as a wall; three named groups are read as
+ * three questions, and the reader can skip the ones they did not come for.
+ */
+export function SectionTitle({ children, testID }: { children: string; testID?: string }) {
+  const { p } = useUi();
+  return (
+    <Row gap={Space.sm} style={{ marginTop: Space.sm }} testID={testID}>
+      <View style={{ width: 3, height: 18, borderRadius: 2, backgroundColor: p.brandGold }} />
+      <T variant="label" color={p.textSubtle}>
+        {children}
+      </T>
+    </Row>
+  );
+}
+
+export function Card({ title, action, children, style, testID }: { title?: string; action?: ReactNode; children: ReactNode; style?: StyleProp<ViewStyle>; testID?: string }) {
   const { p } = useUi();
   return (
     <View
@@ -301,14 +290,7 @@ export function AnimatedAmount({ minor, variant = 'display', color, testID }: { 
 
 // -- inputs -------------------------------------------------------------------
 
-export function Field({
-  label,
-  error,
-  hint,
-  suffix,
-  ltr,
-  ...props
-}: TextInputProps & { label: string; error?: string | null; hint?: string; suffix?: string; ltr?: boolean }) {
+export function Field({ label, error, hint, suffix, ltr, ...props }: TextInputProps & { label: string; error?: string | null; hint?: string; suffix?: string; ltr?: boolean }) {
   const { p, rtl } = useUi();
   const [focused, setFocused] = useState(false);
   return (
@@ -422,7 +404,10 @@ export function EmptyState({ icon, title, body, action, compact = false, testID 
   const size = compact ? 48 : 64;
   return (
     <View testID={testID} style={{ alignItems: 'center', padding: compact ? Space.md : Space.xxl, gap: compact ? Space.sm : Space.md }}>
-      <View importantForAccessibility="no-hide-descendants" style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: p.primaryContainer, alignItems: 'center', justifyContent: 'center' }}>
+      <View
+        importantForAccessibility="no-hide-descendants"
+        style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: p.primaryContainer, alignItems: 'center', justifyContent: 'center' }}
+      >
         <Icon name={icon} size={size / 2} color={p.onPrimaryContainer} />
       </View>
       <T variant={compact ? 'body' : 'subtitle'} center>
@@ -501,10 +486,7 @@ export function CategoryBadge({ category, size = 40 }: { category: Category | un
   const { p } = useUi();
   const tone = categoryTone(p, category?.key ?? null, category?.iconCode ?? 11);
   return (
-    <View
-      importantForAccessibility="no-hide-descendants"
-      style={{ width: size, height: size, borderRadius: Radii.sm, backgroundColor: tone.bg, alignItems: 'center', justifyContent: 'center' }}
-    >
+    <View importantForAccessibility="no-hide-descendants" style={{ width: size, height: size, borderRadius: Radii.sm, backgroundColor: tone.bg, alignItems: 'center', justifyContent: 'center' }}>
       <Icon name={category ? categoryIcon(category) : 'catOther'} size={Math.round(size * 0.55)} color={tone.fg} />
     </View>
   );

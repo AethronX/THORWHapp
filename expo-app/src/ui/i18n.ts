@@ -212,6 +212,11 @@ const en = {
   // --- analytics ---
   navAnalytics: 'Insights',
   analyticsTitle: 'Insights',
+  // Analytics is grouped by the question it answers, not by widget (D-053).
+  secThisMonth: 'Your month so far',
+  secHealth: 'Your financial health',
+  secPatterns: 'Your patterns',
+  secCompare: 'Compared with before',
   analyticsEmpty: 'Add income and expenses to see your insights.',
   healthTitle: 'Financial health',
   healthOutOf: (score: number) => `${score} of 100`,
@@ -793,6 +798,10 @@ const ar: Strings = {
   yourPlan: 'خطتي وإجاباتي',
   navAnalytics: 'التحليلات',
   analyticsTitle: 'التحليلات',
+  secThisMonth: 'شهرك حتى الآن',
+  secHealth: 'صحتك المالية',
+  secPatterns: 'أنماطك',
+  secCompare: 'مقارنة بما قبل',
   analyticsEmpty: 'أضف دخلك ومصروفاتك لتظهر تحليلاتك.',
   healthTitle: 'صحتك المالية',
   healthOutOf: (score) => `${score} من 100`,

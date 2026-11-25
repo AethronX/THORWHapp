@@ -4,9 +4,22 @@ import { Pressable, View } from 'react-native';
 import { dayToDate } from '../../core/dates';
 
 import { categoryBreakdown, change, Change, HealthComponentKey } from '../../domain/analytics';
-import { calendar, expenseTotal, health, incomeTotal, isViewingCurrentMonth, monthEndForecast, previousMonthTotals, recurring, safeToSpend, spends, unusual, weekdayHabit } from '../../state/selectors';
+import {
+  calendar,
+  expenseTotal,
+  health,
+  incomeTotal,
+  isViewingCurrentMonth,
+  monthEndForecast,
+  previousMonthTotals,
+  recurring,
+  safeToSpend,
+  spends,
+  unusual,
+  weekdayHabit,
+} from '../../state/selectors';
 import { useAppState, useUi } from '../../ui/AppContext';
-import { AnimatedAmount, Card, CategoryBadge, EmptyState, Icon, LabeledProgress, MonthSwitcher, Row, Screen, T } from '../../ui/components';
+import { AnimatedAmount, SectionTitle, Card, CategoryBadge, EmptyState, Icon, LabeledProgress, MonthSwitcher, Row, Screen, T } from '../../ui/components';
 import { Donut, HeatLegend, LegendRow, PairedBars, ScoreRing, SpendCalendar } from '../../ui/charts';
 import { Reveal } from '../../ui/motion';
 import { categoryLabel, formatPercent } from '../../ui/format';
@@ -93,36 +106,14 @@ export default function Analytics() {
     <Screen testID="analytics">
       <MonthSwitcher />
 
-      {/* 1. Financial health — transparent score with the next best step. */}
-      <Card title={s.healthTitle} testID="analytics.health">
-        <Row gap={Space.lg} style={{ alignItems: 'center' }}>
-          <ScoreRing score={h.score} color={gradeColor(h.grade, p)} label={`${s.healthTitle}: ${s.healthOutOf(h.score)}${s.listSep}${gradeText(h.grade, s)}`} />
-          <View style={{ flex: 1, gap: Space.xs }}>
-            <T variant="title" color={gradeColor(h.grade, p)} testID="analytics.grade">
-              {gradeText(h.grade, s)}
-            </T>
-            <T variant="small" muted>
-              {s.healthOutOf(h.score)}
-            </T>
-          </View>
-        </Row>
-        {h.components.map((c) => (
-          <LabeledProgress key={c.key} value={c.points / c.max} label={strings[COMPONENT_LABEL[c.key]]} trailing={`${c.points}/${c.max}`} />
-        ))}
-        <Row style={{ alignItems: 'flex-start', backgroundColor: p.accentContainer, borderRadius: Radii.md, padding: Space.md }}>
-          <Icon name="tip" color={p.accentText} />
-          <View style={{ flex: 1 }}>
-            <T color={p.accentText} testID="analytics.tip">
-              {strings[COMPONENT_TIP[h.focus]]}
-            </T>
-          </View>
-        </Row>
-        <T variant="small" muted>
-          {s.healthNote}
-        </T>
-      </Card>
+      {/*
+        Grouped by the question each part answers rather than by widget (D-053):
+        what is left of this month, then how healthy the picture is, then the
+        patterns behind it, then how it compares with before.
+      */}
+      <SectionTitle testID="analytics.sec.month">{s.secThisMonth}</SectionTitle>
 
-      {/* 2. Safe daily spend + month-end forecast (current month only). */}
+      {/* Safe daily spend + month-end forecast (current month only). */}
       {safe && (
         <Card testID="analytics.safe">
           <Row style={{ alignItems: 'flex-start' }}>
@@ -136,7 +127,13 @@ export default function Analytics() {
                 {safe.perDayMinor > 0 ? (safe.untilPayday ? s.safeUntilPayday(safe.daysLeft) : s.safeUntilMonthEnd(safe.daysLeft)) : s.safeZero}
               </T>
               {/* Transparency builds trust: the formula with the user's own numbers. */}
-              <Pressable testID="analytics.safe.how" accessibilityRole="button" accessibilityState={{ expanded: showHow }} onPress={() => setShowHow(!showHow)} hitSlop={{ top: 14, bottom: 14, left: 8, right: 8 }}>
+              <Pressable
+                testID="analytics.safe.how"
+                accessibilityRole="button"
+                accessibilityState={{ expanded: showHow }}
+                onPress={() => setShowHow(!showHow)}
+                hitSlop={{ top: 14, bottom: 14, left: 8, right: 8 }}
+              >
                 <Row gap={Space.xs}>
                   <Icon name="info" size={16} color={p.primary} />
                   <T variant="label" color={p.primary}>
@@ -171,6 +168,40 @@ export default function Analytics() {
           </Row>
         </Card>
       )}
+
+      <SectionTitle testID="analytics.sec.health">{s.secHealth}</SectionTitle>
+
+      {/* The score explains itself and ends in one step; it follows the month because a
+          score is a summary of decisions already made, while the month is still open. */}
+      <Card testID="analytics.health">
+        <Row gap={Space.lg} style={{ alignItems: 'center' }}>
+          <ScoreRing score={h.score} color={gradeColor(h.grade, p)} label={`${s.healthTitle}: ${s.healthOutOf(h.score)}${s.listSep}${gradeText(h.grade, s)}`} />
+          <View style={{ flex: 1, gap: Space.xs }}>
+            <T variant="title" color={gradeColor(h.grade, p)} testID="analytics.grade">
+              {gradeText(h.grade, s)}
+            </T>
+            <T variant="small" muted>
+              {s.healthOutOf(h.score)}
+            </T>
+          </View>
+        </Row>
+        {h.components.map((c) => (
+          <LabeledProgress key={c.key} value={c.points / c.max} label={strings[COMPONENT_LABEL[c.key]]} trailing={`${c.points}/${c.max}`} />
+        ))}
+        <Row style={{ alignItems: 'flex-start', backgroundColor: p.accentContainer, borderRadius: Radii.md, padding: Space.md }}>
+          <Icon name="tip" color={p.accentText} />
+          <View style={{ flex: 1 }}>
+            <T color={p.accentText} testID="analytics.tip">
+              {strings[COMPONENT_TIP[h.focus]]}
+            </T>
+          </View>
+        </Row>
+        <T variant="small" muted>
+          {s.healthNote}
+        </T>
+      </Card>
+
+      <SectionTitle testID="analytics.sec.patterns">{s.secPatterns}</SectionTitle>
 
       {/* Unusual expense — a nudge, not a judgement. */}
       {big && (
@@ -253,6 +284,8 @@ export default function Analytics() {
       )}
 
       {/* 3. Compared with last month. */}
+      <SectionTitle testID="analytics.sec.compare">{s.secCompare}</SectionTitle>
+
       {prev && (prev.incomeMinor > 0 || prev.expensesMinor > 0) && (
         <Card title={s.vsLastMonth} testID="analytics.compare">
           {(
@@ -262,7 +295,7 @@ export default function Analytics() {
             ] as const
           ).map(([icon, label, c, upIsGood]) => {
             const same = c.pct == null ? c.deltaMinor === 0 : Math.abs(c.pct) < 0.02;
-            const good = same || (c.deltaMinor > 0) === upIsGood;
+            const good = same || c.deltaMinor > 0 === upIsGood;
             const tone = same ? p.onSurfaceMuted : good ? p.positive : p.warning;
             return (
               <Row key={icon} style={{ justifyContent: 'space-between' }}>
