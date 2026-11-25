@@ -6,16 +6,9 @@ import { Currency, minorPerMajor } from './currency';
  */
 export const MAX_MAJOR_AMOUNT = 999_999_999;
 
-export type AmountError =
-  | 'empty'
-  | 'invalid'
-  | 'tooManyDecimals'
-  | 'tooLarge'
-  | 'notPositive';
+export type AmountError = 'empty' | 'invalid' | 'tooManyDecimals' | 'tooLarge' | 'notPositive';
 
-export type AmountParseResult =
-  | { ok: true; minor: number }
-  | { ok: false; error: AmountError };
+export type AmountParseResult = { ok: true; minor: number } | { ok: false; error: AmountError };
 
 const ARABIC_INDIC = '٠١٢٣٤٥٦٧٨٩';
 const PERSIAN = '۰۱۲۳۴۵۶۷۸۹';
@@ -69,11 +62,7 @@ function resolveSeparators(s: string): string | null {
  * Parses a user-typed decimal amount into integer minor units without ever
  * going through a floating-point value.
  */
-export function parseAmount(
-  raw: string,
-  currency: Currency,
-  opts: { allowZero?: boolean } = {},
-): AmountParseResult {
+export function parseAmount(raw: string, currency: Currency, opts: { allowZero?: boolean } = {}): AmountParseResult {
   const normalized = normalizeDigits(raw.trim());
   if (normalized === '') return { ok: false, error: 'empty' };
   const s = resolveSeparators(normalized);

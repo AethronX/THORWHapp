@@ -185,7 +185,7 @@ export function principles(s: AppState): PrincipleResult[] {
 
 /** How the user actually spends (src/domain/persona.ts, D-045). */
 export function persona(s: AppState): Persona {
-  return readPersona({ history: s.history, categories: [...s.categoriesById.values()], currencyCode: s.currency.code, payday: s.profile?.payday ?? null });
+  return readPersona({ history: s.history, categories: [...s.categoriesById.values()], currencyCode: s.currency.code, countryCode: s.country, payday: s.profile?.payday ?? null });
 }
 
 // -- investing (src/domain/investing.ts) ----------------------------------------

@@ -23,6 +23,8 @@ export const SettingKeys = {
   currencySign: 'currency_sign',
   /** JSON { guidanceId: "YYYY-MM" } — steps the user said "not now" to, per month. */
   dismissedGuidance: 'dismissed_guidance',
+  /** ISO 3166-1 alpha-2 of where the user lives; decides the weekend (D-055). */
+  country: 'country',
 } as const;
 
 export class ValidationError extends Error {

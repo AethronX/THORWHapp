@@ -1,3 +1,4 @@
+import { countryFromCode } from '../core/countries';
 import { CLASSIC_SIGN_BY_DEFAULT, Currency, currencyFromCode, DEFAULT_CURRENCY } from '../core/currency';
 import { addMonths, Day, dayFromDate, monthOf, sameMonth, YearMonth } from '../core/dates';
 import type { DbDriver } from '../data/db';
@@ -21,6 +22,8 @@ export interface AppState {
   readonly hideAmounts: boolean;
   /** Show «ر.ع.»-style abbreviations instead of the new official signs. */
   readonly classicSign: boolean;
+  /** ISO 3166-1 alpha-2, or null while the user has not chosen one. */
+  readonly country: string | null;
   readonly haptics: boolean;
   readonly arabicDigits: boolean;
   /** Guidance the user dismissed: id → month key "YYYY-MM". */
@@ -77,6 +80,7 @@ export class AppController {
       appLock: false,
       hideAmounts: false,
       classicSign: CLASSIC_SIGN_BY_DEFAULT,
+      country: null,
       haptics: true,
       arabicDigits: false,
       dismissedGuidance: {},
@@ -143,6 +147,7 @@ export class AppController {
         appLock: s[SettingKeys.appLock] === '1',
         hideAmounts: s[SettingKeys.hideAmounts] === '1',
         classicSign: s[SettingKeys.currencySign] ? s[SettingKeys.currencySign] === 'classic' : CLASSIC_SIGN_BY_DEFAULT,
+        country: countryFromCode(s[SettingKeys.country])?.code ?? null,
         haptics: s[SettingKeys.haptics] !== '0',
         arabicDigits: s[SettingKeys.digits] === 'arab',
         dismissedGuidance: parseDismissed(s[SettingKeys.dismissedGuidance]),
@@ -303,6 +308,13 @@ export class AppController {
   async setAppLock(appLock: boolean) {
     await this.r.setSetting(SettingKeys.appLock, appLock ? '1' : '0');
     this.set({ appLock });
+  }
+
+  async setCountry(country: string) {
+    const c = countryFromCode(country);
+    if (!c) return;
+    await this.r.setSetting(SettingKeys.country, c.code);
+    this.set({ country: c.code });
   }
 
   async setClassicSign(classicSign: boolean) {

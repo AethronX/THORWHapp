@@ -1,6 +1,7 @@
 /** @jest-environment node */
+import { COUNTRIES, countryForCurrency } from '../src/core/countries';
 import { minorToEditable, parseAmount } from '../src/core/amountParser';
-import { CURRENCIES, currencyFromCode } from '../src/core/currency';
+import { CURRENCIES, currencyFromCode, minorPerMajor } from '../src/core/currency';
 import { addMonths, dayKey, lastDayKey, monthsUntil, parseDayKey } from '../src/core/dates';
 
 const OMR = currencyFromCode('OMR');
@@ -174,4 +175,33 @@ describe('new official currency signs', () => {
     expect(formatMoney(12500, currencyFromCode('OMR'), 'en', false, true)).toBe('OMR\u00A012.500');
     expect(currencySymbol(currencyFromCode('USD'), 'ar')).toBe('$');
   });
+});
+
+// -- the Arab world beyond the Gulf (D-055) -----------------------------------
+
+test('every Arab League currency is supported, with its ISO exponent', () => {
+  const codes = CURRENCIES.map((c) => c.code);
+  for (const c of ['OMR', 'SAR', 'AED', 'QAR', 'KWD', 'BHD', 'YER', 'IQD', 'JOD', 'ILS', 'SYP', 'LBP', 'EGP', 'SDG', 'LYD', 'TND', 'DZD', 'MAD', 'MRU', 'SOS', 'DJF', 'KMF']) {
+    expect(codes).toContain(c);
+  }
+  const exp = (code: string) => CURRENCIES.find((c) => c.code === code)!.exponent;
+  // Three decimals for the dinars and rials that use them, none for the francs.
+  expect([exp('OMR'), exp('KWD'), exp('BHD'), exp('JOD'), exp('IQD'), exp('TND'), exp('LYD')]).toEqual([3, 3, 3, 3, 3, 3, 3]);
+  expect([exp('DJF'), exp('KMF')]).toEqual([0, 0]);
+  expect(exp('MAD')).toBe(2);
+});
+
+test('a currency with no minor unit keeps whole numbers intact', () => {
+  const DJF = CURRENCIES.find((c) => c.code === 'DJF')!;
+  expect(minorPerMajor(DJF)).toBe(1);
+  const r = parseAmount('1500', DJF);
+  expect(r).toEqual({ ok: true, minor: 1500 });
+  expect(parseAmount('1500.5', DJF).ok).toBe(false);
+});
+
+test('every country maps to a currency the app supports', () => {
+  const codes = new Set(CURRENCIES.map((c) => c.code));
+  for (const c of COUNTRIES) expect(codes.has(c.currency)).toBe(true);
+  expect(COUNTRIES.map((c) => c.code)).toContain('MA');
+  expect(countryForCurrency('MAD')?.code).toBe('MA');
 });

@@ -4,7 +4,8 @@ import { Alert, Pressable, View } from 'react-native';
 
 import type { Locale, ThemeMode } from '../../state/appController';
 import { useAppState, useController, useUi } from '../../ui/AppContext';
-import { currencySymbol, hasNewSign } from '../../ui/format';
+import { COUNTRIES, countryForCurrency } from '../../core/countries';
+import { countryName, currencySymbol, hasNewSign } from '../../ui/format';
 import { Toggle, Button, Card, confirm, Icon, IconName, Row, runGuarded, Screen, T } from '../../ui/components';
 import { shareExpensesCsv, shareJsonBackup } from '../../ui/exportData';
 import { haptic } from '../../ui/feedback';
@@ -99,6 +100,50 @@ export default function Settings() {
           />
         </Card>
       )}
+      {/*
+       * Where the user lives, chosen explicitly (D-055). The weekend differs
+       * across the Arab world — Friday-Saturday in Oman and Saudi Arabia,
+       * Saturday-Sunday in the UAE, Morocco, Tunisia, Algeria and Lebanon —
+       * and it used to be guessed from the currency, which says nothing about
+       * where someone actually is.
+       */}
+      <Card title={s.countryTitle}>
+        <View accessibilityRole="radiogroup" style={{ gap: Space.xxs }}>
+          {COUNTRIES.map((x) => {
+            const selected = (st.country ?? countryForCurrency(st.currency.code)?.code) === x.code;
+            return (
+              <Pressable
+                key={x.code}
+                testID={`settings.country.${x.code}`}
+                accessibilityRole="radio"
+                accessibilityState={{ selected }}
+                onPress={() => runGuarded(() => c.setCountry(x.code), s.errGeneric)}
+                style={{
+                  minHeight: MIN_TAP,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: Space.sm,
+                  paddingHorizontal: Space.sm,
+                  borderRadius: Radii.md,
+                  backgroundColor: selected ? p.primaryContainer : 'transparent',
+                }}
+              >
+                <Icon name={selected ? 'radioOn' : 'radioOff'} color={selected ? p.primary : p.onSurfaceMuted} />
+                <View style={{ flex: 1 }}>
+                  <T>{countryName(x.code, st.locale)}</T>
+                </View>
+                <T variant="small" muted>
+                  {x.weekend[0] === 5 ? s.weekendFriSat : s.weekendSatSun}
+                </T>
+              </Pressable>
+            );
+          })}
+        </View>
+        <T variant="small" muted>
+          {s.countryNote}
+        </T>
+      </Card>
+
       <Card title={s.theme}>
         <Segmented<ThemeMode>
           testID="settings.theme"

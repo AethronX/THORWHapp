@@ -15,11 +15,11 @@
       "checkAutomatically": "NEVER",
       "fallbackToCacheTimeout": 0
     },
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/brand/icon.png",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "supportsTablet": false,
+      "supportsTablet": true,
       "bundleIdentifier": "om.tharwati.tharwati",
       "buildNumber": "1",
       "config": {

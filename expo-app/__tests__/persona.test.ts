@@ -25,10 +25,18 @@ test('fixed bills are excluded from "everyday" spending', () => {
   if (r.status === 'ready') expect(r.everydayMinor).toBe((MIN_EXPENSES + 2) * 1000);
 });
 
-test('weekend differs by country: UAE Sat–Sun, Oman and Saudi Fri–Sat', () => {
-  expect(weekendDays('AED')).toEqual([6, 0]);
-  expect(weekendDays('OMR')).toEqual([5, 6]);
-  expect(weekendDays('SAR')).toEqual([5, 6]);
+test('weekend comes from the country, not the currency', () => {
+  // The country decides, whatever the currency is.
+  expect(weekendDays('AE', 'AED')).toEqual([6, 0]);
+  expect(weekendDays('OM', 'OMR')).toEqual([5, 6]);
+  expect(weekendDays('MA', 'MAD')).toEqual([6, 0]);
+  expect(weekendDays('IQ', 'IQD')).toEqual([5, 6]);
+  expect(weekendDays('LB', 'LBP')).toEqual([6, 0]);
+  // A Saudi resident holding dollars still has a Friday-Saturday weekend.
+  expect(weekendDays('SA', 'USD')).toEqual([5, 6]);
+  // No country chosen yet: fall back to where that currency is used.
+  expect(weekendDays(null, 'EGP')).toEqual([5, 6]);
+  expect(weekendDays(null, 'EUR')).toEqual([6, 0]);
 });
 
 test('days since payday crosses the month boundary', () => {

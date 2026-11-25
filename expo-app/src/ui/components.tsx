@@ -5,7 +5,7 @@ import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, Switch, Styl
 import { addMonths } from '../core/dates';
 import { toArabicDigits } from '../core/digits';
 import { useAppState, useController, useUi } from './AppContext';
-import { categoryIcon, CURRENCY_SIGN_FONTS, formatMonth } from './format';
+import { categoryIcon, CURRENCY_SIGN_FONTS, formatMonth, hijriMonthLabel } from './format';
 import { PressScale, useCountUp } from './motion';
 import { IconName, PhIcon } from './icons';
 import type { Category } from '../domain/models';
@@ -101,6 +101,9 @@ export function Icon({ name, size = 22, color, weight }: { name: IconName; size?
 // -- layout -------------------------------------------------------------------
 
 /** Scrollable screen body with the standard gutter. */
+/** Widest a single column of text and amounts should ever get. */
+export const READABLE_WIDTH = 720;
+
 export function Screen({ children, testID }: { children: ReactNode; testID?: string }) {
   const { p } = useUi();
   return (
@@ -438,6 +441,7 @@ export function MonthSwitcher() {
   const c = useController();
   const { s, rtl } = useUi();
   const isCurrent = st.month.year === st.today.year && st.month.month === st.today.month;
+  const hijri = hijriMonthLabel(st.month, st.locale);
   return (
     <Row style={{ justifyContent: 'center' }}>
       <IconButton testID="month.prev" icon="back" label={s.prevMonth} onPress={() => runGuarded(() => c.setMonth(addMonths(st.month, -1)), s.errLoad)} />
@@ -445,6 +449,13 @@ export function MonthSwitcher() {
         <T variant="subtitle" center testID="month.label">
           {formatMonth(st.month, st.locale)}
         </T>
+        {/* The Hijri month underneath, when the device can produce it (D-055):
+            many users live by it, and nothing here depends on it being there. */}
+        {hijri && (
+          <T variant="small" muted center testID="month.hijri">
+            {hijri}
+          </T>
+        )}
       </View>
       <IconButton testID="month.next" icon="forward" label={s.nextMonth} disabled={isCurrent} onPress={() => runGuarded(() => c.setMonth(addMonths(st.month, 1)), s.errLoad)} />
     </Row>

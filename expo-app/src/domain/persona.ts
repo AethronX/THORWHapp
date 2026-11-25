@@ -10,6 +10,7 @@
  * Qatar, Kuwait, Bahrain, Jordan, Egypt Fri–Sat.
  * Tests: __tests__/persona.test.ts.
  */
+import { weekendOf } from '../core/countries';
 import { addDays, Day, dayKey, dayToDate, daysInMonth } from '../core/dates';
 import { FIXED_CATEGORY_KEYS } from './analytics';
 import type { Category, Expense } from './models';
@@ -52,9 +53,13 @@ export const RUSH_DAYS = 7;
 /** A single category only defines the persona when it is close to half of everyday spending. */
 export const FOCUS_MIN_SHARE = 0.45;
 
-/** Weekend days as JS getDay() numbers (0 Sun … 5 Fri, 6 Sat). */
-export function weekendDays(currencyCode: string): readonly number[] {
-  return ['SAR', 'OMR', 'QAR', 'KWD', 'BHD', 'JOD', 'EGP'].includes(currencyCode) ? [5, 6] : [6, 0];
+/**
+ * Weekend days as JS getDay() numbers (0 Sun … 5 Fri, 6 Sat).
+ * Taken from the user's country, not their currency: a currency says nothing
+ * about where someone lives, and several Arab countries share one (D-055).
+ */
+export function weekendDays(countryCode: string | null | undefined, currencyCode: string): readonly number[] {
+  return weekendOf(countryCode, currencyCode);
 }
 
 /** Days since the most recent payday on or before `d` (0 = payday itself). */
@@ -66,7 +71,7 @@ export function daysSincePayday(d: Day, payday: number): number {
   return daysInMonth(pm.y, pm.m) - pd(pm.y, pm.m) + d.day;
 }
 
-export function readPersona(args: { history: readonly Expense[]; categories: readonly Category[]; currencyCode: string; payday: number | null }): Persona {
+export function readPersona(args: { history: readonly Expense[]; categories: readonly Category[]; currencyCode: string; countryCode?: string | null; payday: number | null }): Persona {
   const fixedKeys = new Set(FIXED_CATEGORY_KEYS as readonly string[]);
   const fixed = new Set(args.categories.filter((c) => c.key && fixedKeys.has(c.key)).map((c) => c.id));
   const items = args.history.filter((e) => e.amountMinor > 0 && !fixed.has(e.categoryId));
@@ -90,7 +95,7 @@ export function readPersona(args: { history: readonly Expense[]; categories: rea
       ),
     );
 
-  const wk = weekendDays(args.currencyCode);
+  const wk = weekendDays(args.countryCode, args.currencyCode);
   traits.push(
     trait(
       'weekend',

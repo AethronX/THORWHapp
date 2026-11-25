@@ -8,6 +8,10 @@ const AR = '٠١٢٣٤٥٦٧٨٩';
 
 export function toArabicDigits(text: string): string {
   return text.replace(/\d+(?:[.,]\d+)*%?/g, (run) =>
-    run.replace(/\d/g, (d) => AR[Number(d)]).replace(/\./g, '٫').replace(/,/g, '٬').replace(/%$/, '٪'),
+    run
+      .replace(/\d/g, (d) => AR[Number(d)])
+      .replace(/\./g, '٫')
+      .replace(/,/g, '٬')
+      .replace(/%$/, '٪'),
   );
 }

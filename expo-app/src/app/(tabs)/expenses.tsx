@@ -5,7 +5,7 @@ import { FlatList, Pressable, ScrollView, TextInput, View } from 'react-native';
 import { filterExpenses, isFiltering } from '../../domain/search';
 import { expenseTotal } from '../../state/selectors';
 import { useAppState, useUi } from '../../ui/AppContext';
-import { Button, CategoryBadge, EmptyState, Fab, Icon, MonthSwitcher, Row, T, TotalRow } from '../../ui/components';
+import { Button, CategoryBadge, EmptyState, Fab, Icon, MonthSwitcher, READABLE_WIDTH, Row, T, TotalRow } from '../../ui/components';
 import { categoryIcon, categoryLabel, formatDate, formatMonth } from '../../ui/format';
 import { categoryTone, Fonts, MIN_TAP, Radii, Space } from '../../ui/theme';
 
@@ -45,7 +45,7 @@ export default function Expenses() {
       <FlatList
         testID="expenses"
         style={{ backgroundColor: p.background }}
-        contentContainerStyle={{ padding: Space.gutter, paddingBottom: 120 }}
+        contentContainerStyle={{ padding: Space.gutter, paddingBottom: 120, width: '100%', maxWidth: READABLE_WIDTH, alignSelf: 'center' }}
         keyboardShouldPersistTaps="handled"
         data={shown}
         keyExtractor={(e) => String(e.id)}
