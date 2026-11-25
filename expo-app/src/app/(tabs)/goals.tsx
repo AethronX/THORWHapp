@@ -34,8 +34,8 @@ export default function Goals() {
     <View style={{ flex: 1 }}>
       <Screen testID="goals">
         <Row style={{ flexWrap: 'wrap' }} gap={Space.sm}>
-          <Button kind="tonal" icon="coins" label={s.wealthOpen} onPress={() => router.push('/wealth')} testID="goals.wealth" />
-          <Button kind="tonal" icon="plan" label={s.openPlan} onPress={() => router.push('/plan')} testID="goals.plan" />
+          <Button size="sm" kind="tonal" icon="coins" label={s.wealthOpen} onPress={() => router.push('/wealth')} testID="goals.wealth" />
+          <Button size="sm" kind="tonal" icon="plan" label={s.openPlan} onPress={() => router.push('/plan')} testID="goals.plan" />
         </Row>
         {st.goals.length === 0 ? (
           <EmptyState icon="goals" title={s.goalsEmpty} body={s.goalsEmptyBody} />
@@ -122,10 +122,11 @@ function GoalCard({ goal, nearest = false }: { goal: SavingsGoal; nearest?: bool
         />
       ) : (
         <Row style={{ flexWrap: 'wrap' }} gap={Space.sm}>
-          <Button kind="tonal" icon="add" label={s.addMoney} onPress={() => setMode('add')} testID={`goal.add.${goal.id}`} />
-          {goal.savedMinor > 0 && <Button kind="outlined" icon="remove" label={s.withdraw} onPress={() => setMode('withdraw')} testID={`goal.withdraw.${goal.id}`} />}
+          <Button size="sm" kind="tonal" icon="add" label={s.addMoney} onPress={() => setMode('add')} testID={`goal.add.${goal.id}`} />
+          {goal.savedMinor > 0 && <Button size="sm" kind="outlined" icon="remove" label={s.withdraw} onPress={() => setMode('withdraw')} testID={`goal.withdraw.${goal.id}`} />}
           {!reached && (
             <Button
+              size="sm"
               kind="text"
               label={goal.paused ? s.goalResume : s.goalPause}
               onPress={() => runGuarded(() => c.setGoalPaused(goal.id, !goal.paused), s.errGeneric)}

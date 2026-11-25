@@ -242,7 +242,7 @@ export default function Dashboard() {
           )}
         </Card>
 
-        <Card title={s.budgetsTitle} action={<Button kind="text" label={s.setBudgets} onPress={() => router.push('/budgets')} testID="dashboard.budgets" />}>
+        <Card title={s.budgetsTitle} action={<Button size="sm" kind="text" label={s.setBudgets} onPress={() => router.push('/budgets')} testID="dashboard.budgets" />}>
           {budgeted.length === 0 ? (
             <EmptyState compact icon="analytics" title={s.noBudgets} />
           ) : (
@@ -258,13 +258,13 @@ export default function Dashboard() {
           )}
         </Card>
 
-        <Card title={s.goalsTitle} action={<Button kind="text" label={s.seeAll} onPress={() => router.push('/goals')} />}>
+        <Card title={s.goalsTitle} action={<Button size="sm" kind="text" label={s.seeAll} onPress={() => router.push('/goals')} />}>
           {st.goals.length === 0 ? (
             <EmptyState
               compact
               icon="target"
               title={s.noGoalsShort}
-              action={<Button kind="tonal" icon="add" label={s.addGoal} onPress={() => router.push('/goal/new')} testID="dashboard.addGoal" />}
+              action={<Button size="sm" kind="tonal" icon="add" label={s.addGoal} onPress={() => router.push('/goal/new')} testID="dashboard.addGoal" />}
             />
           ) : (
             st.goals

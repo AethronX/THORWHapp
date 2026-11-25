@@ -108,7 +108,13 @@ export function NextStepCard({ items }: { items: Guidance[] }) {
       </Row>
       <Step g={top} text={guidanceText(top, s, money, catName, st.locale)} onAct={() => act(top)} onDismiss={() => dismiss(top)} prominent />
       {rest.length > 0 && (
-        <Pressable testID="nextStep.more" accessibilityRole="button" accessibilityState={{ expanded: showAll }} onPress={() => setShowAll(!showAll)} hitSlop={{ top: 14, bottom: 14, left: 8, right: 8 }}>
+        <Pressable
+          testID="nextStep.more"
+          accessibilityRole="button"
+          accessibilityState={{ expanded: showAll }}
+          onPress={() => setShowAll(!showAll)}
+          hitSlop={{ top: 14, bottom: 14, left: 8, right: 8 }}
+        >
           <T variant="label" color={p.primary}>
             {showAll ? s.showLess : s.moreSteps(rest.length)}
           </T>
@@ -152,7 +158,7 @@ function Step({ g, text, onAct, onDismiss, prominent = false }: { g: Guidance; t
       )}
       <Row style={{ flexWrap: 'wrap' }}>
         <Button kind={prominent ? 'filled' : 'tonal'} label={text.action} onPress={onAct} testID={`guidance.${g.id}.act`} />
-        <Button kind="text" label={s.notNow} onPress={onDismiss} testID={`guidance.${g.id}.dismiss`} />
+        <Button size="sm" kind="text" label={s.notNow} onPress={onDismiss} testID={`guidance.${g.id}.dismiss`} />
       </Row>
     </View>
   );

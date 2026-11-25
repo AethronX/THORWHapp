@@ -165,6 +165,12 @@ export function Card({ title, action, children, style, testID }: { title?: strin
 
 type ButtonKind = 'filled' | 'tonal' | 'outlined' | 'text' | 'danger';
 
+/**
+ * Two sizes (D-056). `md` is the default for a real decision; `sm` is for the
+ * secondary actions that sit inside a card, where a full-height button shouts
+ * louder than the content around it. A small button keeps a 48-point touch
+ * target through hitSlop, so it only looks smaller — it is not harder to hit.
+ */
 export function Button({
   label,
   onPress,
@@ -173,6 +179,7 @@ export function Button({
   disabled,
   testID,
   style,
+  size = 'md',
 }: {
   label: string;
   onPress: () => void;
@@ -181,12 +188,17 @@ export function Button({
   disabled?: boolean;
   testID?: string;
   style?: StyleProp<ViewStyle>;
+  size?: 'md' | 'sm';
 }) {
   const { p } = useUi();
   const bg = { filled: p.primary, tonal: p.primaryContainer, outlined: 'transparent', text: 'transparent', danger: 'transparent' }[kind];
   const fg = { filled: p.onPrimary, tonal: p.onPrimaryContainer, outlined: p.primary, text: p.primary, danger: p.negative }[kind];
   const border = kind === 'outlined' ? p.primary : kind === 'danger' ? p.negative : 'transparent';
   const labelStyle = { fontFamily: Fonts.medium };
+  const small = size === 'sm';
+  // A button with no background needs no barrel of padding around its label.
+  const flat = kind === 'text' || kind === 'danger';
+  const height = small ? 40 : MIN_TAP;
   return (
     <Pressable
       testID={testID}
@@ -195,10 +207,11 @@ export function Button({
       accessibilityState={{ disabled: !!disabled }}
       disabled={disabled}
       onPress={onPress}
+      hitSlop={small ? { top: 4, bottom: 4, left: 4, right: 4 } : undefined}
       style={({ pressed }) => [
         {
-          minHeight: MIN_TAP,
-          paddingHorizontal: Space.xl,
+          minHeight: height,
+          paddingHorizontal: flat ? Space.md : small ? Space.lg : Space.xl - 2,
           borderRadius: Radii.md,
           backgroundColor: kind === 'filled' && pressed ? p.primaryPressed : bg,
           borderWidth: kind === 'outlined' || kind === 'danger' ? 1 : 0,
@@ -206,14 +219,14 @@ export function Button({
           alignItems: 'center',
           justifyContent: 'center',
           flexDirection: 'row',
-          gap: Space.sm,
+          gap: small ? Space.xs : Space.sm,
           opacity: disabled ? 0.45 : pressed && kind !== 'filled' ? 0.7 : 1,
         },
         style,
       ]}
     >
-      {icon && <Icon name={icon} size={20} color={fg} />}
-      <T variant="subtitle" color={fg} center style={labelStyle}>
+      {icon && <Icon name={icon} size={small ? 18 : 20} color={fg} />}
+      <T variant={small ? 'body' : 'subtitle'} color={fg} center style={labelStyle}>
         {label}
       </T>
     </Pressable>
@@ -252,30 +265,33 @@ function liquidGlass(): boolean {
  * controls floating above content, never for the content itself. Elsewhere a
  * solid emerald button.
  */
+/**
+ * The floating add button (D-056).
+ *
+ * It used to be a full-width pill carrying its label, which covered whatever
+ * row or button happened to be under it — including, on the home screen, the
+ * action of "your next step". A round icon button says the same thing in a
+ * fifth of the area; the label stays as the screen-reader name and in the
+ * long-press tooltip, and the touch target is still 56 points.
+ */
+const FAB_SIZE = 56;
+
 export function Fab({ label, onPress, testID }: { label: string; onPress: () => void; testID?: string }) {
   const { p } = useUi();
-  if (liquidGlass()) {
-    return (
-      <View pointerEvents="box-none" style={{ position: 'absolute', bottom: Space.lg, end: Space.lg }}>
-        <PressScale testID={testID} accessibilityRole="button" accessibilityLabel={label} onPress={onPress}>
-          <GlassView
-            glassEffectStyle="regular"
-            tintColor={p.primary}
-            isInteractive
-            style={{ minHeight: MIN_TAP + 4, paddingHorizontal: Space.xl, borderRadius: Radii.pill, flexDirection: 'row', alignItems: 'center', gap: Space.sm }}
-          >
-            <Icon name="add" size={20} color={p.onPrimary} />
-            <T variant="subtitle" color={p.onPrimary} style={{ fontFamily: Fonts.medium }}>
-              {label}
-            </T>
-          </GlassView>
-        </PressScale>
-      </View>
-    );
-  }
+  const round = { width: FAB_SIZE, height: FAB_SIZE, borderRadius: FAB_SIZE / 2, alignItems: 'center', justifyContent: 'center' } as const;
   return (
     <View pointerEvents="box-none" style={{ position: 'absolute', bottom: Space.lg, end: Space.lg }}>
-      <Button label={label} icon="add" onPress={onPress} testID={testID} style={{ borderRadius: Radii.lg, ...Elevation.overlay }} />
+      <PressScale testID={testID} accessibilityRole="button" accessibilityLabel={label} onPress={onPress}>
+        {liquidGlass() ? (
+          <GlassView glassEffectStyle="regular" tintColor={p.primary} isInteractive style={round}>
+            <Icon name="add" size={26} color={p.onPrimary} />
+          </GlassView>
+        ) : (
+          <View style={{ ...round, backgroundColor: p.primary, ...Elevation.overlay }}>
+            <Icon name="add" size={26} color={p.onPrimary} />
+          </View>
+        )}
+      </PressScale>
     </View>
   );
 }
