@@ -45,38 +45,139 @@ const contains = (haystack: string, needle: string) => ` ${haystack} `.includes(
 const RAW_KEYWORDS: Record<CategoryKey, string[]> = {
   housing: ['ايجار', 'إيجار', 'الإيجار', 'سكن', 'شقة', 'rent', 'apartment', 'landlord', 'صيانة المنزل'],
   food: [
-    'لولو', 'كارفور', 'نستو', 'الميرة', 'سبار', 'هايبرماركت', 'سوبرماركت', 'بقالة', 'مطعم', 'غداء', 'عشاء', 'فطور', 'قهوة', 'كافيه',
-    'ستاربكس', 'طلبات', 'ماكدونالدز', 'بيتزا', 'مخبز', 'خضار', 'فواكه', 'سمك', 'لحم', 'دجاج', 'شاورما', 'كرك',
-    'lulu', 'carrefour', 'nesto', 'spar', 'grocery', 'groceries', 'restaurant', 'lunch', 'dinner', 'breakfast', 'coffee', 'cafe',
-    'starbucks', 'talabat', 'mcdonalds', 'kfc', 'pizza', 'bakery', 'food',
+    'لولو',
+    'كارفور',
+    'نستو',
+    'الميرة',
+    'سبار',
+    'هايبرماركت',
+    'سوبرماركت',
+    'بقالة',
+    'مطعم',
+    'غداء',
+    'عشاء',
+    'فطور',
+    'قهوة',
+    'كافيه',
+    'ستاربكس',
+    'طلبات',
+    'ماكدونالدز',
+    'بيتزا',
+    'مخبز',
+    'خضار',
+    'فواكه',
+    'سمك',
+    'لحم',
+    'دجاج',
+    'شاورما',
+    'كرك',
+    'lulu',
+    'carrefour',
+    'nesto',
+    'spar',
+    'grocery',
+    'groceries',
+    'restaurant',
+    'lunch',
+    'dinner',
+    'breakfast',
+    'coffee',
+    'cafe',
+    'starbucks',
+    'talabat',
+    'mcdonalds',
+    'kfc',
+    'pizza',
+    'bakery',
+    'food',
   ],
   transport: [
-    'بنزين', 'وقود', 'ديزل', 'شل', 'المها', 'عمان اويل', 'تاكسي', 'اوبر', 'كريم', 'مواقف', 'باص', 'حافلة', 'غسيل سيارة', 'صيانة سيارة', 'اطارات',
-    'petrol', 'fuel', 'diesel', 'shell', 'taxi', 'uber', 'careem', 'otaxi', 'parking', 'bus', 'car wash', 'tyres', 'tires',
+    'بنزين',
+    'وقود',
+    'ديزل',
+    'شل',
+    'المها',
+    'عمان اويل',
+    'تاكسي',
+    'اوبر',
+    'كريم',
+    'مواقف',
+    'باص',
+    'حافلة',
+    'غسيل سيارة',
+    'صيانة سيارة',
+    'اطارات',
+    'petrol',
+    'fuel',
+    'diesel',
+    'shell',
+    'taxi',
+    'uber',
+    'careem',
+    'otaxi',
+    'parking',
+    'bus',
+    'car wash',
+    'tyres',
+    'tires',
   ],
   utilities: ['كهرباء', 'ماء', 'مياه', 'نماء', 'غاز', 'فاتورة الكهرباء', 'electricity', 'water', 'nama', 'gas bill', 'utility'],
-  telecom: [
-    'عمانتل', 'اوريدو', 'فودافون', 'انترنت', 'إنترنت', 'باقة', 'رصيد', 'هاتف', 'جوال', 'فايبر',
-    'omantel', 'ooredoo', 'vodafone', 'internet', 'mobile', 'phone', 'recharge', 'fibre', 'fiber',
-  ],
+  telecom: ['عمانتل', 'اوريدو', 'فودافون', 'انترنت', 'إنترنت', 'باقة', 'رصيد', 'هاتف', 'جوال', 'فايبر', 'omantel', 'ooredoo', 'vodafone', 'internet', 'mobile', 'phone', 'recharge', 'fibre', 'fiber'],
   health: ['صيدلية', 'مستشفى', 'عيادة', 'دواء', 'طبيب', 'اسنان', 'تحليل', 'pharmacy', 'hospital', 'clinic', 'medicine', 'doctor', 'dentist'],
   education: ['مدرسة', 'رسوم دراسية', 'جامعة', 'كلية', 'كتب', 'دورة', 'قرطاسية', 'school', 'tuition', 'university', 'college', 'books', 'course'],
   family: ['هدية', 'هدايا', 'عيدية', 'اطفال', 'عائلة', 'الوالدة', 'الوالد', 'زواج', 'gift', 'gifts', 'kids', 'family', 'wedding'],
   shopping: [
-    'ملابس', 'حذاء', 'احذية', 'عطر', 'عطور', 'امازون', 'نون', 'مول', 'سيتي سنتر', 'الكترونيات', 'اثاث', 'ايكيا',
-    'clothes', 'shoes', 'perfume', 'amazon', 'noon', 'shein', 'mall', 'electronics', 'furniture', 'ikea',
+    'ملابس',
+    'حذاء',
+    'احذية',
+    'عطر',
+    'عطور',
+    'امازون',
+    'نون',
+    'مول',
+    'سيتي سنتر',
+    'الكترونيات',
+    'اثاث',
+    'ايكيا',
+    'clothes',
+    'shoes',
+    'perfume',
+    'amazon',
+    'noon',
+    'shein',
+    'mall',
+    'electronics',
+    'furniture',
+    'ikea',
   ],
   entertainment: [
-    'سينما', 'نتفليكس', 'شاهد', 'سبوتيفاي', 'العاب', 'لعبة', 'رحلة', 'فندق', 'سفر', 'طيران',
-    'cinema', 'vox', 'netflix', 'shahid', 'spotify', 'games', 'playstation', 'trip', 'hotel', 'travel', 'flight',
+    'سينما',
+    'نتفليكس',
+    'شاهد',
+    'سبوتيفاي',
+    'العاب',
+    'لعبة',
+    'رحلة',
+    'فندق',
+    'سفر',
+    'طيران',
+    'cinema',
+    'vox',
+    'netflix',
+    'shahid',
+    'spotify',
+    'games',
+    'playstation',
+    'trip',
+    'hotel',
+    'travel',
+    'flight',
   ],
   debt: ['قرض', 'قسط', 'اقساط', 'بطاقة ائتمان', 'تمارا', 'تابي', 'loan', 'installment', 'instalment', 'credit card', 'tamara', 'tabby'],
   other: [],
 };
 
-const KEYWORDS: [CategoryKey, string][] = (Object.keys(RAW_KEYWORDS) as CategoryKey[]).flatMap((k) =>
-  RAW_KEYWORDS[k].map((w) => [k, normalizeText(w)] as [CategoryKey, string]),
-);
+const KEYWORDS: [CategoryKey, string][] = (Object.keys(RAW_KEYWORDS) as CategoryKey[]).flatMap((k) => RAW_KEYWORDS[k].map((w) => [k, normalizeText(w)] as [CategoryKey, string]));
 
 export interface CategorySuggestion {
   categoryId: number;
@@ -231,7 +332,9 @@ export function weekdayPattern(expenses: readonly Expense[], excludeCategoryIds:
   const items = expenses.filter((e) => !excludeCategoryIds.has(e.categoryId));
   if (items.length < 10) return null;
   const days = items.map((e) => dayToDate(e.date).getTime());
-  if (Math.max(...days) - Math.min(...days) < 20 * 86400000) return null;
+  // Rounded to whole days: an unrounded span is an hour short after a
+  // daylight-saving change and the whole pattern disappears (D-054).
+  if (Math.round((Math.max(...days) - Math.min(...days)) / 86400000) < 20) return null;
   const totals = new Array<number>(7).fill(0);
   for (const e of items) totals[weekdayOf(e.date)] += e.amountMinor;
   const sum = totals.reduce((a, b) => a + b, 0);
@@ -259,9 +362,7 @@ export interface UnusualExpense {
  * are excluded by the caller. Null if none.
  */
 export function unusualExpense(history: readonly Expense[], month: YearMonth, excludeCategoryIds: ReadonlySet<number> = new Set()): UnusualExpense | null {
-  const current = history
-    .filter((e) => sameMonth(monthOf(e.date), month) && !excludeCategoryIds.has(e.categoryId))
-    .sort((a, b) => compareDays(b.date, a.date) || b.id - a.id);
+  const current = history.filter((e) => sameMonth(monthOf(e.date), month) && !excludeCategoryIds.has(e.categoryId)).sort((a, b) => compareDays(b.date, a.date) || b.id - a.id);
   for (const e of current) {
     const earlier = history.filter((x) => x.categoryId === e.categoryId && x.id !== e.id && compareDays(x.date, e.date) <= 0);
     if (earlier.length < 4) continue;

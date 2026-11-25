@@ -49,9 +49,7 @@ test('negative cash flow is critical and first', () => {
 });
 
 test('no income with expenses is info only', () => {
-  expect(kinds(buildInsights({ incomeMinor: 0, expensesMinor: 10, spends: [], goals: [], today }))).toEqual([
-    'noIncome',
-  ]);
+  expect(kinds(buildInsights({ incomeMinor: 0, expensesMinor: 10, spends: [], goals: [], today }))).toEqual(['noIncome']);
 });
 
 test('over budget amount; exactly at limit is near', () => {
@@ -69,7 +67,7 @@ test('over budget amount; exactly at limit is near', () => {
   expect(r.map((i) => i.amountMinor)).toEqual([50000, 0]);
 });
 
-test('goal at risk only when it exceeds this month\'s leftover', () => {
+test("goal at risk only when it exceeds this month's leftover", () => {
   const g = goal({});
   const atRisk = buildInsights({ incomeMinor: 800000, expensesMinor: 400000, spends: [], goals: [g], today });
   expect(kinds(atRisk)).toEqual(['goalAtRisk']);

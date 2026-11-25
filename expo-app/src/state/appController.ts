@@ -150,6 +150,15 @@ export class AppController {
       this.set({ ...patch, ...(await this.load(this.state.month)), status: 'ready' });
     } catch {
       // Never log the error: it may contain user amounts.
+      // Close the handle and drop the repository: a failure after the database
+      // opened used to leave it open and `repo` pointing at it, so a retry from
+      // the error screen opened a second handle and leaked the first (D-054).
+      try {
+        await this.repo?.close();
+      } catch {
+        // The close itself can fail on a dead handle; the error state is what matters.
+      }
+      this.repo = null;
       this.set({ status: 'error' });
     }
   }
@@ -191,20 +200,36 @@ export class AppController {
 
   /** Increments on every load; an older load that finishes late is dropped (month switch during a save). */
   private loadSeq = 0;
+  /**
+   * The month a switch is loading but has not applied yet. `state.month` only
+   * changes when a load lands, so a save started in between used to re-load —
+   * and re-apply — the month the user had just left, silently undoing the
+   * switch (D-054). Anything that reloads targets this month while it is set.
+   */
+  private pendingMonth: YearMonth | null = null;
 
   private async loadLatest(month: YearMonth, extra?: Partial<AppState>) {
     const seq = ++this.loadSeq;
-    const next = await this.load(month);
+    let next: Partial<AppState>;
+    try {
+      next = await this.load(month);
+    } catch (e) {
+      // A load whose repository was closed under it (dispose, delete all data)
+      // is dropped, not thrown: nobody is waiting for its result any more.
+      if (seq !== this.loadSeq || this.repo === null) return;
+      throw e;
+    }
     if (seq !== this.loadSeq) {
       if (extra) this.set(extra);
       return;
     }
+    this.pendingMonth = null;
     this.set({ ...extra, ...next });
   }
 
   private async mutate<T>(op: (r: FinanceRepository) => Promise<T>, extra?: Partial<AppState>): Promise<T> {
     const result = await op(this.r);
-    await this.loadLatest(this.state.month, extra);
+    await this.loadLatest(this.pendingMonth ?? this.state.month, extra);
     return result;
   }
 
@@ -222,12 +247,16 @@ export class AppController {
   async onResumed() {
     const now = monthOf(dayFromDate(this.clock()));
     const prev = this.lastSeenCurrentMonth;
-    this.lastSeenCurrentMonth = now;
-    if (this.state.status === 'ready' && !sameMonth(now, prev) && sameMonth(this.state.month, prev)) {
-      await this.setMonth(now);
-    } else {
+    // Only mark the rollover as seen once the app is in a state that can act on
+    // it; otherwise a resume during loading swallowed it and the app sat on
+    // last month until the user switched by hand (D-054).
+    if (this.state.status !== 'ready') {
       this.set({});
+      return;
     }
+    this.lastSeenCurrentMonth = now;
+    if (!sameMonth(now, prev) && sameMonth(this.state.month, prev)) await this.setMonth(now);
+    else this.set({});
   }
 
   // -- settings & onboarding -------------------------------------------------
@@ -308,6 +337,7 @@ export class AppController {
   }
 
   async setMonth(month: YearMonth) {
+    this.pendingMonth = month;
     await this.loadLatest(month);
   }
 
@@ -317,42 +347,31 @@ export class AppController {
   updateExpense = (e: Expense) => this.mutate((r) => r.updateExpense(e));
   deleteExpense = (id: number) => this.mutate((r) => r.deleteExpense(id));
 
-  addIncome = (amountMinor: number, label = '') =>
-    this.mutate((r) => r.addIncome(this.state.month, amountMinor, label));
+  addIncome = (amountMinor: number, label = '') => this.mutate((r) => r.addIncome(this.state.month, amountMinor, label));
   updateIncome = (e: IncomeEntry) => this.mutate((r) => r.updateIncome(e));
   deleteIncome = (id: number) => this.mutate((r) => r.deleteIncome(id));
-  copyIncomeFromPreviousMonth = () =>
-    this.mutate((r) => r.copyIncome(addMonths(this.state.month, -1), this.state.month));
+  copyIncomeFromPreviousMonth = () => this.mutate((r) => r.copyIncome(addMonths(this.state.month, -1), this.state.month));
 
-  setBudget = (categoryId: number, limitMinor: number | null) =>
-    this.mutate((r) => r.setBudget(categoryId, limitMinor));
+  setBudget = (categoryId: number, limitMinor: number | null) => this.mutate((r) => r.setBudget(categoryId, limitMinor));
 
   addCategory = (name: string) => this.mutate((r) => r.addCategory(name));
   renameCategory = (id: number, name: string) => this.mutate((r) => r.renameCategory(id, name));
   removeCategory = (id: number) => this.mutate((r) => r.removeCategory(id));
 
-  addGoal = (args: { name: string; targetMinor: number; targetDate: Day; initialSavedMinor?: number }) =>
-    this.mutate((r) => r.addGoal({ ...args, today: dayFromDate(this.clock()) }));
-  updateGoal = (args: { id: number; name: string; targetMinor: number; targetDate: Day }) =>
-    this.mutate((r) => r.updateGoal(args));
+  addGoal = (args: { name: string; targetMinor: number; targetDate: Day; initialSavedMinor?: number }) => this.mutate((r) => r.addGoal({ ...args, today: dayFromDate(this.clock()) }));
+  updateGoal = (args: { id: number; name: string; targetMinor: number; targetDate: Day }) => this.mutate((r) => r.updateGoal(args));
   deleteGoal = (id: number) => this.mutate((r) => r.deleteGoal(id));
-  addContribution = (goalId: number, amountMinor: number) =>
-    this.mutate((r) => r.addContribution(goalId, amountMinor, dayFromDate(this.clock())));
+  addContribution = (goalId: number, amountMinor: number) => this.mutate((r) => r.addContribution(goalId, amountMinor, dayFromDate(this.clock())));
 
   setGoalPaused = (id: number, paused: boolean) => this.mutate((r) => r.setGoalPaused(id, paused));
 
-  addDebt = (d: { name: string; remainingMinor: number; annualRatePercent: number; monthlyPaymentMinor: number; dueDay: number | null }) =>
-    this.mutate((r) => r.addDebt(d));
-  updateDebt = (d: { id: number; name: string; remainingMinor: number; annualRatePercent: number; monthlyPaymentMinor: number; dueDay: number | null }) =>
-    this.mutate((r) => r.updateDebt(d));
+  addDebt = (d: { name: string; remainingMinor: number; annualRatePercent: number; monthlyPaymentMinor: number; dueDay: number | null }) => this.mutate((r) => r.addDebt(d));
+  updateDebt = (d: { id: number; name: string; remainingMinor: number; annualRatePercent: number; monthlyPaymentMinor: number; dueDay: number | null }) => this.mutate((r) => r.updateDebt(d));
   deleteDebt = (id: number) => this.mutate((r) => r.deleteDebt(id));
-  addDebtPayment = (args: { debtId: number; amountMinor: number; alsoExpense: boolean; note: string }) =>
-    this.mutate((r) => r.addDebtPayment({ ...args, date: dayFromDate(this.clock()) }));
+  addDebtPayment = (args: { debtId: number; amountMinor: number; alsoExpense: boolean; note: string }) => this.mutate((r) => r.addDebtPayment({ ...args, date: dayFromDate(this.clock()) }));
 
-  addAsset = (a: { name: string; kind: AssetKind; valueMinor: number; isEstimate: boolean }) =>
-    this.mutate((r) => r.addAsset({ ...a, today: dayFromDate(this.clock()) }));
-  updateAsset = (a: { id: number; name: string; kind: AssetKind; valueMinor: number; isEstimate: boolean }) =>
-    this.mutate((r) => r.updateAsset({ ...a, today: dayFromDate(this.clock()) }));
+  addAsset = (a: { name: string; kind: AssetKind; valueMinor: number; isEstimate: boolean }) => this.mutate((r) => r.addAsset({ ...a, today: dayFromDate(this.clock()) }));
+  updateAsset = (a: { id: number; name: string; kind: AssetKind; valueMinor: number; isEstimate: boolean }) => this.mutate((r) => r.updateAsset({ ...a, today: dayFromDate(this.clock()) }));
   deleteAsset = (id: number) => this.mutate((r) => r.deleteAsset(id));
 
   /** Raw tables for a manual export (read-only). */

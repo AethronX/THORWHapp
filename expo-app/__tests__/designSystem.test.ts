@@ -103,7 +103,9 @@ for (const [name, p] of [
 
 test('primitive scales get darker step by step (perceptual lightness)', () => {
   for (const [name, scale] of Object.entries(Scale)) {
-    const steps = Object.keys(scale).map(Number).sort((a, b) => a - b);
+    const steps = Object.keys(scale)
+      .map(Number)
+      .sort((a, b) => a - b);
     const L = steps.map((s) => oklab((scale as Record<number, string>)[s])[0]);
     for (let i = 1; i < L.length; i++) expect({ name, step: steps[i], darker: L[i] < L[i - 1] }).toEqual({ name, step: steps[i], darker: true });
   }
@@ -127,7 +129,14 @@ test('light theme is the default for new and existing users', async () => {
 test('spending-calendar day numbers keep 4.5:1 on every heat level (light and dark)', () => {
   const rgb = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
   const blend = (fg: string, bg: string, a: number) =>
-    '#' + rgb(fg).map((c, i) => Math.round(c * a + rgb(bg)[i] * (1 - a)).toString(16).padStart(2, '0')).join('');
+    '#' +
+    rgb(fg)
+      .map((c, i) =>
+        Math.round(c * a + rgb(bg)[i] * (1 - a))
+          .toString(16)
+          .padStart(2, '0'),
+      )
+      .join('');
   for (const p of [light, dark]) {
     for (const lv of [1, 2, 3, 4]) {
       const cell = blend(p.primary, p.surface, heatOpacity(p, lv));

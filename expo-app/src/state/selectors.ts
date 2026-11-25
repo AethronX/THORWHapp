@@ -1,4 +1,4 @@
-import { Day, dayToDate, monthOf, sameMonth } from '../core/dates';
+import { addDays, Day, dayKey, dayToDate, monthOf, sameMonth } from '../core/dates';
 import * as fe from '../domain/financeEngine';
 import {
   averageSpending,
@@ -210,29 +210,29 @@ export const wealth = (s: AppState): NetWorth => netWorth(s.assets, s.debts);
 
 /** Spent today and over the last 7 days (today included), from the loaded history. */
 export function recentSpending(s: AppState): { todayMinor: number; weekMinor: number } {
-  const t = dayToDate(s.today).getTime();
+  // Calendar days, not 24-hour blocks: millisecond stepping moves a day across
+  // a daylight-saving transition (D-054).
+  const week = new Map(Array.from({ length: 7 }, (_, i) => [dayKey(addDays(s.today, -i)), i]));
+  const todayKey = dayKey(s.today);
   let todayMinor = 0;
   let weekMinor = 0;
   for (const e of s.history) {
-    const diff = Math.round((t - dayToDate(e.date).getTime()) / 86400000);
-    if (diff === 0) todayMinor += e.amountMinor;
-    if (diff >= 0 && diff < 7) weekMinor += e.amountMinor;
+    const k = dayKey(e.date);
+    if (k === todayKey) todayMinor += e.amountMinor;
+    if (week.has(k)) weekMinor += e.amountMinor;
   }
   return { todayMinor, weekMinor };
 }
 
 /** Spending per day for the last 7 days, oldest first (today last). */
 export function lastSevenDays(s: AppState): { day: Day; totalMinor: number; count: number }[] {
-  const t = dayToDate(s.today).getTime();
-  const out = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(t - (6 - i) * 86400000);
-    return { day: { year: d.getFullYear(), month: d.getMonth() + 1, day: d.getDate() } as Day, totalMinor: 0, count: 0 };
-  });
+  const out = Array.from({ length: 7 }, (_, i) => ({ day: addDays(s.today, i - 6), totalMinor: 0, count: 0 }));
+  const index = new Map(out.map((x, i) => [dayKey(x.day), i]));
   for (const e of s.history) {
-    const diff = Math.round((t - dayToDate(e.date).getTime()) / 86400000);
-    if (diff >= 0 && diff < 7) {
-      out[6 - diff].totalMinor += e.amountMinor;
-      out[6 - diff].count += 1;
+    const i = index.get(dayKey(e.date));
+    if (i != null) {
+      out[i].totalMinor += e.amountMinor;
+      out[i].count += 1;
     }
   }
   return out;

@@ -33,6 +33,19 @@ export function dayToDate(d: Day): Date {
   return new Date(d.year, d.month - 1, d.day);
 }
 
+/**
+ * `d` shifted by `n` calendar days (negative shifts back).
+ *
+ * Day arithmetic, never milliseconds: subtracting 24-hour blocks from a local
+ * midnight loses or repeats a day across a daylight-saving transition, which
+ * silently dropped a day from the week chart and from the recording streak
+ * (D-054). Noon is used as the anchor so no zone's midnight gap can bite.
+ */
+export function addDays(d: Day, n: number): Day {
+  const t = new Date(d.year, d.month - 1, d.day + n, 12);
+  return { year: t.getFullYear(), month: t.getMonth() + 1, day: t.getDate() };
+}
+
 export function dayKey(d: Day): string {
   return `${pad(d.year, 4)}-${pad(d.month)}-${pad(d.day)}`;
 }
@@ -63,7 +76,7 @@ export function parseMonthKey(s: string): YearMonth {
 
 export function addMonths(m: YearMonth, n: number): YearMonth {
   const total = m.year * 12 + (m.month - 1) + n;
-  return { year: Math.floor(total / 12), month: (total % 12 + 12) % 12 + 1 };
+  return { year: Math.floor(total / 12), month: (((total % 12) + 12) % 12) + 1 };
 }
 
 export function sameMonth(a: YearMonth, b: YearMonth): boolean {

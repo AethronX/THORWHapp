@@ -135,3 +135,66 @@ test('month-end forecast counts rent once and extrapolates only everyday spendin
   // 350.000 + 31.000 / 10 days × 31 = 350.000 + 96.100 (naive linear would say 1,181.100)
   expect(monthEndForecast(s())).toBe(446100);
 });
+
+// -- races and lifecycle (D-054) ------------------------------------------------
+
+test('a save started during a month switch does not snap the view back', async () => {
+  await app.completeOnboarding({ currency: OMR, monthlyIncomeMinor: 800000, incomeLabel: 'راتب' });
+  const switched = app.setMonth({ year: 2026, month: 11 });
+  // The user taps save before the new month has rendered.
+  const saved = app.addIncome(100000, 'مكافأة');
+  await Promise.all([switched, saved]);
+  expect(s().month).toEqual({ year: 2026, month: 11 });
+  // The income was recorded in the month that was showing when they tapped.
+  expect(incomeTotal(s())).toBe(0);
+  await app.setMonth({ year: 2026, month: 10 });
+  expect(incomeTotal(s())).toBe(900000);
+});
+
+test('a month rollover seen while the app is not ready is still followed once it is', async () => {
+  const d = new SqlJsDriver();
+  let clock = new Date(2026, 9, 31, 23, 59);
+  const a = new AppController(d, () => clock);
+  // Resumed before init finished: the rollover must not be consumed.
+  clock = new Date(2026, 10, 1, 0, 1);
+  await a.onResumed();
+  await a.init();
+  await a.onResumed();
+  expect(a.getState().month).toEqual({ year: 2026, month: 11 });
+  await a.dispose();
+});
+
+test('deleting all data while a load is in flight does not throw at the caller', async () => {
+  await app.completeOnboarding({ currency: OMR, monthlyIncomeMinor: 800000, incomeLabel: 'راتب' });
+  const switching = app.setMonth({ year: 2026, month: 11 });
+  const deleting = app.deleteAllData();
+  await expect(Promise.all([switching, deleting])).resolves.toBeDefined();
+  expect(s().status).toBe('ready');
+});
+
+test('a failure after the database opened leaves no repository behind', async () => {
+  const d = new SqlJsDriver();
+  const a = new AppController(d, () => now);
+  const open = d.open.bind(d);
+  d.open = async () => {
+    const db = await open();
+    // Fail the first read after migration, the way a disk error would.
+    const all = db.all.bind(db);
+    let failed = false;
+    db.all = async (sql: string, params?: unknown[]) => {
+      if (!failed && sql.includes('settings')) {
+        failed = true;
+        throw new Error('read failed');
+      }
+      return all(sql, params as never);
+    };
+    return db;
+  };
+  await a.init();
+  expect(a.getState().status).toBe('error');
+  // Retrying must not leak the first handle: the driver reopens from scratch.
+  d.open = open;
+  await a.init();
+  expect(a.getState().status).toBe('ready');
+  await a.dispose();
+});

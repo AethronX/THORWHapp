@@ -1,15 +1,4 @@
-import {
-  addMonths,
-  Day,
-  dayKey,
-  daysInMonth,
-  firstDayKey,
-  lastDayKey,
-  monthKey,
-  parseDayKey,
-  parseMonthKey,
-  YearMonth,
-} from '../core/dates';
+import { addMonths, Day, dayKey, daysInMonth, firstDayKey, lastDayKey, monthKey, parseDayKey, parseMonthKey, YearMonth } from '../core/dates';
 import type { MonthTotals } from '../domain/analytics';
 import { ASSET_KINDS } from '../domain/models';
 import type { Asset, AssetKind, Budget, Category, Debt, Expense, IncomeEntry, SavingsGoal } from '../domain/models';
@@ -117,18 +106,23 @@ export class FinanceRepository {
     budget?: { categoryKey: string; limitMinor: number } | null;
   }): Promise<void> {
     return this.db.transaction(async (tx) => {
-      await this.setSetting(SettingKeys.currency, args.currencyCode, tx);
+      // The currency only changes while the ledger is empty. Every amount is an
+      // integer in the current currency's minor units and nothing rescales them,
+      // so switching OMR (3 decimals) to SAR (2) would multiply every number in
+      // the app by ten (D-054). Income and goals are already guarded this way.
+      const hasMoney = await tx.first<{ n: number }>('SELECT (SELECT COUNT(*) FROM expenses) + (SELECT COUNT(*) FROM incomes) AS n');
+      if ((hasMoney?.n ?? 0) === 0) await this.setSetting(SettingKeys.currency, args.currencyCode, tx);
       if (args.incomeMinor != null && args.incomeMinor > 0) {
-        const existing = await tx.first<{ n: number }>(
-          'SELECT COUNT(*) AS n FROM incomes WHERE month = ?',
-          [monthKey(args.month)],
-        );
+        const existing = await tx.first<{ n: number }>('SELECT COUNT(*) AS n FROM incomes WHERE month = ?', [monthKey(args.month)]);
         if ((existing?.n ?? 0) === 0) {
           const now = this.nowUtc;
-          await tx.run(
-            'INSERT INTO incomes (month, amount_minor, label, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
-            [monthKey(args.month), args.incomeMinor, (args.incomeLabel ?? '').trim(), now, now],
-          );
+          await tx.run('INSERT INTO incomes (month, amount_minor, label, created_at, updated_at) VALUES (?, ?, ?, ?, ?)', [
+            monthKey(args.month),
+            args.incomeMinor,
+            (args.incomeLabel ?? '').trim(),
+            now,
+            now,
+          ]);
         }
       }
       if (args.profileJson) await this.setSetting(SettingKeys.profile, args.profileJson, tx);
@@ -136,21 +130,21 @@ export class FinanceRepository {
       if (args.goal && args.goal.name.trim() !== '' && args.goal.targetMinor > 0) {
         const n = await tx.first<{ n: number }>('SELECT COUNT(*) AS n FROM goals');
         if ((n?.n ?? 0) === 0) {
-          await tx.run(
-            'INSERT INTO goals (name, target_minor, target_day, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
-            [args.goal.name.trim(), args.goal.targetMinor, dayKey(args.goal.targetDate), now, now],
-          );
+          await tx.run('INSERT INTO goals (name, target_minor, target_day, created_at, updated_at) VALUES (?, ?, ?, ?, ?)', [
+            args.goal.name.trim(),
+            args.goal.targetMinor,
+            dayKey(args.goal.targetDate),
+            now,
+            now,
+          ]);
         }
       }
       if (args.budget && args.budget.limitMinor > 0) {
-        const c = await tx.first<{ id: number }>('SELECT id FROM categories WHERE key = ? AND archived = 0', [
-          args.budget.categoryKey,
-        ]);
+        const c = await tx.first<{ id: number }>('SELECT id FROM categories WHERE key = ? AND archived = 0', [args.budget.categoryKey]);
         if (c) {
-          await tx.run('INSERT OR REPLACE INTO budgets (category_id, limit_minor) VALUES (?, ?)', [
-            c.id,
-            args.budget.limitMinor,
-          ]);
+          // Never overwrite a limit the user has since edited — the same reason
+          // income and goals are inserted only when none exist (D-054).
+          await tx.run('INSERT OR IGNORE INTO budgets (category_id, limit_minor) VALUES (?, ?)', [c.id, args.budget.limitMinor]);
         }
       }
       await this.setSetting(SettingKeys.onboarded, '1', tx);
@@ -164,10 +158,7 @@ export class FinanceRepository {
   /** Total spent from the 1st of `month` to `day` (clamped to the month's length). */
   async expensesUntil(month: YearMonth, day: number): Promise<number> {
     const last = Math.min(Math.max(1, day), daysInMonth(month.year, month.month));
-    const row = await this.db.first<{ total: number | null }>(
-      'SELECT SUM(amount_minor) AS total FROM expenses WHERE day BETWEEN ? AND ?',
-      [firstDayKey(month), dayKey({ ...month, day: last })],
-    );
+    const row = await this.db.first<{ total: number | null }>('SELECT SUM(amount_minor) AS total FROM expenses WHERE day BETWEEN ? AND ?', [firstDayKey(month), dayKey({ ...month, day: last })]);
     return row?.total ?? 0;
   }
 
@@ -180,10 +171,7 @@ export class FinanceRepository {
        WHERE day BETWEEN ? AND ? GROUP BY m`,
       [firstDayKey(first), lastDayKey(last)],
     );
-    const inc = await this.db.all<{ m: string; total: number }>(
-      'SELECT month AS m, SUM(amount_minor) AS total FROM incomes WHERE month BETWEEN ? AND ? GROUP BY m',
-      [monthKey(first), monthKey(last)],
-    );
+    const inc = await this.db.all<{ m: string; total: number }>('SELECT month AS m, SUM(amount_minor) AS total FROM incomes WHERE month BETWEEN ? AND ? GROUP BY m', [monthKey(first), monthKey(last)]);
     const e = new Map(exp.map((r) => [r.m, r.total]));
     const i = new Map(inc.map((r) => [r.m, r.total]));
     return months.map((m) => ({
@@ -206,10 +194,7 @@ export class FinanceRepository {
   async addCategory(name: string, iconCode = 11): Promise<number> {
     const n = nonBlank(name, 'Category name');
     const max = await this.db.first<{ m: number | null }>('SELECT MAX(sort_order) AS m FROM categories');
-    const r = await this.db.run(
-      'INSERT INTO categories (name, icon_code, sort_order) VALUES (?, ?, ?)',
-      [n, iconCode, (max?.m ?? 0) + 1],
-    );
+    const r = await this.db.run('INSERT INTO categories (name, icon_code, sort_order) VALUES (?, ?, ?)', [n, iconCode, (max?.m ?? 0) + 1]);
     return r.lastInsertRowId;
   }
 
@@ -220,11 +205,13 @@ export class FinanceRepository {
   /** Deletes an unused category; archives one with expenses. True if archived. */
   async removeCategory(id: number): Promise<boolean> {
     return this.db.transaction(async (tx) => {
-      const used = await tx.first<{ n: number }>(
-        'SELECT COUNT(*) AS n FROM expenses WHERE category_id = ?',
-        [id],
-      );
-      if ((used?.n ?? 0) > 0) {
+      const used = await tx.first<{ n: number }>('SELECT COUNT(*) AS n FROM expenses WHERE category_id = ?', [id]);
+      // A built-in category (one with a `key`) is archived even when nothing
+      // uses it: the schema seeds those once, in v1, so a deleted one never
+      // comes back — and the app looks them up by key (a debt payment recorded
+      // as an expense needs 'debt'), which then failed for good (D-054).
+      const builtIn = await tx.first<{ key: string | null }>('SELECT key FROM categories WHERE id = ?', [id]);
+      if ((used?.n ?? 0) > 0 || builtIn?.key != null) {
         await tx.run('UPDATE categories SET archived = 1 WHERE id = ?', [id]);
         await tx.run('DELETE FROM budgets WHERE category_id = ?', [id]);
         return true;
@@ -289,10 +276,9 @@ export class FinanceRepository {
   // -- income ----------------------------------------------------------------
 
   async incomesFor(month: YearMonth): Promise<IncomeEntry[]> {
-    const rows = await this.db.all<{ id: number; month: string; amount_minor: number; label: string }>(
-      'SELECT id, month, amount_minor, label FROM incomes WHERE month = ? ORDER BY id',
-      [monthKey(month)],
-    );
+    const rows = await this.db.all<{ id: number; month: string; amount_minor: number; label: string }>('SELECT id, month, amount_minor, label FROM incomes WHERE month = ? ORDER BY id', [
+      monthKey(month),
+    ]);
     return rows.map((r) => ({
       id: r.id,
       month: parseMonthKey(r.month),
@@ -304,19 +290,13 @@ export class FinanceRepository {
   async addIncome(month: YearMonth, amountMinor: number, label = ''): Promise<number> {
     positive(amountMinor);
     const now = this.nowUtc;
-    const r = await this.db.run(
-      'INSERT INTO incomes (month, amount_minor, label, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
-      [monthKey(month), amountMinor, label.trim(), now, now],
-    );
+    const r = await this.db.run('INSERT INTO incomes (month, amount_minor, label, created_at, updated_at) VALUES (?, ?, ?, ?, ?)', [monthKey(month), amountMinor, label.trim(), now, now]);
     return r.lastInsertRowId;
   }
 
   async updateIncome(e: IncomeEntry) {
     positive(e.amountMinor);
-    await this.db.run(
-      'UPDATE incomes SET amount_minor = ?, label = ?, updated_at = ? WHERE id = ?',
-      [e.amountMinor, e.label.trim(), this.nowUtc, e.id],
-    );
+    await this.db.run('UPDATE incomes SET amount_minor = ?, label = ?, updated_at = ? WHERE id = ?', [e.amountMinor, e.label.trim(), this.nowUtc, e.id]);
   }
 
   async deleteIncome(id: number) {
@@ -326,21 +306,12 @@ export class FinanceRepository {
   /** Copies `from`'s income into `to`. No-op if `to` already has income. */
   copyIncome(from: YearMonth, to: YearMonth): Promise<number> {
     return this.db.transaction(async (tx) => {
-      const existing = await tx.first<{ n: number }>(
-        'SELECT COUNT(*) AS n FROM incomes WHERE month = ?',
-        [monthKey(to)],
-      );
+      const existing = await tx.first<{ n: number }>('SELECT COUNT(*) AS n FROM incomes WHERE month = ?', [monthKey(to)]);
       if ((existing?.n ?? 0) > 0) return 0;
-      const rows = await tx.all<{ amount_minor: number; label: string }>(
-        'SELECT amount_minor, label FROM incomes WHERE month = ? ORDER BY id',
-        [monthKey(from)],
-      );
+      const rows = await tx.all<{ amount_minor: number; label: string }>('SELECT amount_minor, label FROM incomes WHERE month = ? ORDER BY id', [monthKey(from)]);
       const now = this.nowUtc;
       for (const r of rows) {
-        await tx.run(
-          'INSERT INTO incomes (month, amount_minor, label, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
-          [monthKey(to), r.amount_minor, r.label, now, now],
-        );
+        await tx.run('INSERT INTO incomes (month, amount_minor, label, created_at, updated_at) VALUES (?, ?, ?, ?, ?)', [monthKey(to), r.amount_minor, r.label, now, now]);
       }
       return rows.length;
     });
@@ -349,9 +320,7 @@ export class FinanceRepository {
   // -- budgets ---------------------------------------------------------------
 
   async budgets(): Promise<Budget[]> {
-    const rows = await this.db.all<{ category_id: number; limit_minor: number }>(
-      'SELECT category_id, limit_minor FROM budgets',
-    );
+    const rows = await this.db.all<{ category_id: number; limit_minor: number }>('SELECT category_id, limit_minor FROM budgets');
     return rows.map((r) => ({ categoryId: r.category_id, limitMinor: r.limit_minor }));
   }
 
@@ -362,10 +331,7 @@ export class FinanceRepository {
       return;
     }
     positive(limitMinor);
-    await this.db.run(
-      'INSERT OR REPLACE INTO budgets (category_id, limit_minor) VALUES (?, ?)',
-      [categoryId, limitMinor],
-    );
+    await this.db.run('INSERT OR REPLACE INTO budgets (category_id, limit_minor) VALUES (?, ?)', [categoryId, limitMinor]);
   }
 
   // -- goals -----------------------------------------------------------------
@@ -431,10 +397,15 @@ export class FinanceRepository {
   async addDebt(d: { name: string; remainingMinor: number; annualRatePercent: number; monthlyPaymentMinor: number; dueDay: number | null }): Promise<number> {
     const v = validDebt(d);
     const now = this.nowUtc;
-    const r = await this.db.run(
-      'INSERT INTO debts (name, original_minor, annual_rate_bp, monthly_payment_minor, due_day, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [v.name, d.remainingMinor, v.rateBp, d.monthlyPaymentMinor, d.dueDay, now, now],
-    );
+    const r = await this.db.run('INSERT INTO debts (name, original_minor, annual_rate_bp, monthly_payment_minor, due_day, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)', [
+      v.name,
+      d.remainingMinor,
+      v.rateBp,
+      d.monthlyPaymentMinor,
+      d.dueDay,
+      now,
+      now,
+    ]);
     return r.lastInsertRowId;
   }
 
@@ -443,10 +414,15 @@ export class FinanceRepository {
     const v = validDebt(d);
     return this.db.transaction(async (tx) => {
       const paid = await tx.first<{ s: number }>('SELECT COALESCE(SUM(amount_minor), 0) AS s FROM debt_payments WHERE debt_id = ?', [d.id]);
-      await tx.run(
-        'UPDATE debts SET name = ?, original_minor = ?, annual_rate_bp = ?, monthly_payment_minor = ?, due_day = ?, updated_at = ? WHERE id = ?',
-        [v.name, d.remainingMinor + (paid?.s ?? 0), v.rateBp, d.monthlyPaymentMinor, d.dueDay, this.nowUtc, d.id],
-      );
+      await tx.run('UPDATE debts SET name = ?, original_minor = ?, annual_rate_bp = ?, monthly_payment_minor = ?, due_day = ?, updated_at = ? WHERE id = ?', [
+        v.name,
+        d.remainingMinor + (paid?.s ?? 0),
+        v.rateBp,
+        d.monthlyPaymentMinor,
+        d.dueDay,
+        this.nowUtc,
+        d.id,
+      ]);
     });
   }
 
@@ -489,7 +465,11 @@ export class FinanceRepository {
   /** Every table, as stored, for a manual backup file. */
   async exportTables(): Promise<Record<string, Record<string, unknown>[]>> {
     const out: Record<string, Record<string, unknown>[]> = {};
-    for (const t of EXPORT_TABLES) out[t] = await this.db.all<Record<string, unknown>>(`SELECT * FROM ${t} ORDER BY rowid`);
+    // One transaction, so a write landing mid-export cannot produce a file
+    // whose tables disagree with each other (D-054).
+    await this.db.transaction(async (tx) => {
+      for (const t of EXPORT_TABLES) out[t] = await tx.all<Record<string, unknown>>(`SELECT * FROM ${t} ORDER BY rowid`);
+    });
     return out;
   }
 
@@ -513,10 +493,15 @@ export class FinanceRepository {
     const name = nonBlank(a.name, 'Asset name');
     nonNegative(a.valueMinor);
     const now = this.nowUtc;
-    const r = await this.db.run(
-      'INSERT INTO assets (name, kind, value_minor, is_estimate, updated_day, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [name, a.kind, a.valueMinor, a.isEstimate ? 1 : 0, dayKey(a.today), now, now],
-    );
+    const r = await this.db.run('INSERT INTO assets (name, kind, value_minor, is_estimate, updated_day, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)', [
+      name,
+      a.kind,
+      a.valueMinor,
+      a.isEstimate ? 1 : 0,
+      dayKey(a.today),
+      now,
+      now,
+    ]);
     return r.lastInsertRowId;
   }
 
@@ -538,28 +523,16 @@ export class FinanceRepository {
     await this.db.run('DELETE FROM assets WHERE id = ?', [id]);
   }
 
-  addGoal(args: {
-    name: string;
-    targetMinor: number;
-    targetDate: Day;
-    initialSavedMinor?: number;
-    today: Day;
-  }): Promise<number> {
+  addGoal(args: { name: string; targetMinor: number; targetDate: Day; initialSavedMinor?: number; today: Day }): Promise<number> {
     const name = nonBlank(args.name, 'Goal name');
     positive(args.targetMinor);
     const initial = args.initialSavedMinor ?? 0;
     if (!Number.isInteger(initial) || initial < 0) throw new ValidationError('Negative saved amount');
     const now = this.nowUtc;
     return this.db.transaction(async (tx) => {
-      const r = await tx.run(
-        'INSERT INTO goals (name, target_minor, target_day, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
-        [name, args.targetMinor, dayKey(args.targetDate), now, now],
-      );
+      const r = await tx.run('INSERT INTO goals (name, target_minor, target_day, created_at, updated_at) VALUES (?, ?, ?, ?, ?)', [name, args.targetMinor, dayKey(args.targetDate), now, now]);
       if (initial > 0) {
-        await tx.run(
-          'INSERT INTO goal_contributions (goal_id, amount_minor, day, created_at) VALUES (?, ?, ?, ?)',
-          [r.lastInsertRowId, initial, dayKey(args.today), now],
-        );
+        await tx.run('INSERT INTO goal_contributions (goal_id, amount_minor, day, created_at) VALUES (?, ?, ?, ?)', [r.lastInsertRowId, initial, dayKey(args.today), now]);
       }
       return r.lastInsertRowId;
     });
@@ -568,10 +541,7 @@ export class FinanceRepository {
   async updateGoal(args: { id: number; name: string; targetMinor: number; targetDate: Day }) {
     const name = nonBlank(args.name, 'Goal name');
     positive(args.targetMinor);
-    await this.db.run(
-      'UPDATE goals SET name = ?, target_minor = ?, target_day = ?, updated_at = ? WHERE id = ?',
-      [name, args.targetMinor, dayKey(args.targetDate), this.nowUtc, args.id],
-    );
+    await this.db.run('UPDATE goals SET name = ?, target_minor = ?, target_day = ?, updated_at = ? WHERE id = ?', [name, args.targetMinor, dayKey(args.targetDate), this.nowUtc, args.id]);
   }
 
   async deleteGoal(id: number) {
@@ -585,16 +555,10 @@ export class FinanceRepository {
     }
     return this.db.transaction(async (tx) => {
       if (amountMinor < 0) {
-        const s = await tx.first<{ s: number }>(
-          'SELECT COALESCE(SUM(amount_minor), 0) AS s FROM goal_contributions WHERE goal_id = ?',
-          [goalId],
-        );
+        const s = await tx.first<{ s: number }>('SELECT COALESCE(SUM(amount_minor), 0) AS s FROM goal_contributions WHERE goal_id = ?', [goalId]);
         if ((s?.s ?? 0) + amountMinor < 0) throw new ValidationError('Withdrawal exceeds saved amount');
       }
-      await tx.run(
-        'INSERT INTO goal_contributions (goal_id, amount_minor, day, created_at) VALUES (?, ?, ?, ?)',
-        [goalId, amountMinor, dayKey(date), this.nowUtc],
-      );
+      await tx.run('INSERT INTO goal_contributions (goal_id, amount_minor, day, created_at) VALUES (?, ?, ?, ?)', [goalId, amountMinor, dayKey(date), this.nowUtc]);
     });
   }
 }

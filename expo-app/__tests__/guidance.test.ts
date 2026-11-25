@@ -4,15 +4,38 @@ import type { Category, CategoryKey, CategorySpend, Expense, SavingsGoal } from 
 
 const OMR = currencyFromCode('OMR');
 const KEYS: [CategoryKey, boolean][] = [
-  ['housing', true], ['food', true], ['transport', true], ['utilities', true], ['telecom', true], ['health', true],
-  ['education', false], ['family', false], ['shopping', false], ['entertainment', false], ['debt', true], ['other', false],
+  ['housing', true],
+  ['food', true],
+  ['transport', true],
+  ['utilities', true],
+  ['telecom', true],
+  ['health', true],
+  ['education', false],
+  ['family', false],
+  ['shopping', false],
+  ['entertainment', false],
+  ['debt', true],
+  ['other', false],
 ];
 const cats: Category[] = KEYS.map(([key, ess], i) => ({ id: i + 1, key, name: '', iconCode: i, isEssential: ess, archived: false }));
 const id = (k: CategoryKey) => KEYS.findIndex(([x]) => x === k) + 1;
 let n = 1;
-const ex = (k: CategoryKey, omr: number, m: number, d: number, y = 2026): Expense => ({ id: n++, amountMinor: Math.round(omr * 1000), categoryId: id(k), date: { year: y, month: m, day: d }, note: '' });
+const ex = (k: CategoryKey, omr: number, m: number, d: number, y = 2026): Expense => ({
+  id: n++,
+  amountMinor: Math.round(omr * 1000),
+  categoryId: id(k),
+  date: { year: y, month: m, day: d },
+  note: '',
+});
 const spend = (k: CategoryKey, omr: number, limit: number | null = null): CategorySpend => ({ category: cats[id(k) - 1], spentMinor: omr * 1000, limitMinor: limit == null ? null : limit * 1000 });
-const goal = (gid: number, name: string, target: number, saved: number, y = 2027, m = 10): SavingsGoal => ({ id: gid, name, targetMinor: target * 1000, savedMinor: saved * 1000, targetDate: { year: y, month: m, day: 1 }, paused: false });
+const goal = (gid: number, name: string, target: number, saved: number, y = 2027, m = 10): SavingsGoal => ({
+  id: gid,
+  name,
+  targetMinor: target * 1000,
+  savedMinor: saved * 1000,
+  targetDate: { year: y, month: m, day: 1 },
+  paused: false,
+});
 const today = { year: 2026, month: 10, day: 12 };
 const base = { today, incomeMinor: 1000000, expensesMinor: 0, spends: [], history: [], categories: cats, goals: [], currency: OMR, emergencyGoalName: 'صندوق الطوارئ' };
 const kinds = (g: { kind: string }[]) => g.map((x) => x.kind);
@@ -150,4 +173,28 @@ test('pay yourself first: within 3 days after payday, with a plan amount and an 
   expect(has({ ...args, goals: [{ ...travel, lastContributionDay: { year: 2026, month: 10, day: 20 } }] })).toBe(true);
   // Payday 31 in a 30-day month → the 30th.
   expect(has({ ...args, payday: 31, today: { year: 2026, month: 11, day: 30 } })).toBe(true);
+});
+
+// -- same-length comparison and a cross-month payday (D-054) --------------------
+
+test('a rising category compares the same number of days on both sides', () => {
+  // 30 March: February only has 28 days, so both sides must stop at the 28th.
+  // Days 1-28: March 10 OMR against February 20 OMR — spending HALVED.
+  const history = [ex('entertainment', 10, 2, 5), ex('entertainment', 10, 2, 10), ex('entertainment', 10, 3, 3), ex('entertainment', 15, 3, 29), ex('entertainment', 15, 3, 30)];
+  const g = buildGuidance({ ...base, today: { year: 2026, month: 3, day: 30 }, incomeMinor: 500000, history });
+  expect(kinds(g)).not.toContain('categoryRising');
+});
+
+test('"pay yourself first" fires when the salary arrived at the end of last month', () => {
+  // Payday 30, today 1 December: the salary came on 30 November, one day ago.
+  const g = buildGuidance({
+    ...base,
+    today: { year: 2026, month: 12, day: 1 },
+    payday: 30,
+    plannedSavingMinor: 150000,
+    goals: [goal(1, 'سيارة', 4000, 100, 2028, 1)],
+  });
+  const item = g.find((x) => x.kind === 'payYourselfFirst') as { daysSincePayday: number } | undefined;
+  expect(item).toBeTruthy();
+  expect(item!.daysSincePayday).toBe(1);
 });

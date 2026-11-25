@@ -10,7 +10,7 @@
  * Qatar, Kuwait, Bahrain, Jordan, Egypt Fri–Sat.
  * Tests: __tests__/persona.test.ts.
  */
-import { Day, dayToDate, daysInMonth } from '../core/dates';
+import { addDays, Day, dayKey, dayToDate, daysInMonth } from '../core/dates';
 import { FIXED_CATEGORY_KEYS } from './analytics';
 import type { Category, Expense } from './models';
 
@@ -117,12 +117,10 @@ export function readPersona(args: { history: readonly Expense[]; categories: rea
  * break it — the streak then counts back from yesterday.
  */
 export function recordingStreak(history: readonly Expense[], today: Day): number {
-  const days = new Set(history.map((e) => `${e.date.year}-${e.date.month}-${e.date.day}`));
-  const t = dayToDate(today).getTime();
-  const has = (offset: number) => {
-    const d = new Date(t - offset * 86400000);
-    return days.has(`${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`);
-  };
+  // Calendar days, not 24-hour blocks: millisecond stepping skips a day across
+  // a daylight-saving transition and read the streak one day short (D-054).
+  const days = new Set(history.map((e) => dayKey(e.date)));
+  const has = (offset: number) => days.has(dayKey(addDays(today, -offset)));
   let start = has(0) ? 0 : has(1) ? 1 : -1;
   if (start < 0) return 0;
   let n = 0;

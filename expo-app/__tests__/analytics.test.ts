@@ -1,16 +1,6 @@
 /** @jest-environment node */
 import { currencyFromCode } from '../src/core/currency';
-import {
-  averageSpending,
-  categoryBreakdown,
-  change,
-  daysLeftInMonth,
-  daysUntilPayday,
-  daysToNextPayday,
-  healthScore,
-  projectMonthEndSpending,
-  safeToSpendPerDay,
-} from '../src/domain/analytics';
+import { averageSpending, categoryBreakdown, change, daysLeftInMonth, daysUntilPayday, daysToNextPayday, healthScore, projectMonthEndSpending, safeToSpendPerDay } from '../src/domain/analytics';
 import type { Category, CategorySpend } from '../src/domain/models';
 import { parseProfile, suggestPlan, DEFAULT_PROFILE } from '../src/domain/profile';
 

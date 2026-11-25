@@ -2,8 +2,18 @@ import { evaluatePrinciples, principleScore, PrincipleResult } from '../src/doma
 import type { Asset, Category, CategoryKey, CategorySpend, Debt, Expense } from '../src/domain/models';
 
 const KEYS: [CategoryKey, boolean][] = [
-  ['housing', true], ['food', true], ['transport', true], ['utilities', true], ['telecom', true], ['health', true],
-  ['education', false], ['family', false], ['shopping', false], ['entertainment', false], ['debt', true], ['other', false],
+  ['housing', true],
+  ['food', true],
+  ['transport', true],
+  ['utilities', true],
+  ['telecom', true],
+  ['health', true],
+  ['education', false],
+  ['family', false],
+  ['shopping', false],
+  ['entertainment', false],
+  ['debt', true],
+  ['other', false],
 ];
 const cats: Category[] = KEYS.map(([key, ess], i) => ({ id: i + 1, key, name: '', iconCode: i, isEssential: ess, archived: false }));
 const id = (k: CategoryKey) => KEYS.findIndex(([x]) => x === k) + 1;
@@ -11,7 +21,14 @@ let n = 1;
 const ex = (k: CategoryKey, omr: number, m: number, d = 1): Expense => ({ id: n++, amountMinor: omr * 1000, categoryId: id(k), date: { year: 2026, month: m, day: d }, note: '' });
 const spend = (k: CategoryKey, omr: number, limit: number | null = null): CategorySpend => ({ category: cats[id(k) - 1], spentMinor: omr * 1000, limitMinor: limit == null ? null : limit * 1000 });
 const debt = (did: number, name: string, remaining: number, rate: number, monthly: number): Debt => ({
-  id: did, name, originalMinor: remaining * 2000, paidMinor: remaining * 1000, remainingMinor: remaining * 1000, annualRatePercent: rate, monthlyPaymentMinor: monthly * 1000, dueDay: null,
+  id: did,
+  name,
+  originalMinor: remaining * 2000,
+  paidMinor: remaining * 1000,
+  remainingMinor: remaining * 1000,
+  annualRatePercent: rate,
+  monthlyPaymentMinor: monthly * 1000,
+  dueDay: null,
 });
 const asset = (aid: number, kind: Asset['kind'], omr: number): Asset => ({ id: aid, name: 'x', kind, valueMinor: omr * 1000, isEstimate: false, updatedDay: { year: 2026, month: 10, day: 1 } });
 const base = { today: { year: 2026, month: 10, day: 12 }, incomeMinor: 0, expensesMinor: 0, history: [], categories: cats, spends: [], goals: [], debts: [], assets: [] };

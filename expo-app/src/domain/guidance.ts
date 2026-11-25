@@ -10,9 +10,10 @@
  * Tests: __tests__/guidance.test.ts. Money in integer minor units.
  */
 import { Currency, minorPerMajor } from '../core/currency';
-import { addMonths, Day, daysInMonth, monthOf, sameMonth, YearMonth, compareDays, monthsUntil } from '../core/dates';
+import { addDays, addMonths, Day, daysInMonth, monthOf, sameMonth, YearMonth, compareDays, monthsUntil } from '../core/dates';
 import type { Season, SeasonKey } from './seasons';
 import { seasonFundDate } from './seasons';
+import { daysSincePayday } from './persona';
 import { FIXED_CATEGORY_KEYS } from './analytics';
 import { requiredMonthlySaving } from './financeEngine';
 import type { Asset, Category, CategorySpend, Expense, SavingsGoal } from './models';
@@ -168,7 +169,9 @@ export function buildGuidance(args: {
     const prevFull = new Map<number, number>();
     for (const e of history) {
       const m = monthOf(e.date);
-      if (sameMonth(m, month) && e.date.day <= today.day) cur.set(e.categoryId, (cur.get(e.categoryId) ?? 0) + e.amountMinor);
+      // Both sides are cut at `through`: on the 29th-31st the previous month
+      // may be shorter, and comparing 31 days against 28 invented a rise (D-054).
+      if (sameMonth(m, month) && e.date.day <= through) cur.set(e.categoryId, (cur.get(e.categoryId) ?? 0) + e.amountMinor);
       if (sameMonth(m, prevMonth)) {
         prevFull.set(e.categoryId, (prevFull.get(e.categoryId) ?? 0) + e.amountMinor);
         if (e.date.day <= through) prev.set(e.categoryId, (prev.get(e.categoryId) ?? 0) + e.amountMinor);
@@ -235,9 +238,11 @@ export function buildGuidance(args: {
   //    aside since the salary arrived.
   const planned = args.plannedSavingMinor ?? 0;
   if (args.payday != null && incomeMinor > 0 && planned > 0 && open) {
-    const payDay = Math.min(Math.max(1, Math.round(args.payday)), daysInMonth(today.year, today.month));
-    const since = today.day - payDay;
-    const paidFrom: Day = { year: today.year, month: today.month, day: payDay };
+    // Cross-month: a payday of 28-31 lands in the PREVIOUS month during the
+    // first days of this one, which is exactly when this nudge should fire.
+    // Clamping to the current month made it dead for those paydays (D-054).
+    const since = daysSincePayday(today, args.payday);
+    const paidFrom = addDays(today, -since);
     const savedSincePayday = args.goals.some((g) => g.lastContributionDay != null && compareDays(g.lastContributionDay, paidFrom) >= 0);
     if (since >= 0 && since <= PAY_FIRST_DAYS && !savedSincePayday) {
       out.push({

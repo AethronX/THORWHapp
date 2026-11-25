@@ -50,10 +50,7 @@ describe('schema & migrations', () => {
   test('SQL constraints reject bad rows even if app checks are bypassed', async () => {
     const food = await catId('food');
     const ins = (amount: number, cat: number, day: string) =>
-      db.run(
-        'INSERT INTO expenses (amount_minor, category_id, day, note, created_at, updated_at) VALUES (?,?,?,?,?,?)',
-        [amount, cat, day, '', 0, 0],
-      );
+      db.run('INSERT INTO expenses (amount_minor, category_id, day, note, created_at, updated_at) VALUES (?,?,?,?,?,?)', [amount, cat, day, '', 0, 0]);
     await expect(ins(0, food, '2026-10-09')).rejects.toThrow();
     await expect(ins(-5, food, '2026-10-09')).rejects.toThrow();
     await expect(ins(100, 9999, '2026-10-09')).rejects.toThrow(); // FK
@@ -158,4 +155,43 @@ test('onboarding is atomic and idempotent', async () => {
   await repo.completeOnboarding({ currencyCode: 'USD', month: oct, incomeMinor: 150000 });
   expect(await repo.loadSettings()).toMatchObject({ currency: 'USD', onboarded: '1' });
   expect(await repo.incomesFor(oct)).toHaveLength(1);
+});
+
+// -- re-running onboarding must not touch money that already exists (D-054) ----
+
+test('onboarding re-run keeps the currency and a budget the user has edited', async () => {
+  const food = (await repo.categories()).find((c) => c.key === 'food')!.id;
+  await repo.completeOnboarding({ currencyCode: 'OMR', month: oct, incomeMinor: 800000, budget: { categoryKey: 'food', limitMinor: 100000 } });
+  await repo.addExpense({ amountMinor: 12500, categoryId: food, date: d(2026, 10, 3), note: 'لولو' });
+  await repo.setBudget(food, 150000);
+
+  // The quiz is retaken and a different currency is chosen.
+  await repo.completeOnboarding({ currencyCode: 'SAR', month: oct, incomeMinor: 800000, budget: { categoryKey: 'food', limitMinor: 100000 } });
+
+  const settings = await repo.loadSettings();
+  // Amounts are stored in the current currency's minor units and nothing
+  // rescales them, so the currency must not change once money exists.
+  expect(settings.currency).toBe('OMR');
+  expect((await repo.expensesFor(oct))[0].amountMinor).toBe(12500);
+  expect((await repo.budgets()).find((b) => b.categoryId === food)?.limitMinor).toBe(150000);
+});
+
+test('a built-in category is archived, never deleted, even when nothing uses it', async () => {
+  const debt = (await repo.categories()).find((c) => c.key === 'debt')!.id;
+  expect(await repo.removeCategory(debt)).toBe(true); // archived, not dropped
+  const all = await repo.categories(true);
+  expect(all.find((c) => c.id === debt)).toMatchObject({ key: 'debt', archived: true });
+
+  // The app looks the category up by key when a debt payment is also an expense.
+  const id = await repo.addDebt({ name: 'قرض', remainingMinor: 100000, annualRatePercent: 0, monthlyPaymentMinor: 10000, dueDay: null });
+  await repo.addDebtPayment({ debtId: id, amountMinor: 10000, date: d(2026, 10, 5), alsoExpense: true, note: 'قسط' });
+  expect((await repo.debts())[0].paidMinor).toBe(10000);
+});
+
+test('a backup is one consistent snapshot', async () => {
+  const food = (await repo.categories()).find((c) => c.key === 'food')!.id;
+  await repo.addExpense({ amountMinor: 1000, categoryId: food, date: d(2026, 10, 1), note: '' });
+  const tables = await repo.exportTables();
+  expect(Object.keys(tables)).toContain('expenses');
+  expect(tables.expenses).toHaveLength(1);
 });

@@ -22,8 +22,7 @@ import {
   sumMinor,
 } from '../src/domain/financeEngine';
 
-const fv = (initialMinor: number, monthlyMinor: number, months: number, annualRatePercent: number) =>
-  futureValue({ initialMinor, monthlyMinor, months, annualRatePercent });
+const fv = (initialMinor: number, monthlyMinor: number, months: number, annualRatePercent: number) => futureValue({ initialMinor, monthlyMinor, months, annualRatePercent });
 
 describe('cash flow', () => {
   test('sumMinor is exact', () => {
@@ -110,15 +109,12 @@ describe('realValue', () => {
     expect(realValue({ nominalMinor: 5000, months: 120, annualInflationPercent: 0 })).toBe(5000);
     expect(realValue({ nominalMinor: 5000, months: 0, annualInflationPercent: 8 })).toBe(5000);
     expect(realValue({ nominalMinor: 1000, months: 12, annualInflationPercent: -50 })).toBe(2000);
-    expect(() => realValue({ nominalMinor: 1000, months: 12, annualInflationPercent: -60 })).toThrow(
-      FinanceInputError,
-    );
+    expect(() => realValue({ nominalMinor: 1000, months: 12, annualInflationPercent: -60 })).toThrow(FinanceInputError);
   });
 });
 
 describe('requiredMonthlySaving', () => {
-  const req = (targetMinor: number, savedMinor: number, months: number, annualRatePercent = 0) =>
-    requiredMonthlySaving({ targetMinor, savedMinor, months, annualRatePercent });
+  const req = (targetMinor: number, savedMinor: number, months: number, annualRatePercent = 0) => requiredMonthlySaving({ targetMinor, savedMinor, months, annualRatePercent });
 
   test('0% divides evenly and rounds UP', () => {
     expect(req(6000000, 0, 24)).toBe(250000);
@@ -162,9 +158,7 @@ describe('emergencyFund', () => {
   test('funded, zero spend, bounds', () => {
     expect(emergencyFund({ monthlyEssentialMinor: 100, savedMinor: 1000 }).gapMinor).toBe(0);
     expect(emergencyFund({ monthlyEssentialMinor: 0, savedMinor: 1000 }).monthsCovered).toBeNull();
-    expect(() => emergencyFund({ monthlyEssentialMinor: 1, savedMinor: 0, targetMonths: 0 })).toThrow(
-      FinanceInputError,
-    );
+    expect(() => emergencyFund({ monthlyEssentialMinor: 1, savedMinor: 0, targetMonths: 0 })).toThrow(FinanceInputError);
   });
 });
 
@@ -184,9 +178,7 @@ describe('debtPayoff', () => {
   });
 
   test('never pays off; 0%; zero balance', () => {
-    expect(debtPayoff({ balanceMinor: 1000000, annualRatePercent: 24, monthlyPaymentMinor: 20000 }).paysOff).toBe(
-      false,
-    );
+    expect(debtPayoff({ balanceMinor: 1000000, annualRatePercent: 24, monthlyPaymentMinor: 20000 }).paysOff).toBe(false);
     const z = debtPayoff({ balanceMinor: 600000, annualRatePercent: 0, monthlyPaymentMinor: 100000 });
     expect([z.paysOff, z.months, z.totalInterestMinor]).toEqual([true, 6, 0]);
     expect(debtPayoff({ balanceMinor: 0, annualRatePercent: 5, monthlyPaymentMinor: 0 }).months).toBe(0);
