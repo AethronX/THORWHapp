@@ -1,4 +1,5 @@
 import { File, Paths } from 'expo-file-system';
+import * as DocumentPicker from 'expo-document-picker';
 import * as Sharing from 'expo-sharing';
 
 import type { Currency } from '../core/currency';
@@ -22,16 +23,20 @@ export function shareJsonBackup(tables: Record<string, Record<string, unknown>[]
   return shareFile(`tharwati-backup-${stamp(now)}.json`, json, 'application/json', 'public.json', title);
 }
 
-export function shareExpensesCsv(args: {
-  tables: Record<string, Record<string, unknown>[]>;
-  currency: Currency;
-  header: string[];
-  categoryName: (id: number) => string;
-  now: Date;
-  title: string;
-}) {
+export function shareExpensesCsv(args: { tables: Record<string, Record<string, unknown>[]>; currency: Currency; header: string[]; categoryName: (id: number) => string; now: Date; title: string }) {
   const rows = (args.tables.expenses ?? [])
     .map((e) => [String(e.day), args.categoryName(Number(e.category_id)), minorToDecimal(Number(e.amount_minor), args.currency.exponent), args.currency.code, String(e.note ?? '')])
     .sort((a, b) => a[0].localeCompare(b[0]));
   return shareFile(`tharwati-expenses-${stamp(args.now)}.csv`, toCsv(args.header, rows), 'text/csv', 'public.comma-separated-values-text', args.title);
+}
+
+/**
+ * Lets the user pick a backup file and returns its text, or null if they
+ * cancelled. Reading only: validation and the write happen in the controller
+ * (D-058), so the picker never decides whether a file is trustworthy.
+ */
+export async function pickBackupText(): Promise<string | null> {
+  const r = await DocumentPicker.getDocumentAsync({ type: ['application/json', 'public.json', '*/*'], copyToCacheDirectory: true, multiple: false });
+  if (r.canceled || !r.assets?.[0]) return null;
+  return new File(r.assets[0].uri).text();
 }

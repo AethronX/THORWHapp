@@ -7,7 +7,10 @@ import { useAppState, useController, useUi } from '../../ui/AppContext';
 import { COUNTRIES, countryForCurrency } from '../../core/countries';
 import { countryName, currencySymbol, hasNewSign } from '../../ui/format';
 import { Toggle, Button, Card, confirm, Icon, IconName, Row, runGuarded, Screen, T } from '../../ui/components';
-import { shareExpensesCsv, shareJsonBackup } from '../../ui/exportData';
+import { pickBackupText, shareExpensesCsv, shareJsonBackup } from '../../ui/exportData';
+import { parseBackup } from '../../domain/backup';
+import { SCHEMA_VERSION } from '../../data/schema';
+import { showToast } from '../../ui/toast';
 import { haptic } from '../../ui/feedback';
 import { categoryLabel } from '../../ui/format';
 import { authenticate, canUseLock } from '../../ui/lock';
@@ -27,6 +30,36 @@ export default function Settings() {
     if (!(await authenticate(s.unlockPrompt, s.cancel))) return;
     haptic.success();
     await runGuarded(() => c.setAppLock(on), s.errGeneric);
+  }
+
+  /**
+   * Restore (D-058): read → validate → show exactly what will replace what →
+   * one confirmed, all-or-nothing write. A bad file never gets as far as the
+   * question, and a failed write leaves today's data as it was.
+   */
+  async function doRestore() {
+    const text = await pickBackupText().catch(() => null);
+    if (text == null) return;
+    const parsed = parseBackup(text, SCHEMA_VERSION);
+    if (!parsed.ok) {
+      Alert.alert(s.restoreBackup, s.restoreFailed[parsed.reason]);
+      return;
+    }
+    const yes = await confirm({
+      title: s.restoreConfirmTitle,
+      body: s.restoreConfirmBody(parsed.counts.expenses, parsed.counts.incomes, parsed.counts.goals, parsed.exportedAt.slice(0, 10)),
+      confirmLabel: s.restoreConfirmAction,
+      cancelLabel: s.cancel,
+      destructive: true,
+    });
+    if (!yes) return;
+    try {
+      await c.restoreBackup(text);
+      haptic.success();
+      showToast({ message: s.restoreDone });
+    } catch {
+      Alert.alert(s.restoreBackup, s.restoreWriteFailed);
+    }
   }
 
   async function doExport(kind: 'json' | 'csv') {
@@ -200,6 +233,7 @@ export default function Settings() {
             <Button kind="tonal" label={s.exportJson} onPress={() => doExport('json')} testID="settings.exportJson" />
             <Button kind="tonal" label={s.exportCsv} onPress={() => doExport('csv')} testID="settings.exportCsv" />
           </Row>
+          <Button kind="outlined" icon="repeat" label={s.restoreBackup} onPress={doRestore} testID="settings.restore" style={{ alignSelf: 'flex-start' }} />
           <T variant="small" muted>
             {s.exportRestoreNote}
           </T>

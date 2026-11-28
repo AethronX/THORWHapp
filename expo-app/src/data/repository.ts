@@ -1,4 +1,5 @@
 import { addMonths, Day, dayKey, daysInMonth, firstDayKey, lastDayKey, monthKey, parseDayKey, parseMonthKey, YearMonth } from '../core/dates';
+import { BACKUP_TABLES, type BackupRow, type BackupTable } from '../domain/backup';
 import type { MonthTotals } from '../domain/analytics';
 import { ASSET_KINDS } from '../domain/models';
 import type { Asset, AssetKind, Budget, Category, Debt, Expense, IncomeEntry, SavingsGoal } from '../domain/models';
@@ -475,6 +476,38 @@ export class FinanceRepository {
     return out;
   }
 
+  /**
+   * Replaces EVERYTHING with the rows of a parsed backup, in one transaction
+   * (D-058). Any failure — an unknown column, a row whose category does not
+   * exist, a constraint — rolls the whole thing back and the current data is
+   * left exactly as it was. Table names come from our own fixed list and every
+   * column is checked against the real table, so nothing in the file is ever
+   * spliced into SQL unchecked. This device's app-lock setting is kept: it
+   * belongs to the phone, not to the data.
+   */
+  async restoreTables(tables: Partial<Record<BackupTable, BackupRow[]>>): Promise<void> {
+    await this.db.transaction(async (tx) => {
+      const keep = await tx.all<{ key: string; value: string }>('SELECT key, value FROM settings WHERE key = ?', [SettingKeys.appLock]);
+      for (const t of [...BACKUP_TABLES].reverse()) await tx.run(`DELETE FROM ${t}`);
+      for (const t of BACKUP_TABLES) {
+        const rows = tables[t];
+        if (!rows || rows.length === 0) continue;
+        const columns = new Set((await tx.all<{ name: string }>(`PRAGMA table_info(${t})`)).map((c) => c.name));
+        for (const row of rows) {
+          const keys = Object.keys(row);
+          if (keys.length === 0) throw new ValidationError(`Empty row in ${t}`);
+          for (const k of keys) if (!columns.has(k)) throw new ValidationError(`Unknown column ${t}.${k}`);
+          await tx.run(
+            `INSERT INTO ${t} (${keys.join(', ')}) VALUES (${keys.map(() => '?').join(', ')})`,
+            keys.map((k) => row[k]),
+          );
+        }
+      }
+      await tx.run('DELETE FROM settings WHERE key = ?', [SettingKeys.appLock]);
+      for (const r of keep) await tx.run('INSERT INTO settings (key, value) VALUES (?, ?)', [r.key, r.value]);
+    });
+  }
+
   // -- assets (v2) ---------------------------------------------------------------
 
   async assets(): Promise<Asset[]> {
@@ -583,4 +616,5 @@ function validDebt(d: { name: string; remainingMinor: number; annualRatePercent:
 }
 
 /** Tables included in a backup (fixed list — never interpolate user input into SQL). */
-const EXPORT_TABLES = ['settings', 'categories', 'expenses', 'incomes', 'budgets', 'goals', 'goal_contributions', 'debts', 'debt_payments', 'assets'] as const;
+/** One list for export and restore, so a table can never be backed up but not restored. */
+const EXPORT_TABLES = BACKUP_TABLES;

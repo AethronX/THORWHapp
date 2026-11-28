@@ -1,4 +1,6 @@
 import { countryFromCode } from '../core/countries';
+import { parseBackup, type ParsedBackup } from '../domain/backup';
+import { SCHEMA_VERSION } from '../data/schema';
 import { CLASSIC_SIGN_BY_DEFAULT, Currency, currencyFromCode, DEFAULT_CURRENCY } from '../core/currency';
 import { addMonths, Day, dayFromDate, monthOf, sameMonth, YearMonth } from '../core/dates';
 import type { DbDriver } from '../data/db';
@@ -135,23 +137,7 @@ export class AppController {
         throw e;
       }
       this.repo = new FinanceRepository(db, this.clock);
-      const s = await this.repo.loadSettings();
-      const theme = s[SettingKeys.themeMode];
-      const patch: Partial<AppState> = {
-        currency: currencyFromCode(s[SettingKeys.currency]),
-        locale: s[SettingKeys.locale] === 'en' ? 'en' : 'ar',
-        // Light is the default (D-020); dark/system only when the user chose it.
-        themeMode: theme === 'dark' || theme === 'system' ? theme : 'light',
-        onboarded: s[SettingKeys.onboarded] === '1',
-        profile: parseProfile(s[SettingKeys.profile]),
-        appLock: s[SettingKeys.appLock] === '1',
-        hideAmounts: s[SettingKeys.hideAmounts] === '1',
-        classicSign: s[SettingKeys.currencySign] ? s[SettingKeys.currencySign] === 'classic' : CLASSIC_SIGN_BY_DEFAULT,
-        country: countryFromCode(s[SettingKeys.country])?.code ?? null,
-        haptics: s[SettingKeys.haptics] !== '0',
-        arabicDigits: s[SettingKeys.digits] === 'arab',
-        dismissedGuidance: parseDismissed(s[SettingKeys.dismissedGuidance]),
-      };
+      const patch = await this.readSettings();
       this.set({ ...patch, ...(await this.load(this.state.month)), status: 'ready' });
     } catch {
       // Never log the error: it may contain user amounts.
@@ -201,6 +187,43 @@ export class AppController {
       trend,
       previousSamePeriodExpensesMinor: prevSamePeriod,
     };
+  }
+
+  /** Every stored setting, read into state shape (used by init and by restore). */
+  private async readSettings(): Promise<Partial<AppState>> {
+    const s = await this.r.loadSettings();
+    const theme = s[SettingKeys.themeMode];
+    const patch: Partial<AppState> = {
+      currency: currencyFromCode(s[SettingKeys.currency]),
+      locale: s[SettingKeys.locale] === 'en' ? 'en' : 'ar',
+      // Light is the default (D-020); dark/system only when the user chose it.
+      themeMode: theme === 'dark' || theme === 'system' ? theme : 'light',
+      onboarded: s[SettingKeys.onboarded] === '1',
+      profile: parseProfile(s[SettingKeys.profile]),
+      appLock: s[SettingKeys.appLock] === '1',
+      hideAmounts: s[SettingKeys.hideAmounts] === '1',
+      classicSign: s[SettingKeys.currencySign] ? s[SettingKeys.currencySign] === 'classic' : CLASSIC_SIGN_BY_DEFAULT,
+      country: countryFromCode(s[SettingKeys.country])?.code ?? null,
+      haptics: s[SettingKeys.haptics] !== '0',
+      arabicDigits: s[SettingKeys.digits] === 'arab',
+      dismissedGuidance: parseDismissed(s[SettingKeys.dismissedGuidance]),
+    };
+    return patch;
+  }
+
+  /**
+   * Replaces all data with a backup file (D-058). The file is parsed and
+   * validated first; nothing is written unless it passes, and the write itself
+   * is one transaction, so a bad file can never leave half a database behind.
+   */
+  async restoreBackup(text: string): Promise<ParsedBackup> {
+    const parsed = parseBackup(text, SCHEMA_VERSION);
+    if (!parsed.ok) return parsed;
+    await this.r.restoreTables(parsed.tables);
+    const patch = await this.readSettings();
+    this.pendingMonth = null;
+    this.set({ ...patch, ...(await this.load(this.state.month)), status: 'ready' });
+    return parsed;
   }
 
   /** Increments on every load; an older load that finishes late is dropped (month switch during a save). */
