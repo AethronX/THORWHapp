@@ -23,6 +23,7 @@ import { dailyTotals, detectRecurring, RecurringPayment, unusualExpense, Unusual
 import { suggestPlan } from '../domain/profile';
 import type { Category, CategorySpend } from '../domain/models';
 import type { AppState } from './appController';
+import { STRINGS } from '../ui/i18n';
 
 export const incomeTotal = (s: AppState) => fe.sumMinor(s.incomes.map((i) => i.amountMinor));
 export const expenseTotal = (s: AppState) => fe.sumMinor(s.expenses.map((e) => e.amountMinor));
@@ -199,6 +200,10 @@ export function readiness(s: AppState) {
     debts: s.debts,
     incomeMinor: incomeTotal(s),
     expensesMinor: monthEndForecast(s) ?? expenseTotal(s),
+    // Complete months only: the open month would always look "unsteady".
+    pastMonthTotals: s.trend.filter((t) => !sameMonth(t.month, monthOf(s.today))).map((t) => t.expensesMinor),
+    goals: s.goals,
+    emergencyNames: [STRINGS.ar.emergencyGoalName, STRINGS.en.emergencyGoalName],
   });
 }
 

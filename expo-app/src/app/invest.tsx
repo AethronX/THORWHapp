@@ -3,7 +3,8 @@ import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { minorToEditable, parseAmount } from '../core/amountParser';
-import { allocation, costOfWaiting, ReadinessItem } from '../domain/investing';
+import { allocation, costOfWaiting, feeImpact, lossAndRecovery, purchasingPower, ReadinessItem } from '../domain/investing';
+import { Chips } from '../ui/Chips';
 import { position, totalsByCurrency } from '../domain/ledger';
 import { isViewingCurrentMonth, readiness, safeToSpend } from '../state/selectors';
 import { useAppState, useUi } from '../ui/AppContext';
@@ -39,7 +40,7 @@ export default function Invest() {
           </T>
         </Row>
         <T variant="title" color={p.onHero} testID="invest.ready">
-          {r.ready ? s.readyYes : s.readyNo(good)}
+          {r.ready ? s.readyYes : s.readyNo(good, r.items.length)}
         </T>
         <T variant="small" color={p.onHeroMuted}>
           {s.investIntro}
@@ -66,7 +67,9 @@ export default function Invest() {
       <Ledger />
       <Holdings />
       <CostOfWaiting />
+      <Concepts />
       <Learn />
+      <Calculators />
 
       <Card title={s.safetyTitle} testID="invest.safety">
         {s.safety.map((t, i) => (
@@ -100,6 +103,14 @@ function ReadinessRow({ item }: { item: ReadinessItem }) {
       text = item.status === 'needsData' ? s.rSurplusNoData : item.status === 'good' ? s.rSurplusGood(money(item.surplusMinor)) : s.rSurplusNo;
       if (item.status === 'needsData') action = { label: s.pActIncome, go: () => router.push('/income') };
       else if (item.status === 'opportunity') action = { label: s.pActBudgets, go: () => router.push('/budgets') };
+      break;
+    case 'budgetStable':
+      text = item.variation == null ? s.rStableNoData : item.status === 'good' ? s.rStableGood(formatPercent(item.variation)) : s.rStableNo(formatPercent(item.variation));
+      if (item.status === 'opportunity') action = { label: s.pActBudgets, go: () => router.push('/budgets') };
+      break;
+    case 'emergencySeparate':
+      text = item.status === 'needsData' ? s.rSeparateNoData : item.status === 'good' ? s.rSeparateGood : s.rSeparateNo;
+      if (item.status !== 'good') action = { label: s.pActGoals, go: () => router.navigate('/goals') };
       break;
   }
   return (
@@ -286,6 +297,114 @@ function CostOfWaiting() {
         {s.waitNote}
       </T>
       <Button kind="text" icon="plan" label={s.openCalculator} onPress={() => router.push('/plan')} testID="wait.calculator" style={{ alignSelf: 'flex-start' }} />
+    </Card>
+  );
+}
+
+/** Six ideas everyone should meet before a first investment (D-060). */
+function Concepts() {
+  const { s, p } = useUi();
+  const [open, setOpen] = useState<string | null>(null);
+  return (
+    <Card title={s.conceptsTitle} testID="invest.concepts">
+      {s.concepts.map((x) => {
+        const expanded = open === x.key;
+        return (
+          <View key={x.key} style={{ borderBottomWidth: 1, borderBottomColor: p.outline, paddingBottom: Space.sm }}>
+            <Pressable
+              testID={`concept.${x.key}`}
+              accessibilityRole="button"
+              accessibilityState={{ expanded }}
+              onPress={() => setOpen(expanded ? null : x.key)}
+              style={{ minHeight: MIN_TAP, justifyContent: 'center' }}
+            >
+              <Row style={{ justifyContent: 'space-between' }}>
+                <T variant="label">{x.title}</T>
+                <Icon name={expanded ? 'remove' : 'add'} size={18} color={p.textSubtle} />
+              </Row>
+            </Pressable>
+            {expanded && (
+              <T variant="small" testID={`concept.${x.key}.body`}>
+                {x.body}
+              </T>
+            )}
+          </View>
+        );
+      })}
+    </Card>
+  );
+}
+
+/**
+ * Three learning calculators (D-060). Every input is the user's own, the
+ * fields start EMPTY (a pre-filled rate reads as our expectation — D-050),
+ * and the result is phrased as arithmetic, never as what will happen.
+ */
+function Calculators() {
+  const st = useAppState();
+  const { s, p, money } = useUi();
+  const [kind, setKind] = useState<'fees' | 'inflation' | 'loss'>('fees');
+  const [amount, setAmount] = useState('');
+  const [rate, setRate] = useState('');
+  const [fee, setFee] = useState('');
+  const [years, setYears] = useState('');
+  const num = (t: string, lo: number, hi: number) => {
+    const v = Number(t.trim().replace(',', '.'));
+    return t.trim() === '' || !Number.isFinite(v) || v < lo || v > hi ? null : v;
+  };
+  const a = parseAmount(amount, st.currency);
+  const y = num(years, 1, 50);
+  let result: string | null = null;
+  if (kind === 'fees') {
+    const r = num(rate, 0, 50);
+    const f = num(fee, 0, 50);
+    if (a.ok && r != null && f != null && y != null) {
+      const x = feeImpact({ initialMinor: 0, monthlyMinor: a.minor, annualRatePercent: r, feePercent: f, years: y });
+      result = s.lcFeeResult(money(x.withoutFeeMinor), money(x.withFeeMinor), money(x.feeCostMinor));
+    }
+  } else if (kind === 'inflation') {
+    const i = num(rate, 0, 50);
+    if (a.ok && i != null && y != null) {
+      const x = purchasingPower({ amountMinor: a.minor, inflationPercent: i, years: y });
+      result = s.lcInflationResult(money(x.todayMinor), money(x.erodedMinor));
+    }
+  } else {
+    const d = num(rate, 0, 100);
+    if (a.ok && d != null) {
+      const x = lossAndRecovery({ amountMinor: a.minor, dropPercent: d });
+      result = s.lcLossResult(money(x.afterMinor), money(x.lostMinor), x.recoveryPercent == null ? null : formatPercent(x.recoveryPercent / 100));
+    }
+  }
+  const sym = currencySymbol(st.currency, st.locale, st.classicSign);
+  return (
+    <Card title={s.lcTitle} testID="invest.calc">
+      <T variant="small" muted>
+        {s.lcIntro}
+      </T>
+      <Chips testID="calc.kind" value={kind} onChange={setKind} options={(['fees', 'inflation', 'loss'] as const).map((k) => [k, s.lcKind[k]] as const)} />
+      <Field testID="calc.amount" label={kind === 'fees' ? s.lcMonthly : s.lcAmount} keyboardType="decimal-pad" value={amount} onChangeText={setAmount} suffix={sym} ltr />
+      <Row gap={Space.sm}>
+        <View style={{ flex: 1 }}>
+          <Field testID="calc.rate" label={kind === 'fees' ? s.lcReturn : kind === 'inflation' ? s.lcInflation : s.lcDrop} keyboardType="decimal-pad" value={rate} onChangeText={setRate} ltr />
+        </View>
+        {kind !== 'loss' && (
+          <View style={{ flex: 1 }}>
+            <Field testID="calc.years" label={s.lcYears} keyboardType="number-pad" value={years} onChangeText={setYears} ltr />
+          </View>
+        )}
+      </Row>
+      {kind === 'fees' && <Field testID="calc.fee" label={s.lcFee} keyboardType="decimal-pad" value={fee} onChangeText={setFee} ltr />}
+      {result ? (
+        <View style={{ backgroundColor: p.surfaceMuted, borderRadius: Radii.md, padding: Space.md }}>
+          <T variant="small" testID="calc.result">
+            {result}
+          </T>
+        </View>
+      ) : (
+        <T variant="small" muted testID="calc.invalid">
+          {s.lcInvalid}
+        </T>
+      )}
     </Card>
   );
 }

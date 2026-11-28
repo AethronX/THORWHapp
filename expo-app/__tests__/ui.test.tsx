@@ -885,3 +885,26 @@ test('investments ledger: add a holding, buy, an over-sale is refused, sell, pri
   expect(JSON.stringify(screen.toJSON())).toContain('ادخار طويل الأجل');
   void omr;
 });
+
+test('learning calculators: empty until the user types, results phrased as arithmetic', async () => {
+  const db = await mockDriver.current.open();
+  await migrate(db);
+  const repo = new FinanceRepository(db, () => new Date(2026, 9, 9, 10));
+  await repo.completeOnboarding({ currencyCode: 'OMR', month: { year: 2026, month: 10 }, incomeMinor: 1000000, incomeLabel: 'راتب' });
+  await db.close();
+  app();
+  await screen.findByTestId('dashboard');
+  await nav((router) => router.push('/invest'));
+  await screen.findByTestId('invest.calc');
+  // Nothing pre-filled: no number of ours is ever shown as an expectation.
+  expect(screen.getByTestId('calc.rate').props.value).toBe('');
+  expect(screen.getByTestId('calc.invalid')).toBeTruthy();
+  // A 50 % fall needs a 100 % rise to recover.
+  press('calc.kind.loss');
+  type('calc.amount', '1000');
+  type('calc.rate', '50');
+  expect(String(screen.getByTestId('calc.result').props.children)).toContain('100');
+  // Concepts open in place.
+  press('concept.realized');
+  expect(screen.getByTestId('concept.realized.body')).toBeTruthy();
+});

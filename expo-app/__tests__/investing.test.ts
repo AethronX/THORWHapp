@@ -13,12 +13,14 @@ const debt = (id: number, name: string, remaining: number, rate: number): Debt =
 });
 const asset = (id: number, kind: Asset['kind'], omr: number): Asset => ({ id, name: 'x', kind, valueMinor: omr * 1000, isEstimate: false, updatedDay: { year: 2026, month: 10, day: 1 } });
 
-test('readiness: cushion → no interest debt → surplus; judged only with data', () => {
+test('readiness: cushion → no interest debt → surplus → steady spending → emergency kept apart; judged only with data', () => {
   const none = investReadiness({ monthlyEssentialMinor: null, liquidMinor: 0, debts: [], incomeMinor: 0, expensesMinor: 0 });
   expect(none.items.map((i) => [i.key, i.status])).toEqual([
     ['emergency', 'needsData'],
     ['interestDebt', 'good'],
     ['surplus', 'needsData'],
+    ['budgetStable', 'needsData'],
+    ['emergencySeparate', 'needsData'],
   ]);
   expect(none.ready).toBe(false);
 
@@ -35,7 +37,17 @@ test('readiness: cushion → no interest debt → surplus; judged only with data
   expect(r.items[2]).toEqual({ key: 'surplus', status: 'good', surplusMinor: 200000 });
   expect(r.ready).toBe(false);
 
-  const ok = investReadiness({ monthlyEssentialMinor: 400000, liquidMinor: 1200000, debts: [debt(3, 'سلفة', 300, 0)], incomeMinor: 1000000, expensesMinor: 900000 });
+  // All five in place: cushion, no costly debt, surplus, steady months, an emergency goal of its own.
+  const ok = investReadiness({
+    monthlyEssentialMinor: 400000,
+    liquidMinor: 1200000,
+    debts: [debt(3, 'سلفة', 300, 0)],
+    incomeMinor: 1000000,
+    expensesMinor: 900000,
+    pastMonthTotals: [880000, 910000, 900000],
+    goals: [{ name: 'صندوق الطوارئ', paused: false }],
+    emergencyNames: ['صندوق الطوارئ'],
+  });
   expect(ok.ready).toBe(true);
   expect(investReadiness({ monthlyEssentialMinor: 400000, liquidMinor: 1200000, debts: [], incomeMinor: 1000000, expensesMinor: 1000000 }).items[2].status).toBe('opportunity');
 });
@@ -67,4 +79,54 @@ test('cost of waiting: same monthly amount and end date, started now vs later (h
   expect(r.laterMinor).toBe(fv(180)); // ≈ 29,082
   expect(r.differenceMinor).toBe(fv(240) - fv(180));
   expect(Math.round(r.nowMinor / 1000)).toBe(46204);
+});
+
+// -- educational calculators (D-060) ------------------------------------------
+import { feeImpact, lossAndRecovery, purchasingPower } from '../src/domain/investing';
+
+test('a yearly fee costs more than its percentage suggests, and the cost is shown in money', () => {
+  // 100 OMR a month for 20 years at an assumed 6 %: a 1 % fee costs about 11 % of the end value.
+  const r = feeImpact({ initialMinor: 0, monthlyMinor: 100000, annualRatePercent: 6, feePercent: 1, years: 20 });
+  expect(r.contributedMinor).toBe(24000000);
+  expect(r.withoutFeeMinor).toBeGreaterThan(r.withFeeMinor);
+  expect(r.feeCostMinor).toBe(r.withoutFeeMinor - r.withFeeMinor);
+  expect(r.feeCostMinor / r.withoutFeeMinor).toBeGreaterThan(0.1);
+  // No fee, no cost.
+  expect(feeImpact({ initialMinor: 1000000, monthlyMinor: 0, annualRatePercent: 5, feePercent: 0, years: 10 }).feeCostMinor).toBe(0);
+  // A fee larger than the return is floored at zero growth, never negative growth.
+  expect(feeImpact({ initialMinor: 1000000, monthlyMinor: 0, annualRatePercent: 1, feePercent: 3, years: 10 }).withFeeMinor).toBe(1000000);
+});
+
+test('inflation: what money buys later, in today’s terms', () => {
+  // 1000 at 3 % for 10 years buys what about 744 buys today.
+  const r = purchasingPower({ amountMinor: 1000000, inflationPercent: 3, years: 10 });
+  expect(r.todayMinor).toBe(744094);
+  expect(r.erodedMinor).toBe(255906);
+  expect(purchasingPower({ amountMinor: 1000000, inflationPercent: 0, years: 10 }).todayMinor).toBe(1000000);
+});
+
+test('a loss needs a bigger rise to recover: −50 % needs +100 %', () => {
+  expect(lossAndRecovery({ amountMinor: 1000000, dropPercent: 50 })).toEqual({ afterMinor: 500000, lostMinor: 500000, recoveryPercent: 100 });
+  expect(lossAndRecovery({ amountMinor: 1000000, dropPercent: 20 }).recoveryPercent).toBeCloseTo(25, 10);
+  expect(lossAndRecovery({ amountMinor: 1000000, dropPercent: 100 }).recoveryPercent).toBeNull();
+});
+
+test('steady spending: two or more complete months, judged by how much they vary', () => {
+  const base = { monthlyEssentialMinor: null, liquidMinor: 0, debts: [], incomeMinor: 0, expensesMinor: 0 };
+  const stable = (totals: number[]) => investReadiness({ ...base, pastMonthTotals: totals }).items.find((i) => i.key === 'budgetStable')!;
+  expect(stable([500000]).status).toBe('needsData'); // one month is not a pattern
+  expect(stable([500000, 520000, 480000]).status).toBe('good'); // ±4 %
+  expect(stable([300000, 700000, 500000]).status).toBe('opportunity'); // ±33 %
+  expect(stable([0, 0, 500000]).status).toBe('needsData'); // empty months do not count
+});
+
+test('emergency money kept apart: an active goal by the emergency name, in either language', () => {
+  const base = { monthlyEssentialMinor: null, liquidMinor: 0, debts: [], incomeMinor: 0, expensesMinor: 0, emergencyNames: ['صندوق الطوارئ', 'Emergency fund'] };
+  const sep = (goals: { name: string; paused: boolean }[]) => investReadiness({ ...base, goals }).items.find((i) => i.key === 'emergencySeparate')!.status;
+  expect(sep([])).toBe('needsData');
+  expect(sep([{ name: 'سيارة', paused: false }])).toBe('opportunity');
+  expect(sep([{ name: 'صندوق الطوارئ', paused: false }])).toBe('good');
+  expect(sep([{ name: 'Emergency fund', paused: false }])).toBe('good');
+  // A paused emergency goal is not doing its job.
+  expect(sep([{ name: 'صندوق الطوارئ', paused: true }])).toBe('opportunity');
 });
