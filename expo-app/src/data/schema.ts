@@ -4,7 +4,7 @@ import type { Db, DbExecutor } from './db';
  * Schema versioning via `PRAGMA user_version`. Bump SCHEMA_VERSION and append
  * a step to MIGRATIONS for every change; never edit a shipped step.
  */
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 /** [key, iconCode, isEssential] — key is localised in the UI. */
 export const DEFAULT_CATEGORIES: ReadonlyArray<[string, number, boolean]> = [
@@ -82,10 +82,7 @@ async function v1(db: DbExecutor) {
   `);
   let order = 0;
   for (const [key, icon, essential] of DEFAULT_CATEGORIES) {
-    await db.run(
-      'INSERT INTO categories (key, icon_code, is_essential, sort_order) VALUES (?, ?, ?, ?)',
-      [key, icon, essential ? 1 : 0, order++],
-    );
+    await db.run('INSERT INTO categories (key, icon_code, is_essential, sort_order) VALUES (?, ?, ?, ?)', [key, icon, essential ? 1 : 0, order++]);
   }
 }
 
@@ -129,7 +126,44 @@ async function v2(db: DbExecutor) {
   `);
 }
 
-const MIGRATIONS: Record<number, (db: DbExecutor) => Promise<void>> = { 1: v1, 2: v2 };
+/**
+ * v3 (D-059): the investments ledger. Additive only.
+ * - holdings: what the user owns, each in its OWN currency, with the price per
+ *   unit they last entered and the day they entered it (never a market feed).
+ * - holding_txs: buys, sells, dividends and fees, plus the decision journal
+ *   (reason, risks understood). Quantities are integer millionths of a unit.
+ */
+async function v3(db: DbExecutor) {
+  await db.exec(`
+    CREATE TABLE holdings (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      name        TEXT NOT NULL CHECK (length(trim(name)) > 0),
+      kind        TEXT NOT NULL CHECK (kind IN ('stock', 'fund', 'sukuk', 'gold', 'deposit', 'property', 'other')),
+      currency    TEXT NOT NULL CHECK (length(currency) = 3),
+      price_minor INTEGER CHECK (price_minor IS NULL OR price_minor >= 0),
+      price_day   TEXT CHECK (price_day IS NULL OR length(price_day) = 10),
+      note        TEXT NOT NULL DEFAULT '',
+      created_at  INTEGER NOT NULL,
+      updated_at  INTEGER NOT NULL
+    );
+    CREATE TABLE holding_txs (
+      id             INTEGER PRIMARY KEY AUTOINCREMENT,
+      holding_id     INTEGER NOT NULL REFERENCES holdings(id) ON DELETE CASCADE,
+      kind           TEXT NOT NULL CHECK (kind IN ('buy', 'sell', 'dividend', 'fee')),
+      day            TEXT NOT NULL CHECK (length(day) = 10),
+      quantity_micro INTEGER NOT NULL DEFAULT 0 CHECK (quantity_micro >= 0),
+      price_minor    INTEGER NOT NULL DEFAULT 0 CHECK (price_minor >= 0),
+      amount_minor   INTEGER NOT NULL DEFAULT 0 CHECK (amount_minor >= 0),
+      fee_minor      INTEGER NOT NULL DEFAULT 0 CHECK (fee_minor >= 0),
+      reason         TEXT NOT NULL DEFAULT '',
+      risks          TEXT NOT NULL DEFAULT '',
+      created_at     INTEGER NOT NULL
+    );
+    CREATE INDEX idx_holding_txs_holding ON holding_txs(holding_id);
+  `);
+}
+
+const MIGRATIONS: Record<number, (db: DbExecutor) => Promise<void>> = { 1: v1, 2: v2, 3: v3 };
 
 export class NewerSchemaError extends Error {
   constructor(readonly found: number) {

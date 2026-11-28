@@ -4,6 +4,7 @@
  * expo-sqlite. Only native-only pieces are replaced: the DB driver and the
  * native confirm dialog (auto-answered).
  */
+import { SCHEMA_VERSION } from '../src/data/schema';
 import { Alert } from 'react-native';
 import { act, fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
 
@@ -622,7 +623,7 @@ test('export: full JSON backup and an Excel-ready CSV, via the share sheet', asy
   expect(mockShared[0].uri).toBe('file:///cache/tharwati-backup-2026-10-09.json');
   expect(mockShared[0].opts.mimeType).toBe('application/json');
   const backup = JSON.parse(mockFiles[0].content);
-  expect(backup).toMatchObject({ app: 'tharwati', format: 1, schemaVersion: 2 });
+  expect(backup).toMatchObject({ app: 'tharwati', format: 1, schemaVersion: SCHEMA_VERSION });
   expect(backup.tables.expenses).toHaveLength(1);
   expect(backup.tables.expenses[0]).toMatchObject({ amount_minor: 12500, note: 'لولو, "عروض"' });
   expect(backup.tables.incomes[0]).toMatchObject({ amount_minor: 800000 });

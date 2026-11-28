@@ -1,5 +1,6 @@
 import { addMonths, Day, dayKey, daysInMonth, firstDayKey, lastDayKey, monthKey, parseDayKey, parseMonthKey, YearMonth } from '../core/dates';
 import { BACKUP_TABLES, type BackupRow, type BackupTable } from '../domain/backup';
+import { HOLDING_KINDS, LedgerError, position, type Holding, type HoldingKind, type LedgerTx, type LedgerTxKind } from '../domain/ledger';
 import type { MonthTotals } from '../domain/analytics';
 import { ASSET_KINDS } from '../domain/models';
 import type { Asset, AssetKind, Budget, Category, Debt, Expense, IncomeEntry, SavingsGoal } from '../domain/models';
@@ -505,6 +506,153 @@ export class FinanceRepository {
       }
       await tx.run('DELETE FROM settings WHERE key = ?', [SettingKeys.appLock]);
       for (const r of keep) await tx.run('INSERT INTO settings (key, value) VALUES (?, ?)', [r.key, r.value]);
+    });
+  }
+
+  // -- investments ledger (v3, D-059) -------------------------------------------
+
+  async holdings(): Promise<Holding[]> {
+    const rows = await this.db.all<{ id: number; name: string; kind: string; currency: string; price_minor: number | null; price_day: string | null; note: string }>(
+      'SELECT id, name, kind, currency, price_minor, price_day, note FROM holdings ORDER BY name COLLATE NOCASE, id',
+    );
+    return rows.map((r) => ({
+      id: r.id,
+      name: r.name,
+      kind: (HOLDING_KINDS as readonly string[]).includes(r.kind) ? (r.kind as HoldingKind) : 'other',
+      currency: r.currency,
+      priceMinor: r.price_minor,
+      priceDay: r.price_day ? parseDayKey(r.price_day) : null,
+      note: r.note,
+    }));
+  }
+
+  async holdingTxs(): Promise<LedgerTx[]> {
+    const rows = await this.db.all<{
+      id: number;
+      holding_id: number;
+      kind: string;
+      day: string;
+      quantity_micro: number;
+      price_minor: number;
+      amount_minor: number;
+      fee_minor: number;
+      reason: string;
+      risks: string;
+    }>('SELECT id, holding_id, kind, day, quantity_micro, price_minor, amount_minor, fee_minor, reason, risks FROM holding_txs ORDER BY day, id');
+    return rows.map((r) => ({
+      id: r.id,
+      holdingId: r.holding_id,
+      kind: r.kind as LedgerTxKind,
+      day: parseDayKey(r.day),
+      quantityMicro: r.quantity_micro,
+      priceMinor: r.price_minor,
+      amountMinor: r.amount_minor,
+      feeMinor: r.fee_minor,
+      reason: r.reason,
+      risks: r.risks,
+    }));
+  }
+
+  async addHolding(h: { name: string; kind: HoldingKind; currency: string; note?: string }): Promise<number> {
+    const name = nonBlank(h.name, 'Holding name');
+    if (!/^[A-Z]{3}$/.test(h.currency)) throw new ValidationError('Currency must be an ISO code');
+    if (!(HOLDING_KINDS as readonly string[]).includes(h.kind)) throw new ValidationError('Unknown holding kind');
+    const now = this.nowUtc;
+    const r = await this.db.run('INSERT INTO holdings (name, kind, currency, note, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)', [name, h.kind, h.currency, (h.note ?? '').trim(), now, now]);
+    return r.lastInsertRowId;
+  }
+
+  /** The user's own price per unit, stamped with the day they entered it — never a market feed. */
+  async setHoldingPrice(id: number, priceMinor: number | null, day: Day): Promise<void> {
+    if (priceMinor != null) nonNegative(priceMinor);
+    await this.db.run('UPDATE holdings SET price_minor = ?, price_day = ?, updated_at = ? WHERE id = ?', [priceMinor, priceMinor == null ? null : dayKey(day), this.nowUtc, id]);
+  }
+
+  async deleteHolding(id: number): Promise<void> {
+    await this.db.run('DELETE FROM holdings WHERE id = ?', [id]);
+  }
+
+  /**
+   * Records a transaction only if the holding's history still adds up with it
+   * — the whole history is replayed inside the same transaction, so a sale of
+   * more units than were held on that date is refused, not stored (D-059).
+   */
+  async addHoldingTx(t: Omit<LedgerTx, 'id'>): Promise<number> {
+    for (const v of [t.quantityMicro, t.priceMinor, t.amountMinor, t.feeMinor]) nonNegative(v);
+    if ((t.kind === 'buy' || t.kind === 'sell') && t.quantityMicro <= 0) throw new ValidationError('Quantity must be > 0');
+    if ((t.kind === 'dividend' || t.kind === 'fee') && t.amountMinor <= 0) throw new ValidationError('Amount must be > 0');
+    return this.db.transaction(async (tx) => {
+      const h = await tx.first<{ id: number; name: string; kind: string; currency: string }>('SELECT id, name, kind, currency FROM holdings WHERE id = ?', [t.holdingId]);
+      if (!h) throw new ValidationError('Unknown holding');
+      const existing = await tx.all<{ id: number; kind: string; day: string; quantity_micro: number; price_minor: number; amount_minor: number; fee_minor: number }>(
+        'SELECT id, kind, day, quantity_micro, price_minor, amount_minor, fee_minor FROM holding_txs WHERE holding_id = ?',
+        [t.holdingId],
+      );
+      const replay: LedgerTx[] = existing.map((r) => ({
+        id: r.id,
+        holdingId: t.holdingId,
+        kind: r.kind as LedgerTxKind,
+        day: parseDayKey(r.day),
+        quantityMicro: r.quantity_micro,
+        priceMinor: r.price_minor,
+        amountMinor: r.amount_minor,
+        feeMinor: r.fee_minor,
+        reason: '',
+        risks: '',
+      }));
+      replay.push({ ...t, id: Number.MAX_SAFE_INTEGER });
+      try {
+        position({ id: h.id, name: h.name, kind: 'other', currency: h.currency, priceMinor: null, priceDay: null, note: '' }, replay);
+      } catch (e) {
+        if (e instanceof LedgerError) throw new ValidationError(e.code);
+        throw e;
+      }
+      const r = await tx.run('INSERT INTO holding_txs (holding_id, kind, day, quantity_micro, price_minor, amount_minor, fee_minor, reason, risks, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+        t.holdingId,
+        t.kind,
+        dayKey(t.day),
+        t.quantityMicro,
+        t.priceMinor,
+        t.amountMinor,
+        t.feeMinor,
+        t.reason.trim(),
+        t.risks.trim(),
+        this.nowUtc,
+      ]);
+      return r.lastInsertRowId;
+    });
+  }
+
+  /** Deleting a buy could leave a later sale selling units that never existed: replayed and refused if so. */
+  async deleteHoldingTx(id: number): Promise<void> {
+    await this.db.transaction(async (tx) => {
+      const row = await tx.first<{ holding_id: number }>('SELECT holding_id FROM holding_txs WHERE id = ?', [id]);
+      if (!row) return;
+      const rest = await tx.all<{ id: number; kind: string; day: string; quantity_micro: number; price_minor: number; amount_minor: number; fee_minor: number }>(
+        'SELECT id, kind, day, quantity_micro, price_minor, amount_minor, fee_minor FROM holding_txs WHERE holding_id = ? AND id != ?',
+        [row.holding_id, id],
+      );
+      try {
+        position(
+          { id: row.holding_id, name: 'x', kind: 'other', currency: 'XXX', priceMinor: null, priceDay: null, note: '' },
+          rest.map((r) => ({
+            id: r.id,
+            holdingId: row.holding_id,
+            kind: r.kind as LedgerTxKind,
+            day: parseDayKey(r.day),
+            quantityMicro: r.quantity_micro,
+            priceMinor: r.price_minor,
+            amountMinor: r.amount_minor,
+            feeMinor: r.fee_minor,
+            reason: '',
+            risks: '',
+          })),
+        );
+      } catch (e) {
+        if (e instanceof LedgerError) throw new ValidationError(e.code);
+        throw e;
+      }
+      await tx.run('DELETE FROM holding_txs WHERE id = ?', [id]);
     });
   }
 

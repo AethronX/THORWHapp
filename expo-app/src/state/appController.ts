@@ -1,5 +1,6 @@
 import { countryFromCode } from '../core/countries';
 import { parseBackup, type ParsedBackup } from '../domain/backup';
+import type { Holding, HoldingKind, LedgerTx } from '../domain/ledger';
 import { SCHEMA_VERSION } from '../data/schema';
 import { CLASSIC_SIGN_BY_DEFAULT, Currency, currencyFromCode, DEFAULT_CURRENCY } from '../core/currency';
 import { addMonths, Day, dayFromDate, monthOf, sameMonth, YearMonth } from '../core/dates';
@@ -43,6 +44,9 @@ export interface AppState {
   readonly goals: readonly SavingsGoal[];
   readonly debts: readonly Debt[];
   readonly assets: readonly Asset[];
+  /** Investments ledger (D-059). */
+  readonly holdings: readonly Holding[];
+  readonly holdingTxs: readonly LedgerTx[];
   readonly previousMonthHasIncome: boolean;
   /** Questionnaire answers; null if skipped. */
   readonly profile: Profile | null;
@@ -97,6 +101,8 @@ export class AppController {
       goals: [],
       debts: [],
       assets: [],
+      holdings: [],
+      holdingTxs: [],
       previousMonthHasIncome: false,
       profile: null,
       trend: [],
@@ -160,7 +166,7 @@ export class AppController {
     const isCurrentMonth = sameMonth(month, monthOf(today));
     // Independent reads run together: SQLite still serialises them, but the
     // awaits no longer queue one after another (performance review #16).
-    const [all, incomes, history, budgets, goals, debts, assets, prevIncomes, trend, prevSamePeriod] = await Promise.all([
+    const [all, incomes, history, budgets, goals, debts, assets, prevIncomes, trend, prevSamePeriod, holdings, holdingTxs] = await Promise.all([
       r.categories(true),
       r.incomesFor(month),
       r.expensesBetween(addMonths(month, -3), month),
@@ -171,6 +177,8 @@ export class AppController {
       r.incomesFor(addMonths(month, -1)),
       r.monthlyTotals(month, 6),
       isCurrentMonth ? r.expensesUntil(addMonths(month, -1), today.day) : Promise.resolve(null),
+      r.holdings(),
+      r.holdingTxs(),
     ]);
     return {
       month,
@@ -186,6 +194,8 @@ export class AppController {
       previousMonthHasIncome: incomes.length === 0 && prevIncomes.length > 0,
       trend,
       previousSamePeriodExpensesMinor: prevSamePeriod,
+      holdings,
+      holdingTxs,
     };
   }
 
@@ -379,6 +389,11 @@ export class AppController {
   // -- mutations -------------------------------------------------------------
 
   addExpense = (e: Omit<Expense, 'id'>) => this.mutate((r) => r.addExpense(e));
+  addHolding = (h: { name: string; kind: HoldingKind; currency: string; note?: string }) => this.mutate((r) => r.addHolding(h));
+  setHoldingPrice = (id: number, priceMinor: number | null) => this.mutate((r) => r.setHoldingPrice(id, priceMinor, this.state.today));
+  deleteHolding = (id: number) => this.mutate((r) => r.deleteHolding(id));
+  addHoldingTx = (t: Omit<LedgerTx, 'id'>) => this.mutate((r) => r.addHoldingTx(t));
+  deleteHoldingTx = (id: number) => this.mutate((r) => r.deleteHoldingTx(id));
   updateExpense = (e: Expense) => this.mutate((r) => r.updateExpense(e));
   deleteExpense = (id: number) => this.mutate((r) => r.deleteExpense(id));
 

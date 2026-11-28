@@ -42,7 +42,7 @@ export function minorToDecimal(minor: number, exponent: number): string {
 // -- restore (D-058) ------------------------------------------------------------
 
 /** Tables a backup may contain, parent tables first (the order rows are written back in). */
-export const BACKUP_TABLES = ['settings', 'categories', 'expenses', 'incomes', 'budgets', 'goals', 'goal_contributions', 'debts', 'debt_payments', 'assets'] as const;
+export const BACKUP_TABLES = ['settings', 'categories', 'expenses', 'incomes', 'budgets', 'goals', 'goal_contributions', 'debts', 'debt_payments', 'assets', 'holdings', 'holding_txs'] as const;
 export type BackupTable = (typeof BACKUP_TABLES)[number];
 
 export type BackupRow = Record<string, string | number | null>;
