@@ -4,11 +4,12 @@ import { Pressable, View } from 'react-native';
 
 import { minorToEditable, parseAmount } from '../core/amountParser';
 import { allocation, costOfWaiting, ReadinessItem } from '../domain/investing';
+import { position, totalsByCurrency } from '../domain/ledger';
 import { isViewingCurrentMonth, readiness, safeToSpend } from '../state/selectors';
 import { useAppState, useUi } from '../ui/AppContext';
 import { Button, Card, CurrentMonthOnly, EmptyState, Field, HeroPanel, Icon, LabeledProgress, Row, Screen, StatusChip, T } from '../ui/components';
 import { haptic } from '../ui/feedback';
-import { currencySymbol, formatPercent } from '../ui/format';
+import { currencySymbol, formatPercent, formatQuantity } from '../ui/format';
 import { MIN_TAP, Radii, Space } from '../ui/theme';
 
 /**
@@ -62,6 +63,7 @@ export default function Invest() {
         ))}
       </Card>
 
+      <Ledger />
       <Holdings />
       <CostOfWaiting />
       <Learn />
@@ -124,6 +126,82 @@ function ReadinessRow({ item }: { item: ReadinessItem }) {
         />
       )}
     </View>
+  );
+}
+
+/**
+ * The investments ledger (D-059): per-currency totals of what the user
+ * recorded, and one row per holding. Never a market price, never a sum across
+ * currencies, and an unpriced holding is "unknown", not zero.
+ */
+function Ledger() {
+  const st = useAppState();
+  const { s, p, moneyIn } = useUi();
+  const positions = st.holdings.map((h) => position(h, st.holdingTxs));
+  const totals = totalsByCurrency(positions);
+  return (
+    <Card title={s.ledgerTitle} testID="invest.ledger" action={<Button size="sm" kind="text" icon="add" label={s.ledgerAdd} onPress={() => router.push('/holding/new')} testID="invest.ledger.add" />}>
+      <T variant="small" muted>
+        {s.ledgerIntro}
+      </T>
+      {positions.length === 0 ? (
+        <EmptyState compact icon="chartUp" title={s.ledgerEmpty} testID="invest.ledger.empty" />
+      ) : (
+        <>
+          {totals.map((t) => (
+            <View key={t.currency} testID={`invest.ledger.total.${t.currency}`} style={{ backgroundColor: p.surfaceMuted, borderRadius: Radii.md, padding: Space.md, gap: Space.xxs }}>
+              <T variant="label">{s.ledgerTotalsIn(t.currency)}</T>
+              <Row style={{ justifyContent: 'space-between' }}>
+                <T variant="small" muted>
+                  {s.ledgerCost}
+                </T>
+                <T variant="label">{moneyIn(t.costMinor, t.currency)}</T>
+              </Row>
+              <Row style={{ justifyContent: 'space-between' }}>
+                <T variant="small" muted>
+                  {s.ledgerValue}
+                </T>
+                <T variant="label">{moneyIn(t.valueMinor, t.currency)}</T>
+              </Row>
+              {t.unpriced > 0 && (
+                <T variant="small" color={p.warning}>
+                  {s.ledgerUnpriced(t.unpriced)}
+                </T>
+              )}
+            </View>
+          ))}
+          {positions.map((x) => (
+            <Pressable
+              key={x.holding.id}
+              testID={`invest.ledger.row.${x.holding.id}`}
+              accessibilityRole="button"
+              onPress={() => router.push(`/holding/${x.holding.id}`)}
+              style={{ minHeight: MIN_TAP, paddingVertical: Space.xs, borderBottomWidth: 1, borderBottomColor: p.outline }}
+            >
+              <Row style={{ justifyContent: 'space-between' }}>
+                <View style={{ flex: 1 }}>
+                  <T variant="label">{x.holding.name}</T>
+                  <T variant="small" muted>{`${s.holdingKind[x.holding.kind]} · ${formatQuantity(x.quantityMicro)}`}</T>
+                </View>
+                <View style={{ alignItems: 'flex-end' }}>
+                  <T variant="label">{moneyIn(x.valueMinor ?? x.costMinor, x.holding.currency)}</T>
+                  {x.unrealizedMinor != null && (
+                    <T variant="small" color={x.unrealizedMinor >= 0 ? p.positive : p.negative}>
+                      {moneyIn(x.unrealizedMinor, x.holding.currency, true)}
+                    </T>
+                  )}
+                </View>
+              </Row>
+            </Pressable>
+          ))}
+          {totals.length > 1 && (
+            <T variant="small" muted testID="invest.ledger.noMixing">
+              {s.ledgerNoMixing}
+            </T>
+          )}
+        </>
+      )}
+    </Card>
   );
 }
 

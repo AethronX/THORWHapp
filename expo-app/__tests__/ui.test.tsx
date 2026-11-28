@@ -833,3 +833,55 @@ test('week chart: last 7 days, tap a day to read its total and entries', async (
   press('week.bar.4'); // Oct 7 = Wednesday
   expect(screen.getByTestId('week.detail').props.children).toBe(ar.weekDetail('الأربعاء', '‎4.000‎ ر.ع.', 2));
 });
+
+test('investments ledger: add a holding, buy, an over-sale is refused, sell, price it — figures and the decision journal on screen', async () => {
+  const db = await mockDriver.current.open();
+  await migrate(db);
+  const repo = new FinanceRepository(db, () => new Date(2026, 9, 9, 10));
+  await repo.completeOnboarding({ currencyCode: 'OMR', month: { year: 2026, month: 10 }, incomeMinor: 1000000, incomeLabel: 'راتب' });
+  await db.close();
+  const omr = (v: string) => `‎${v}‎ ر.ع.`;
+  app();
+  await screen.findByTestId('dashboard');
+  await nav((router) => router.push('/invest'));
+  expect(await screen.findByTestId('invest.ledger.empty')).toBeTruthy();
+
+  press('invest.ledger.add');
+  await screen.findByTestId('holdingNew');
+  type('holding.name', 'صندوق مؤشر');
+  press('holding.kind.fund');
+  press('holding.save');
+  const row = await screen.findByTestId(/^invest\.ledger\.row\./);
+  fireEvent.press(row);
+  await screen.findByTestId('holding');
+
+  // Buy 10 units at 1.000 with a 0.500 fee, with the reason behind it.
+  type('tx.units', '10');
+  type('tx.price', '1');
+  type('tx.fee', '0.5');
+  type('tx.reason', 'ادخار طويل الأجل');
+  press('tx.save');
+  await waitFor(() => expect(label('holding.cost')).toContain('10.500'));
+
+  // Selling 11 when 10 are held is refused, with a plain message.
+  press('tx.kind.sell');
+  type('tx.units', '11');
+  type('tx.price', '1.2');
+  press('tx.save');
+  expect((await screen.findByTestId('tx.error')).props.children).toBe(ar.txSellTooMuch);
+
+  // Sell 4 at 1.200: proceeds 4.800 − cost of 4 units (4.200) = 0.600 realised.
+  type('tx.units', '4');
+  press('tx.save');
+  await waitFor(() => expect(label('holding.realized')).toContain('0.600'));
+
+  // No price yet → no value shown; entering one shows it, dated, as the user's own.
+  expect(screen.queryByTestId('holding.value')).toBeNull();
+  type('holding.price', '1.1');
+  press('holding.savePrice');
+  await waitFor(() => expect(label('holding.value')).toContain('6.600'));
+  expect(JSON.stringify(screen.getByTestId('holding.priceAsOf').props.children)).toContain('ليس سعر سوق');
+  // The decision journal is part of the history.
+  expect(JSON.stringify(screen.toJSON())).toContain('ادخار طويل الأجل');
+  void omr;
+});

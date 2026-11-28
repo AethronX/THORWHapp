@@ -1,3 +1,4 @@
+import { currencyFromCode } from '../core/currency';
 import { createContext, ReactNode, useContext, useMemo, useSyncExternalStore } from 'react';
 import { useColorScheme } from 'react-native';
 
@@ -30,6 +31,8 @@ export interface UiKit {
   rtl: boolean;
   /** Format minor units in the active currency and language (masked when amounts are hidden). */
   money: (minor: number, signed?: boolean) => string;
+  /** An amount in ANOTHER currency (a holding's own), never converted (D-059). */
+  moneyIn: (minor: number, currencyCode: string, signed?: boolean) => string;
   /** Amounts are masked ("hide amounts" privacy mode). */
   hidden: boolean;
   /** Draw digits as ١٢٣ (Arabic only). */
@@ -53,6 +56,10 @@ export function useUi(): UiKit {
             ? `••••\u00A0${currencySymbol(st.currency, st.locale, st.classicSign)}`
             : `${st.currency.code}\u00A0••••`
           : formatMoney(minor, st.currency, st.locale, signed, st.classicSign),
+      moneyIn: (minor: number, code: string, signed = false) => {
+        const c = currencyFromCode(code).code === code ? currencyFromCode(code) : { code, exponent: 2 };
+        return st.hideAmounts ? `${code}\u00A0••••` : formatMoney(minor, c, st.locale, signed, st.classicSign);
+      },
       hidden: st.hideAmounts,
       arabicDigits: st.locale === 'ar' && st.arabicDigits,
       say: (text: string) => speakSigns(text, st.locale),

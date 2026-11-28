@@ -136,6 +136,14 @@ function group(n: number): string {
 }
 
 const LRM = '‎';
+/** Units held, from millionths: "12.5", "0.25", "1,000" — trailing zeros dropped (D-059). */
+export function formatQuantity(micro: number): string {
+  const whole = Math.floor(micro / 1_000_000);
+  const frac = micro % 1_000_000;
+  const tail = frac ? `.${String(frac).padStart(6, '0').replace(/0+$/, '')}` : '';
+  return `${LRM}${group(whole)}${tail}${LRM}`;
+}
+
 /** No-break space: an amount and its currency never wrap onto different lines. */
 const NBSP = '\u00A0';
 
