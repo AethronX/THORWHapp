@@ -1,4 +1,4 @@
-import { addDays, Day, dayKey, dayToDate, monthOf, sameMonth } from '../core/dates';
+import { addDays, Day, dayKey, dayToDate, daysInMonth, monthOf, sameMonth } from '../core/dates';
 import * as fe from '../domain/financeEngine';
 import {
   averageSpending,
@@ -254,4 +254,28 @@ export function shortcutCategories(s: AppState, n = 4): Category[] {
   const used = ranked.filter((c) => (uses.get(c.id) ?? 0) > 0);
   const fill = DEFAULT_SHORTCUTS.map((k) => s.categories.find((c) => c.key === k)).filter((c): c is Category => !!c && !used.includes(c));
   return [...used, ...fill].slice(0, n);
+}
+
+// -- home: where am I (D-061) ---------------------------------------------------
+
+/**
+ * Obligation payments due in the next `withinDays` days, soonest first. A due
+ * day past the end of a short month falls on its last day; an obligation with
+ * no due day or no monthly payment is skipped rather than guessed.
+ */
+export function upcomingPayments(s: AppState, withinDays = 10): { debt: AppState['debts'][number]; day: Day; inDays: number }[] {
+  const out: { debt: AppState['debts'][number]; day: Day; inDays: number }[] = [];
+  for (const d of s.debts) {
+    if (d.dueDay == null || d.remainingMinor <= 0 || d.monthlyPaymentMinor <= 0) continue;
+    for (let k = 0; k <= 1; k++) {
+      const m = k === 0 ? { year: s.today.year, month: s.today.month } : s.today.month === 12 ? { year: s.today.year + 1, month: 1 } : { year: s.today.year, month: s.today.month + 1 };
+      const day: Day = { ...m, day: Math.min(d.dueDay, daysInMonth(m.year, m.month)) };
+      const inDays = Math.round((dayToDate(day).getTime() - dayToDate(s.today).getTime()) / 86400000);
+      if (inDays >= 0) {
+        if (inDays <= withinDays) out.push({ debt: d, day, inDays });
+        break;
+      }
+    }
+  }
+  return out.sort((a, b) => a.inDays - b.inDays || a.debt.id - b.debt.id);
 }

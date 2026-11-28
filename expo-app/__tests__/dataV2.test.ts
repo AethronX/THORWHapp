@@ -23,7 +23,10 @@ test('v1 → v2 keeps every existing row and adds debts, assets, goal pause', as
   expect((await db.first<{ user_version: number }>('PRAGMA user_version'))?.user_version).toBe(SCHEMA_VERSION);
   const repo = new FinanceRepository(db, clock);
   expect(await repo.expensesFor({ year: 2026, month: 10 })).toEqual([{ id: 1, amountMinor: 12500, categoryId: 2, date: d(2026, 10, 1), note: 'لولو' }]);
-  expect(await repo.goals()).toEqual([{ id: 1, name: 'سفر', targetMinor: 1200000, savedMinor: 200000, targetDate: d(2027, 10, 1), paused: false, lastContributionDay: d(2026, 10, 1) }]);
+  expect(await repo.goals()).toEqual([
+    // ageDays and recent90Minor (D-061) are read alongside; the migrated row itself is unchanged.
+    expect.objectContaining({ id: 1, name: 'سفر', targetMinor: 1200000, savedMinor: 200000, targetDate: d(2027, 10, 1), paused: false, lastContributionDay: d(2026, 10, 1) }),
+  ]);
   expect(await repo.debts()).toEqual([]);
   expect(await repo.assets()).toEqual([]);
   await db.close();

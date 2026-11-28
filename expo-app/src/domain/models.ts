@@ -1,24 +1,9 @@
 import type { Day, YearMonth } from '../core/dates';
 
-export type CategoryKey =
-  | 'housing'
-  | 'food'
-  | 'transport'
-  | 'utilities'
-  | 'telecom'
-  | 'health'
-  | 'education'
-  | 'family'
-  | 'shopping'
-  | 'entertainment'
-  | 'debt'
-  | 'other';
+export type CategoryKey = 'housing' | 'food' | 'transport' | 'utilities' | 'telecom' | 'health' | 'education' | 'family' | 'shopping' | 'entertainment' | 'debt' | 'other';
 
 /** Built-in category order — matches iconCode 0..11 in the database. */
-export const CATEGORY_KEYS: readonly CategoryKey[] = [
-  'housing', 'food', 'transport', 'utilities', 'telecom', 'health',
-  'education', 'family', 'shopping', 'entertainment', 'debt', 'other',
-];
+export const CATEGORY_KEYS: readonly CategoryKey[] = ['housing', 'food', 'transport', 'utilities', 'telecom', 'health', 'education', 'family', 'shopping', 'entertainment', 'debt', 'other'];
 
 /** Built-in categories have a stable `key` (localised in the UI) and no name. */
 export interface Category {
@@ -62,6 +47,10 @@ export interface SavingsGoal {
   paused: boolean;
   /** Day of the latest positive contribution (null/absent: none recorded). */
   lastContributionDay?: Day | null;
+  /** Money put in over the last 90 days (D-061): the user's actual pace. */
+  recent90Minor?: number;
+  /** Whole days since the goal was created. */
+  ageDays?: number;
 }
 
 /** An obligation (loan, card, instalments). remaining = original - paid. */

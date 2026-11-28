@@ -41,8 +41,7 @@ export const SEASON_LOOKAHEAD_DAYS = 150;
 export const SEASON_MIN_DAYS = 10;
 
 const DAY_MS = 86_400_000;
-export const daysBetween = (from: Day, to: Day) =>
-  Math.round((Date.UTC(to.year, to.month - 1, to.day) - Date.UTC(from.year, from.month - 1, from.day)) / DAY_MS);
+export const daysBetween = (from: Day, to: Day) => Math.round((Date.UTC(to.year, to.month - 1, to.day) - Date.UTC(from.year, from.month - 1, from.day)) / DAY_MS);
 
 /** The next season (if any) starting within the lookahead window. */
 export function nextSeason(today: Day, table: readonly Season[] = SEASONS): (Season & { daysAway: number }) | null {

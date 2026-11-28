@@ -282,3 +282,21 @@ export function withoutDismissed(items: Guidance[], dismissed: Readonly<Record<s
   const key = `${month.year}-${String(month.month).padStart(2, '0')}`;
   return items.filter((g) => dismissed[g.id] !== key);
 }
+
+/**
+ * How solid a step is, and when it should be looked at again (D-061).
+ *
+ * Steps read only this month's numbers (add income, over budget, overspending,
+ * a goal at risk, a surplus) stand on what is recorded now. Steps that compare
+ * months or average them (a rising category, the emergency fund, a season fund)
+ * are only as good as the months behind them: with fewer than two months of
+ * spending they are shown as "limited". Each step is reviewed at the end of the
+ * month, except "pay yourself first", which is only meaningful in the first
+ * days after the salary.
+ */
+export function guidanceBasis(kind: Guidance['kind'], monthsOfData: number, today: Day): { sufficiency: 'enough' | 'limited'; reviewOn: Day } {
+  const historical = kind === 'categoryRising' || kind === 'emergencyFund' || kind === 'season';
+  const sufficiency = historical && monthsOfData < 2 ? 'limited' : 'enough';
+  const reviewOn = kind === 'payYourselfFirst' ? addDays(today, PAY_FIRST_DAYS) : { year: today.year, month: today.month, day: daysInMonth(today.year, today.month) };
+  return { sufficiency, reviewOn };
+}

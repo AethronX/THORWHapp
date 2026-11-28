@@ -73,10 +73,7 @@ function requireRate(p: number) {
 
 function requireInflation(p: number) {
   if (Number.isNaN(p) || p < MIN_INFLATION || p > MAX_INFLATION) {
-    throw new FinanceInputError(
-      'inflationPercent',
-      `must be in ${MIN_INFLATION}..${MAX_INFLATION}`,
-    );
+    throw new FinanceInputError('inflationPercent', `must be in ${MIN_INFLATION}..${MAX_INFLATION}`);
   }
 }
 
@@ -106,11 +103,7 @@ export function savingsRate(incomeMinor: number, expensesMinor: number): number 
 }
 
 /** start + net × months. Cash only, no growth. */
-export function projectedCashBalance(
-  startMinor: number,
-  monthlyNetMinor: number,
-  months: number,
-): number {
+export function projectedCashBalance(startMinor: number, monthlyNetMinor: number, months: number): number {
   requireMonths(months);
   return startMinor + monthlyNetMinor * months;
 }
@@ -132,12 +125,7 @@ export interface FutureValueResult {
  * FV = P(1+r)^n + PMT((1+r)^n − 1)/r   (r > 0)
  * FV = P + PMT·n                       (r = 0)
  */
-export function futureValue(args: {
-  initialMinor: number;
-  monthlyMinor: number;
-  months: number;
-  annualRatePercent: number;
-}): FutureValueResult {
+export function futureValue(args: { initialMinor: number; monthlyMinor: number; months: number; annualRatePercent: number }): FutureValueResult {
   const { initialMinor, monthlyMinor, months, annualRatePercent } = args;
   requireNonNegative('initialMinor', initialMinor);
   requireNonNegative('monthlyMinor', monthlyMinor);
@@ -164,23 +152,12 @@ export function futureValue(args: {
   };
 }
 
-export function compareScenarios(args: {
-  initialMinor: number;
-  monthlyMinor: number;
-  months: number;
-  annualRatesPercent: number[];
-}): FutureValueResult[] {
-  return args.annualRatesPercent.map((rate) =>
-    futureValue({ ...args, annualRatePercent: rate }),
-  );
+export function compareScenarios(args: { initialMinor: number; monthlyMinor: number; months: number; annualRatesPercent: number[] }): FutureValueResult[] {
+  return args.annualRatesPercent.map((rate) => futureValue({ ...args, annualRatePercent: rate }));
 }
 
 /** Today's purchasing power: nominal / (1 + i)^(months/12). */
-export function realValue(args: {
-  nominalMinor: number;
-  months: number;
-  annualInflationPercent: number;
-}): number {
+export function realValue(args: { nominalMinor: number; months: number; annualInflationPercent: number }): number {
   requireMonths(args.months);
   requireInflation(args.annualInflationPercent);
   const factor = Math.pow(1 + args.annualInflationPercent / 100, args.months / 12);
@@ -196,12 +173,7 @@ export function realValue(args: {
  *   r = 0: remaining / n;  r > 0: remaining · r / ((1+r)^n − 1)
  * 0 if already reached; whole remainder if months = 0.
  */
-export function requiredMonthlySaving(args: {
-  targetMinor: number;
-  savedMinor: number;
-  months: number;
-  annualRatePercent?: number;
-}): number {
+export function requiredMonthlySaving(args: { targetMinor: number; savedMinor: number; months: number; annualRatePercent?: number }): number {
   const { targetMinor, savedMinor, months } = args;
   const rate = args.annualRatePercent ?? 0;
   requireNonNegative('targetMinor', targetMinor);
@@ -233,11 +205,7 @@ export interface EmergencyFundResult {
   monthsCovered: number | null;
 }
 
-export function emergencyFund(args: {
-  monthlyEssentialMinor: number;
-  savedMinor: number;
-  targetMonths?: number;
-}): EmergencyFundResult {
+export function emergencyFund(args: { monthlyEssentialMinor: number; savedMinor: number; targetMonths?: number }): EmergencyFundResult {
   const targetMonths = args.targetMonths ?? 6;
   requireNonNegative('monthlyEssentialMinor', args.monthlyEssentialMinor);
   requireNonNegative('savedMinor', args.savedMinor);
@@ -248,10 +216,7 @@ export function emergencyFund(args: {
   return {
     targetMinor: target,
     gapMinor: Math.max(0, target - args.savedMinor),
-    monthsCovered:
-      args.monthlyEssentialMinor === 0
-        ? null
-        : args.savedMinor / args.monthlyEssentialMinor,
+    monthsCovered: args.monthlyEssentialMinor === 0 ? null : args.savedMinor / args.monthlyEssentialMinor,
   };
 }
 
@@ -269,11 +234,7 @@ export interface DebtPayoffResult {
  * rounded to the minor unit each month. Assumes fixed rate, no fees, no new
  * borrowing, payment at month end after interest.
  */
-export function debtPayoff(args: {
-  balanceMinor: number;
-  annualRatePercent: number;
-  monthlyPaymentMinor: number;
-}): DebtPayoffResult {
+export function debtPayoff(args: { balanceMinor: number; annualRatePercent: number; monthlyPaymentMinor: number }): DebtPayoffResult {
   const { balanceMinor, annualRatePercent, monthlyPaymentMinor } = args;
   requireNonNegative('balanceMinor', balanceMinor);
   requireNonNegative('monthlyPaymentMinor', monthlyPaymentMinor);
@@ -300,4 +261,22 @@ export function debtPayoff(args: {
     }
   }
   return { paysOff: false, months: MAX_MONTHS, totalInterestMinor: interestTotal, totalPaidMinor: paid };
+}
+
+/**
+ * Is a goal on pace (D-061)? Compares what the user has ACTUALLY been putting
+ * in — the last 90 days, or since the goal began if it is younger — with what
+ * the deadline needs each month. Under 30 days old there is no pace yet, so no
+ * verdict. This reads the record; it does not promise the goal will be met.
+ */
+export function goalPace(args: {
+  requiredMonthlyMinor: number;
+  recent90Minor: number;
+  ageDays: number;
+}): { status: 'needsData' } | { status: 'onTrack' | 'behind'; paceMonthlyMinor: number; gapMinor: number } {
+  if (args.ageDays < 30) return { status: 'needsData' };
+  const months = Math.min(3, args.ageDays / 30);
+  const pace = Math.round(args.recent90Minor / months);
+  const gap = Math.max(0, args.requiredMonthlyMinor - pace);
+  return { status: gap === 0 ? 'onTrack' : 'behind', paceMonthlyMinor: pace, gapMinor: gap };
 }

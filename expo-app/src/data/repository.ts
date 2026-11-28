@@ -1,4 +1,4 @@
-import { addMonths, Day, dayKey, daysInMonth, firstDayKey, lastDayKey, monthKey, parseDayKey, parseMonthKey, YearMonth } from '../core/dates';
+import { addDays, addMonths, Day, dayFromDate, dayKey, daysInMonth, firstDayKey, lastDayKey, monthKey, parseDayKey, parseMonthKey, YearMonth } from '../core/dates';
 import { BACKUP_TABLES, type BackupRow, type BackupTable } from '../domain/backup';
 import { HOLDING_KINDS, LedgerError, position, type Holding, type HoldingKind, type LedgerTx, type LedgerTxKind } from '../domain/ledger';
 import type { MonthTotals } from '../domain/analytics';
@@ -349,12 +349,19 @@ export class FinanceRepository {
       saved_minor: number;
       paused: number;
       last_day: string | null;
-    }>(`
-      SELECT g.id, g.name, g.target_minor, g.target_day, g.paused,
+      recent_minor: number;
+      created_at: number;
+    }>(
+      `
+      SELECT g.id, g.name, g.target_minor, g.target_day, g.paused, g.created_at,
              COALESCE(SUM(c.amount_minor), 0) AS saved_minor,
-             MAX(CASE WHEN c.amount_minor > 0 THEN c.day END) AS last_day
+             MAX(CASE WHEN c.amount_minor > 0 THEN c.day END) AS last_day,
+             COALESCE(SUM(CASE WHEN c.amount_minor > 0 AND c.day >= ? THEN c.amount_minor END), 0) AS recent_minor
       FROM goals g LEFT JOIN goal_contributions c ON c.goal_id = g.id
-      GROUP BY g.id ORDER BY g.target_day, g.id`);
+      GROUP BY g.id ORDER BY g.target_day, g.id`,
+      [dayKey(addDays(dayFromDate(this.clock()), -90))],
+    );
+    const now = this.nowUtc;
     return rows.map((r) => ({
       id: r.id,
       name: r.name,
@@ -363,6 +370,8 @@ export class FinanceRepository {
       targetDate: parseDayKey(r.target_day),
       paused: r.paused === 1,
       lastContributionDay: r.last_day ? parseDayKey(r.last_day) : null,
+      recent90Minor: r.recent_minor,
+      ageDays: Math.max(0, Math.floor((now - r.created_at) / 86400000)),
     }));
   }
 

@@ -24,6 +24,7 @@ import {
   savingsRate,
   shortcutCategories,
   spends,
+  upcomingPayments,
 } from '../../state/selectors';
 import { useAppState, useController, useUi } from '../../ui/AppContext';
 import { AnimatedAmount, Button, Card, EmptyState, Fab, Icon, IconName, LabeledProgress, MonthSwitcher, Row, runGuarded, Screen, T } from '../../ui/components';
@@ -191,6 +192,8 @@ export default function Dashboard() {
         <NextStepCard items={steps} />
 
         {isViewingCurrentMonth(st) && <QuickBar />}
+
+        {isViewingCurrentMonth(st) && <Glance />}
 
         <SmartSummary />
 
@@ -382,6 +385,61 @@ function SmartSummary() {
 }
 
 /** One-tap logging (most used categories → quick add, category preset) + today / last 7 days. */
+/**
+ * "Where am I" in three lines (D-061): the safety cushion, what is due soon,
+ * and recorded net worth — each one tap from its screen. Lines with no data
+ * say so instead of showing a zero.
+ */
+function Glance() {
+  const st = useAppState();
+  const { s, p, money, say } = useUi();
+  const em = readiness(st).items.find((i) => i.key === 'emergency');
+  const months = em && em.key === 'emergency' ? em.months : null;
+  const due = upcomingPayments(st);
+  const hasWealth = st.assets.length > 0 || st.debts.length > 0;
+  const line = (icon: IconName, title: string, text: string, to: '/goals' | '/wealth', testID: string, tone?: string) => (
+    <PressScale testID={testID} accessibilityRole="button" accessibilityLabel={say(`${title}: ${text}`)} onPress={() => router.push(to)}>
+      <Row gap={Space.md} style={{ minHeight: MIN_TAP, paddingVertical: Space.xxs }}>
+        <Icon name={icon} size={20} color={tone ?? p.primary} />
+        <View style={{ flex: 1 }}>
+          <T variant="small" muted>
+            {title}
+          </T>
+          <T variant="label" color={tone}>
+            {text}
+          </T>
+        </View>
+        <Icon name="forward" weight="regular" size={16} color={p.textSubtle} />
+      </Row>
+    </PressScale>
+  );
+  return (
+    <Card title={s.glanceTitle} testID="home.glance">
+      {line(
+        'shield',
+        s.glanceEmergency,
+        months == null ? s.glanceEmergencyNoData : s.glanceEmergencyMonths(s.monthsApprox(Math.floor(months * 10) / 10)),
+        '/goals',
+        'home.glance.emergency',
+        months != null && months < 3 ? p.warning : undefined,
+      )}
+      {line(
+        'calendar',
+        s.glanceDue,
+        due.length === 0
+          ? s.glanceNoneDue
+          : due
+              .slice(0, 2)
+              .map((x) => s.glanceDueItem(x.debt.name, money(x.debt.monthlyPaymentMinor), x.inDays))
+              .join(' · '),
+        '/wealth',
+        'home.glance.due',
+      )}
+      {hasWealth && line('coins', s.glanceNet, money(wealth(st).netMinor), '/wealth', 'home.glance.net')}
+    </Card>
+  );
+}
+
 function QuickBar() {
   const st = useAppState();
   const { s, p, money } = useUi();

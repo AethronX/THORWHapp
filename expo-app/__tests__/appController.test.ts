@@ -198,3 +198,30 @@ test('a failure after the database opened leaves no repository behind', async ()
   expect(a.getState().status).toBe('ready');
   await a.dispose();
 });
+
+// -- home: upcoming obligations (D-061) -----------------------------------------
+import { upcomingPayments } from '../src/state/selectors';
+
+test('upcoming payments: due in the next days, soonest first, short months clamped, no guessing', () => {
+  const debt = (id: number, dueDay: number | null, monthly = 50000) => ({
+    id,
+    name: `d${id}`,
+    originalMinor: 1,
+    paidMinor: 0,
+    remainingMinor: 100000,
+    annualRatePercent: 0,
+    monthlyPaymentMinor: monthly,
+    dueDay,
+  });
+  const st = (day: number, month: number, debts: ReturnType<typeof debt>[]) => ({ ...s(), today: { year: 2026, month, day }, debts });
+  // 28 Feb 2026: a due day of 31 falls on the 28th (today); the 3rd of next month is 3 days away.
+  const r = upcomingPayments(st(28, 2, [debt(1, 3), debt(2, 31)]) as never);
+  expect(r.map((x) => [x.debt.id, x.inDays])).toEqual([
+    [2, 0],
+    [1, 3],
+  ]);
+  // No due day, or nothing to pay monthly: skipped, not guessed.
+  expect(upcomingPayments(st(1, 3, [debt(3, null), debt(4, 5, 0)]) as never)).toEqual([]);
+  // Beyond the window: not shown.
+  expect(upcomingPayments(st(1, 3, [debt(5, 25)]) as never)).toEqual([]);
+});

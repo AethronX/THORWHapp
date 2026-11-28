@@ -16,12 +16,7 @@ import type { Asset, Category, CategorySpend, Debt, Expense, SavingsGoal } from 
 export type PrincipleKey = 'payYourselfFirst' | 'roomForError' | 'measureWealth' | 'assetsVsLiabilities' | 'debtFocus' | 'consciousSpending';
 export type PrincipleStatus = 'good' | 'opportunity' | 'needsData';
 
-export type PrincipleAction =
-  | { type: 'openGoals' }
-  | { type: 'openWealth' }
-  | { type: 'addIncome' }
-  | { type: 'reviewBudgets' }
-  | { type: 'setBudget'; categoryId: number };
+export type PrincipleAction = { type: 'openGoals' } | { type: 'openWealth' } | { type: 'addIncome' } | { type: 'reviewBudgets' } | { type: 'setBudget'; categoryId: number };
 
 export type PrincipleResult =
   | { key: 'payYourselfFirst'; status: PrincipleStatus; rate: number | null; action: PrincipleAction }
@@ -113,11 +108,13 @@ export function evaluatePrinciples(args: {
 
   // 4. Assets put money in, liabilities take it out: share of income going to obligations.
   const payments = open.reduce((t, d) => t + d.monthlyPaymentMinor, 0);
-  if (open.length === 0) out.push({ key: 'assetsVsLiabilities', status: args.debts.length > 0 || args.assets.length > 0 ? 'good' : 'needsData', paymentsMinor: 0, share: null, action: { type: 'openWealth' } });
+  if (open.length === 0)
+    out.push({ key: 'assetsVsLiabilities', status: args.debts.length > 0 || args.assets.length > 0 ? 'good' : 'needsData', paymentsMinor: 0, share: null, action: { type: 'openWealth' } });
   else out.push({ key: 'assetsVsLiabilities', status: 'opportunity', paymentsMinor: payments, share: incomeMinor > 0 ? payments / incomeMinor : null, action: { type: 'openWealth' } });
 
   // 5. One debt at a time: snowball (smallest balance) vs avalanche (highest rate).
-  if (open.length === 0) out.push({ key: 'debtFocus', status: args.debts.length > 0 || args.assets.length > 0 ? 'good' : 'needsData', openDebts: 0, snowball: null, avalanche: null, action: { type: 'openWealth' } });
+  if (open.length === 0)
+    out.push({ key: 'debtFocus', status: args.debts.length > 0 || args.assets.length > 0 ? 'good' : 'needsData', openDebts: 0, snowball: null, avalanche: null, action: { type: 'openWealth' } });
   else {
     const snowball = [...open].sort((a, b) => a.remainingMinor - b.remainingMinor || a.id - b.id)[0];
     const avalanche = [...open].sort((a, b) => b.annualRatePercent - a.annualRatePercent || a.remainingMinor - b.remainingMinor || a.id - b.id)[0];

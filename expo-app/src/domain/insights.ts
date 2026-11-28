@@ -3,13 +3,7 @@ import { requiredMonthlySaving } from './financeEngine';
 import { CategorySpend, isGoalReached, SavingsGoal } from './models';
 
 /** Rule-based, explainable insights (coach v0). No AI, no network. */
-export type InsightKind =
-  | 'noIncome'
-  | 'negativeCashFlow'
-  | 'overBudget'
-  | 'nearBudget'
-  | 'goalAtRisk'
-  | 'goalOverdue';
+export type InsightKind = 'noIncome' | 'negativeCashFlow' | 'overBudget' | 'nearBudget' | 'goalAtRisk' | 'goalOverdue';
 
 export type InsightSeverity = 'info' | 'warning' | 'critical';
 const SEVERITY_RANK: Record<InsightSeverity, number> = { info: 0, warning: 1, critical: 2 };

@@ -94,12 +94,7 @@ export function daysUntilPayday(today: Day, payday: number): number {
  * plan: (income − spent − planned saving) ÷ days left until payday
  * (or month end when no payday is set). Never negative; rounded DOWN.
  */
-export function safeToSpendPerDay(args: {
-  incomeMinor: number;
-  spentMinor: number;
-  plannedSavingMinor: number;
-  daysLeft: number;
-}): number {
+export function safeToSpendPerDay(args: { incomeMinor: number; spentMinor: number; plannedSavingMinor: number; daysLeft: number }): number {
   const left = args.incomeMinor - args.spentMinor - args.plannedSavingMinor;
   if (left <= 0) return 0;
   return Math.floor(left / Math.max(1, args.daysLeft));
@@ -151,10 +146,7 @@ export function healthScore(args: {
   const rate = incomeMinor > 0 ? (incomeMinor - expensesMinor) / incomeMinor : 0;
   const savings = Math.round(40 * Math.min(1, Math.max(0, rate / 0.2)));
 
-  const budgets =
-    args.budgetedCategories === 0
-      ? 10
-      : Math.round(25 * ((args.budgetedCategories - args.categoriesOverBudget) / args.budgetedCategories));
+  const budgets = args.budgetedCategories === 0 ? 10 : Math.round(25 * ((args.budgetedCategories - args.categoriesOverBudget) / args.budgetedCategories));
 
   const months = args.monthlySpendingMinor > 0 ? args.totalSavedMinor / args.monthlySpendingMinor : args.totalSavedMinor > 0 ? 6 : 0;
   const cushion = Math.round(25 * Math.min(1, months / 6));

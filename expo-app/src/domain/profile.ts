@@ -35,8 +35,7 @@ export function parseProfile(json: string | undefined | null): Profile | null {
   if (!json) return null;
   try {
     const p = JSON.parse(json) as Partial<Profile>;
-    const pick = <T extends string>(v: unknown, allowed: readonly T[], d: T): T =>
-      allowed.includes(v as T) ? (v as T) : d;
+    const pick = <T extends string>(v: unknown, allowed: readonly T[], d: T): T => (allowed.includes(v as T) ? (v as T) : d);
     return {
       goal: pick(p.goal, ['emergency', 'control', 'debt', 'purchase', 'track'] as const, DEFAULT_PROFILE.goal),
       incomeType: pick(p.incomeType, ['salary', 'irregular', 'allowance', 'none'] as const, DEFAULT_PROFILE.incomeType),
@@ -88,10 +87,7 @@ export function suggestPlan(profile: Profile, monthlyIncomeMinor: number, curren
     goal = { kind: 'purchase', targetMinor: monthlySavingMinor * 6, months: 6 };
   }
 
-  const focusBudget =
-    income > 0 && profile.focusCategory
-      ? { category: profile.focusCategory, limitMinor: Math.max(minorPerMajor(currency), roundMajor(income * 0.1, currency)) }
-      : null;
+  const focusBudget = income > 0 && profile.focusCategory ? { category: profile.focusCategory, limitMinor: Math.max(minorPerMajor(currency), roundMajor(income * 0.1, currency)) } : null;
 
   return { savingsRate, monthlySavingMinor, goal, focusBudget };
 }

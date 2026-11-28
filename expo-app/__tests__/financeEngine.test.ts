@@ -192,3 +192,16 @@ test('roundMinor: half away from zero (unlike Math.round)', () => {
   expect(roundMinor(2.4999)).toBe(2);
   expect(() => roundMinor(Infinity)).toThrow(FinanceInputError);
 });
+
+// -- goal pace (D-061) ----------------------------------------------------------
+import { goalPace } from '../src/domain/financeEngine';
+
+test('goal pace: from what was actually put in, with no verdict on a goal younger than a month', () => {
+  expect(goalPace({ requiredMonthlyMinor: 100000, recent90Minor: 0, ageDays: 10 })).toEqual({ status: 'needsData' });
+  // 360 over the last 3 months = 120 a month against 100 needed: on track.
+  expect(goalPace({ requiredMonthlyMinor: 100000, recent90Minor: 360000, ageDays: 200 })).toEqual({ status: 'onTrack', paceMonthlyMinor: 120000, gapMinor: 0 });
+  // 150 over 3 months = 50 a month: 50 short each month.
+  expect(goalPace({ requiredMonthlyMinor: 100000, recent90Minor: 150000, ageDays: 200 })).toEqual({ status: 'behind', paceMonthlyMinor: 50000, gapMinor: 50000 });
+  // A 45-day-old goal is judged over its 1.5 months, not over 3.
+  expect(goalPace({ requiredMonthlyMinor: 100000, recent90Minor: 150000, ageDays: 45 })).toEqual({ status: 'onTrack', paceMonthlyMinor: 100000, gapMinor: 0 });
+});

@@ -15,10 +15,7 @@ export interface TextEntry {
 
 const DIGITS = '[0-9٠-٩۰-۹]';
 // A number (dot / Arabic decimal separator / comma), optionally followed by a currency word.
-const AMOUNT = new RegExp(
-  `(${DIGITS}+(?:[.,٫]${DIGITS}+)?)\\s*(بيس[ةه]|baisa|بيسات|ر\\.?\\s?ع\\.?|ريال(?:ات)?(?:\\s+عماني)?|omr|rials?|ro)?(?=\\s|$|[،,.])`,
-  'iu',
-);
+const AMOUNT = new RegExp(`(${DIGITS}+(?:[.,٫]${DIGITS}+)?)\\s*(بيس[ةه]|baisa|بيسات|ر\\.?\\s?ع\\.?|ريال(?:ات)?(?:\\s+عماني)?|omr|rials?|ro)?(?=\\s|$|[،,.])`, 'iu');
 
 export function parseTextEntry(text: string, currency: Currency): TextEntry {
   const m = AMOUNT.exec(text);

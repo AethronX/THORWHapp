@@ -4,7 +4,7 @@ import { Pressable, View } from 'react-native';
 
 import { minorToEditable } from '../core/amountParser';
 import { dayKey } from '../core/dates';
-import type { Guidance } from '../domain/guidance';
+import { guidanceBasis, type Guidance } from '../domain/guidance';
 import { useAppState, useController, useUi } from './AppContext';
 import { Button, Card, Icon, Row, runGuarded, T } from './components';
 import { haptic } from './feedback';
@@ -131,8 +131,11 @@ export function NextStepCard({ items }: { items: Guidance[] }) {
 }
 
 function Step({ g, text, onAct, onDismiss, prominent = false }: { g: Guidance; text: Text; onAct: () => void; onDismiss: () => void; prominent?: boolean }) {
+  const st = useAppState();
   const { s, p } = useUi();
   const [why, setWhy] = useState(false);
+  const monthsOfData = st.trend.filter((t) => t.expensesMinor > 0 && !(t.month.year === st.today.year && t.month.month === st.today.month)).length;
+  const basis = guidanceBasis(g.kind, monthsOfData, st.today);
   return (
     <View style={{ gap: Space.sm }} testID={`guidance.${g.id}`}>
       <T variant={prominent ? 'subtitle' : 'body'} testID={`guidance.${g.id}.title`}>
@@ -150,6 +153,10 @@ function Step({ g, text, onAct, onDismiss, prominent = false }: { g: Guidance; t
         <View style={{ backgroundColor: p.surfaceMuted, borderRadius: Radii.md, padding: Space.md, gap: Space.xs }}>
           <T variant="small" testID={`guidance.${g.id}.reason`}>
             {text.why}
+          </T>
+          {/* How solid the step is and when it is looked at again (D-061). */}
+          <T variant="small" color={basis.sufficiency === 'limited' ? p.warning : p.onSurfaceMuted} testID={`guidance.${g.id}.data`}>
+            {`${s.guidanceData[basis.sufficiency]} · ${s.guidanceReview(formatDate(basis.reviewOn, st.locale))}`}
           </T>
           <T variant="small" muted>
             {s.guidanceBasis}

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { View } from 'react-native';
 
 import { compareDays, monthsUntil } from '../../core/dates';
-import { goalProgress, requiredMonthlySaving } from '../../domain/financeEngine';
+import { goalPace, goalProgress, requiredMonthlySaving } from '../../domain/financeEngine';
 import { isGoalReached, SavingsGoal } from '../../domain/models';
 import { useAppState, useController, useUi } from '../../ui/AppContext';
 import { Button, Card, EmptyState, Fab, Icon, IconButton, LabeledProgress, Row, runGuarded, Screen, T } from '../../ui/components';
@@ -58,6 +58,7 @@ function GoalCard({ goal, nearest = false }: { goal: SavingsGoal; nearest?: bool
   const months = monthsUntil(st.today, goal.targetDate);
   const required = requiredMonthlySaving({ targetMinor: goal.targetMinor, savedMinor: goal.savedMinor, months });
   const progress = goalProgress(goal.savedMinor, goal.targetMinor);
+  const pace = goal.ageDays == null ? null : goalPace({ requiredMonthlyMinor: required, recent90Minor: goal.recent90Minor ?? 0, ageDays: goal.ageDays });
   const status = reached ? s.goalReached : overdue ? s.goalOverdue : s.monthsLeft(months);
 
   return (
@@ -107,6 +108,13 @@ function GoalCard({ goal, nearest = false }: { goal: SavingsGoal; nearest?: bool
       {!reached && !overdue && !goal.paused && (
         <T variant="subtitle" testID={`goal.required.${goal.id}`}>
           {s.goalRequiredMonthly(money(required))}
+        </T>
+      )}
+      {/* The user's actual pace against what the date needs (D-061): a reading
+          of their record, never a promise the goal will be met. */}
+      {!reached && !overdue && !goal.paused && pace && (
+        <T variant="small" color={pace.status === 'behind' ? p.warning : pace.status === 'onTrack' ? p.positive : p.onSurfaceMuted} testID={`goal.pace.${goal.id}`}>
+          {pace.status === 'needsData' ? s.goalPaceNoData : pace.status === 'onTrack' ? s.goalOnTrack(money(pace.paceMonthlyMinor)) : s.goalBehind(money(pace.paceMonthlyMinor), money(pace.gapMinor))}
         </T>
       )}
       {mode ? (

@@ -198,3 +198,18 @@ test('"pay yourself first" fires when the salary arrived at the end of last mont
   expect(item).toBeTruthy();
   expect(item!.daysSincePayday).toBe(1);
 });
+
+// -- how solid a step is, and when to look again (D-061) -----------------------
+import { guidanceBasis } from '../src/domain/guidance';
+
+test('steps that compare months are "limited" with less than two months; this-month steps are not', () => {
+  const t = { year: 2026, month: 11, day: 20 };
+  expect(guidanceBasis('categoryRising', 1, t).sufficiency).toBe('limited');
+  expect(guidanceBasis('emergencyFund', 1, t).sufficiency).toBe('limited');
+  expect(guidanceBasis('emergencyFund', 3, t).sufficiency).toBe('enough');
+  expect(guidanceBasis('overBudget', 0, t).sufficiency).toBe('enough');
+  // Reviewed at the end of the month…
+  expect(guidanceBasis('overBudget', 0, t).reviewOn).toEqual({ year: 2026, month: 11, day: 30 });
+  // …except "pay yourself first", which only matters in the days after payday.
+  expect(guidanceBasis('payYourselfFirst', 0, t).reviewOn).toEqual({ year: 2026, month: 11, day: 23 });
+});
