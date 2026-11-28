@@ -78,6 +78,9 @@ test('totals never mix currencies, and unpriced holdings are counted, not valued
   expect(t.map((x) => x.currency)).toEqual(['OMR', 'USD']);
   expect(t[0]).toMatchObject({ costMinor: 10000, valueMinor: 11000, unpriced: 0 });
   expect(t[1]).toMatchObject({ costMinor: 1700, valueMinor: 2000, unpriced: 1 });
+  // Value is set against the cost of the PRICED holdings only (1600), not all of it (1700):
+  // otherwise an unpriced holding reads as a loss that does not exist.
+  expect(t[1].pricedCostMinor).toBe(1600);
 });
 
 // -- storage: schema v3, the sell guard, backup (D-059) ------------------------

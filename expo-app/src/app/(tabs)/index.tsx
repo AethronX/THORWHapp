@@ -448,34 +448,32 @@ function QuickBar() {
   const cats = shortcutCategories(st);
   return (
     <Card testID="quickBar">
-      <Row style={{ justifyContent: 'space-between' }}>
-        <T variant="label">{s.quickBarTitle}</T>
-        {/*
-         * A running streak reads as something worth keeping; two zeros read as
-         * failure. So while a streak is running it takes the place of today's
-         * total, and an empty day says so in words instead of showing 0.000
-         * (D-051). Today's and the week's totals are still here once there is
-         * something to show, and the full picture stays in Analytics.
-         */}
-        <Row gap={Space.md}>
-          {streak >= 2 ? (
-            <Row gap={Space.xs}>
-              <Icon name="sparkle" size={14} color={p.primary} />
-              <T variant="small" color={p.primary} testID="quickBar.streak">
-                {s.streakDays(streak)}
-              </T>
-            </Row>
-          ) : null}
-          {r.todayMinor > 0 ? (
-            <T variant="small" muted testID="quickBar.today">{`${s.todayLabel} ${money(r.todayMinor)}`}</T>
-          ) : (
-            <T variant="small" muted testID="quickBar.today">
-              {s.nothingToday}
+      <T variant="label">{s.quickBarTitle}</T>
+      {/*
+       * A running streak reads as something worth keeping; two zeros read as
+       * failure. So while a streak is running it leads, and an empty day says
+       * so in words instead of showing 0.000 (D-051).
+       * The figures sit on their own line and wrap: on one line with the
+       * title they overflowed a 390-point screen and cut "last 7 days" off.
+       */}
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: Space.md, rowGap: Space.xxs }}>
+        {streak >= 2 ? (
+          <Row gap={Space.xs}>
+            <Icon name="sparkle" size={14} color={p.primary} />
+            <T variant="small" color={p.primary} testID="quickBar.streak">
+              {s.streakDays(streak)}
             </T>
-          )}
-          {r.weekMinor > 0 && <T variant="small" muted testID="quickBar.week">{`${s.last7Label} ${money(r.weekMinor)}`}</T>}
-        </Row>
-      </Row>
+          </Row>
+        ) : null}
+        {r.todayMinor > 0 ? (
+          <T variant="small" muted testID="quickBar.today">{`${s.todayLabel} ${money(r.todayMinor)}`}</T>
+        ) : (
+          <T variant="small" muted testID="quickBar.today">
+            {s.nothingToday}
+          </T>
+        )}
+        {r.weekMinor > 0 && <T variant="small" muted testID="quickBar.week">{`${s.last7Label} ${money(r.weekMinor)}`}</T>}
+      </View>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: Space.sm }}>
         {[...cats, null].map((c) => {
           const tone = c ? categoryTone(p, c.key, c.iconCode) : null;

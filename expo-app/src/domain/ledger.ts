@@ -141,6 +141,12 @@ export interface CurrencyTotals {
   costMinor: number;
   /** Sum of values over the holdings that HAVE a price; see `unpriced`. */
   valueMinor: number;
+  /**
+   * Cost of exactly those priced holdings — the only fair thing to set the
+   * value against. Comparing value with TOTAL cost while some holdings have no
+   * price reads as a loss that does not exist (D-059).
+   */
+  pricedCostMinor: number;
   realizedMinor: number;
   dividendsMinor: number;
   feesMinor: number;
@@ -153,14 +159,17 @@ export function totalsByCurrency(positions: readonly Position[]): CurrencyTotals
   const map = new Map<string, CurrencyTotals>();
   for (const p of positions) {
     const c = p.holding.currency;
-    const t = map.get(c) ?? { currency: c, costMinor: 0, valueMinor: 0, realizedMinor: 0, dividendsMinor: 0, feesMinor: 0, unpriced: 0 };
+    const t = map.get(c) ?? { currency: c, costMinor: 0, valueMinor: 0, pricedCostMinor: 0, realizedMinor: 0, dividendsMinor: 0, feesMinor: 0, unpriced: 0 };
     t.costMinor += p.costMinor;
     t.realizedMinor += p.realizedMinor;
     t.dividendsMinor += p.dividendsMinor;
     t.feesMinor += p.feesMinor;
     if (p.valueMinor == null) {
       if (p.quantityMicro > 0) t.unpriced += 1;
-    } else t.valueMinor += p.valueMinor;
+    } else {
+      t.valueMinor += p.valueMinor;
+      t.pricedCostMinor += p.costMinor;
+    }
     map.set(c, t);
   }
   return [...map.values()].sort((a, b) => a.currency.localeCompare(b.currency));

@@ -164,16 +164,23 @@ function Ledger() {
               <T variant="label">{s.ledgerTotalsIn(t.currency)}</T>
               <Row style={{ justifyContent: 'space-between' }}>
                 <T variant="small" muted>
-                  {s.ledgerCost}
+                  {s.ledgerTotalCost}
                 </T>
                 <T variant="label">{moneyIn(t.costMinor, t.currency)}</T>
               </Row>
-              <Row style={{ justifyContent: 'space-between' }}>
-                <T variant="small" muted>
-                  {s.ledgerValue}
+              {/* Value against the cost of the SAME holdings, never against total cost. */}
+              {t.unpriced === 0 ? (
+                <Row style={{ justifyContent: 'space-between' }}>
+                  <T variant="small" muted>
+                    {s.ledgerValue}
+                  </T>
+                  <T variant="label">{moneyIn(t.valueMinor, t.currency)}</T>
+                </Row>
+              ) : t.pricedCostMinor > 0 ? (
+                <T variant="small" testID={`invest.ledger.compare.${t.currency}`}>
+                  {s.ledgerPricedCompare(moneyIn(t.valueMinor, t.currency), moneyIn(t.pricedCostMinor, t.currency))}
                 </T>
-                <T variant="label">{moneyIn(t.valueMinor, t.currency)}</T>
-              </Row>
+              ) : null}
               {t.unpriced > 0 && (
                 <T variant="small" color={p.warning}>
                   {s.ledgerUnpriced(t.unpriced)}
@@ -196,6 +203,12 @@ function Ledger() {
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
                   <T variant="label">{moneyIn(x.valueMinor ?? x.costMinor, x.holding.currency)}</T>
+                  {/* Without a price the figure is the COST, and says so. */}
+                  {x.valueMinor == null && (
+                    <T variant="small" muted>
+                      {s.ledgerCostNoPrice}
+                    </T>
+                  )}
                   {x.unrealizedMinor != null && (
                     <T variant="small" color={x.unrealizedMinor >= 0 ? p.positive : p.negative}>
                       {moneyIn(x.unrealizedMinor, x.holding.currency, true)}
